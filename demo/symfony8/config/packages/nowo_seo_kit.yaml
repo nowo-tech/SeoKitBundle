@@ -1,0 +1,86 @@
+nowo_seo_kit:
+    enabled: true
+    default_locale: en
+    base_url: '%env(DEFAULT_URI)%'
+    locales: [en, es, fr]
+
+    defaults:
+        site_name: 'SEO Kit Demo'
+        title_separator: ' · '
+        title_template: '{title}{separator}{site_name}'
+        description: 'Multilingual SEO demonstration'
+        open_graph:
+            enabled: true
+            type: website
+            site_name: 'SEO Kit Demo'
+        twitter:
+            enabled: true
+            card: summary_large_image
+        json_ld:
+            enabled: true
+            organization:
+                name: 'SEO Kit Demo'
+                url: '%env(DEFAULT_URI)%'
+
+    pages:
+        app_home:
+            title: Home
+            description: Welcome to the SEO Kit FrankenPHP demo
+            path: /
+            in_sitemap: true
+            sitemap_priority: 1.0
+            locales:
+                es:
+                    title: Inicio
+                    description: Bienvenido al demo SEO
+                    path: /es
+                fr:
+                    title: Accueil
+                    path: /fr
+
+        app_about:
+            title: About
+            description: About this demonstration application
+            path: /about
+            locales:
+                es:
+                    title: Acerca de
+                    path: /es/acerca
+
+    slug_routes:
+        app_blog_show:
+            slug_parameter: slug
+            title_template: '{title} — Blog'
+            description_template: 'Article: {slug}'
+            path_pattern: '/blog/{slug}'
+            sitemap_priority: 0.7
+            locales:
+                es:
+                    path_pattern: '/es/blog/{slug}'
+                    title_template: '{title} — Blog ES'
+                fr:
+                    path_pattern: '/fr/blog/{slug}'
+
+    slugs:
+        app_blog_show:
+            hello-world:
+                title: Hello World post
+                description: First demo blog post
+                in_sitemap: true
+                locales:
+                    es:
+                        title: Hola mundo
+                        slug: hola-mundo
+                    fr:
+                        title: Bonjour le monde
+                        slug: bonjour-le-monde
+
+    sitemap:
+        enabled: true
+        path: /sitemap.xml
+
+    robots:
+        enabled: true
+        path: /robots.txt
+        allow: ['/']
+        disallow: ['/admin']

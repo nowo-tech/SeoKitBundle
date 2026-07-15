@@ -1,0 +1,9 @@
+nowo_seo_kit_sitemap:
+    path: /sitemap.xml
+    controller: Nowo\SeoKitBundle\Controller\SeoKitController::sitemap
+    methods: [GET]
+
+nowo_seo_kit_robots:
+    path: /robots.txt
+    controller: Nowo\SeoKitBundle\Controller\SeoKitController::robots
+    methods: [GET]

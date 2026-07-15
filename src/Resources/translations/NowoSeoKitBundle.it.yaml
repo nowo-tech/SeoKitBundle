@@ -1,0 +1,8 @@
+seo:
+    fallback:
+        title: 'Pagina'
+        description: 'Benvenuto nel nostro sito.'
+    sitemap:
+        label: 'Mappa del sito'
+    robots:
+        label: 'Robots'

@@ -1,0 +1,52 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+.phpunit.cache/
+/coverage/
+/coverage-html/
+coverage.xml
+/coverage-php.txt
+###< phpunit/phpunit ###
+
+###> php-cs-fixer ###
+.php-cs-fixer.cache
+###< php-cs-fixer ###
+
+###> node ###
+node_modules/
+npm-debug.log
+yarn-error.log
+###< node ###
+
+###> IDE ###
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+###< IDE ###
+
+# Environment files (root)
+.env
+.env.local
+.env.*.local
+
+# Archives / compressed
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+# Cursor local sandbox (machine-specific; REQ-IDE-005)
+.cursor/sandbox.json

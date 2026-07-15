@@ -1,0 +1,83 @@
+name: Sync Releases
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  sync-releases:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync missing/incomplete releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          owner_repo="${GITHUB_REPOSITORY}"
+          tags="$(git tag -l 'v*' | sort -V)"
+
+          if [ -z "${tags}" ]; then
+            echo "No v* tags found."
+            exit 0
+          fi
+
+          for tag in ${tags}; do
+            version="${tag#v}"
+            tag_message="$(git tag -l --format='%(contents)' "${tag}" 2>/dev/null || true)"
+            if [ -z "${tag_message}" ]; then
+              tag_message="Release ${tag}"
+            fi
+
+            changelog=""
+            if [ -f docs/CHANGELOG.md ]; then
+              version_esc="$(printf '%s\n' "${version}" | sed 's/[.]/\\./g')"
+              changelog="$(awk -v ver="${version_esc}" '
+                $0 ~ "^## \\[" ver "\\]" { flag=1; next }
+                /^## \[/ && flag { flag=0 }
+                flag
+              ' docs/CHANGELOG.md || true)"
+            fi
+
+            body="${tag_message}"
+            if [ -n "${changelog}" ]; then
+              body="${body}
+
+## Changelog
+
+${changelog}"
+            fi
+
+            release_json="$(gh api "repos/${owner_repo}/releases/tags/${tag}" --silent 2>/dev/null || true)"
+
+            if [ -z "${release_json}" ]; then
+              echo "Creating missing release for ${tag}"
+              gh release create "${tag}" --title "Release ${tag}" --notes "${body}"
+              continue
+            fi
+
+            release_id="$(printf '%s' "${release_json}" | jq -r '.id')"
+            existing_body="$(printf '%s' "${release_json}" | jq -r '.body // ""')"
+
+            if [ -n "${changelog}" ] && ! printf '%s' "${existing_body}" | grep -q "## Changelog"; then
+              echo "Updating incomplete release for ${tag}"
+              gh api \
+                --method PATCH \
+                "repos/${owner_repo}/releases/${release_id}" \
+                -f body="${existing_body}
+
+## Changelog
+
+${changelog}" >/dev/null
+            else
+              echo "Release ${tag} already synchronized."
+            fi
+          done

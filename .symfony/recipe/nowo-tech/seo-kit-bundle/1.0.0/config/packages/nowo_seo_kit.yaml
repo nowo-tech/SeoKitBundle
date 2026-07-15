@@ -1,0 +1,59 @@
+# Seo Kit Bundle configuration — see docs/CONFIGURATION.md for the full reference.
+nowo_seo_kit:
+    enabled: true
+    default_locale: en
+    # locales: [en, es, fr, de, it, pt, nl]
+    # base_url: 'https://example.com'
+
+    defaults:
+        site_name: 'My Application'
+        title_separator: ' | '
+        title_template: '{title}{separator}{site_name}'
+        canonical_enabled: true
+        hreflang_enabled: true
+        x_default_hreflang: true
+        open_graph:
+            enabled: true
+            type: website
+        twitter:
+            enabled: true
+            card: summary_large_image
+        json_ld:
+            enabled: true
+            organization:
+                name: 'My Application'
+                url: '%env(default::DEFAULT_URI)%'
+
+    # Static pages (route name => SEO + optional locale paths)
+    # pages:
+    #     app_home:
+    #         title: 'Home'
+    #         description: 'Welcome'
+    #         path: /
+    #         locales:
+    #             es:
+    #                 title: 'Inicio'
+    #                 path: /es
+
+    # Slug-based route templates
+    # slug_routes:
+    #     app_blog_show:
+    #         slug_parameter: slug
+    #         title_template: '{title} — Blog'
+    #         path_pattern: '/blog/{slug}'
+
+    # Per-slug overrides
+    # slugs:
+    #     app_blog_show:
+    #         my-post:
+    #             title: 'Custom post title'
+
+    sitemap:
+        enabled: true
+        path: /sitemap.xml
+
+    robots:
+        enabled: true
+        path: /robots.txt
+        allow: ['/']
+        disallow: []

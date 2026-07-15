@@ -1,0 +1,111 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers when a tag starting with 'v' is pushed (e.g. v0.0.6)
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to create releases
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Required to get full history and tag message
+
+      - name: Get tag name
+        id: tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Get tag message
+        id: tag_message
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          TAG_MESSAGE=$(git tag -l --format='%(contents)' "$TAG_NAME" 2>/dev/null || echo "")
+          if [ -z "$TAG_MESSAGE" ]; then
+            TAG_MESSAGE="Release $TAG_NAME"
+          fi
+          {
+            echo "MESSAGE<<EOF"
+            echo "$TAG_MESSAGE"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Get changelog entry
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          CHANGELOG_FILE="docs/CHANGELOG.md"
+          # Escape dots for literal match in awk (e.g. 0.0.6 -> 0\.0\.6)
+          VERSION_ESC=$(printf '%s\n' "$VERSION" | sed 's/[.]/\\./g')
+          
+          if [ ! -f "$CHANGELOG_FILE" ]; then
+            echo "HAS_CHANGELOG=false" >> $GITHUB_OUTPUT
+            echo "⚠️ $CHANGELOG_FILE not found"
+            exit 0
+          fi
+          # Match Keep a Changelog format: ## [X.Y.Z] - date
+          CHANGELOG_ENTRY=$(awk -v ver="$VERSION_ESC" '
+            $0 ~ "^## \\[" ver "\\]" { flag=1; next }
+            /^## \[[0-9]/ && flag { flag=0 }
+            flag
+          ' "$CHANGELOG_FILE" 2>/dev/null || true)
+          
+          if [ -n "$CHANGELOG_ENTRY" ]; then
+            echo "HAS_CHANGELOG=true" >> $GITHUB_OUTPUT
+            printf '%s\n' "$CHANGELOG_ENTRY" > changelog_entry.md
+          else
+            echo "HAS_CHANGELOG=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No changelog section for version $VERSION in $CHANGELOG_FILE"
+          fi
+
+      - name: Prepare release body
+        id: body
+        run: |
+          BODY_FILE="release_body.md"
+          TAG_MSG="${{ steps.tag_message.outputs.MESSAGE }}"
+          HAS_CHANGELOG="${{ steps.changelog.outputs.HAS_CHANGELOG }}"
+          {
+            echo "$TAG_MSG"
+            if [ "$HAS_CHANGELOG" = "true" ] && [ -f changelog_entry.md ]; then
+              echo ""
+              echo "## Changelog"
+              echo ""
+              cat changelog_entry.md
+            fi
+          } > "$BODY_FILE"
+          echo "body_path=$BODY_FILE" >> $GITHUB_OUTPUT
+          echo "📋 Release body prepared (changelog included: $HAS_CHANGELOG)"
+
+      - name: Create Release
+        id: release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.TAG_NAME }}
+          name: Release ${{ steps.tag.outputs.TAG_NAME }}
+          body_path: ${{ steps.body.outputs.body_path }}
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.TAG_NAME, '-alpha') || contains(steps.tag.outputs.TAG_NAME, '-beta') || contains(steps.tag.outputs.TAG_NAME, '-rc') }}
+          generate_release_notes: false
+
+      - name: Release created
+        run: |
+          echo "✅ Release created: ${{ steps.release.outputs.url }}"
+          echo "## 🚀 [Release](${{ steps.release.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+
+# Maintainer: Héctor Franco Aceituno (@HecFranco)
+# Organization: nowo-tech (https://github.com/nowo-tech)
+
+

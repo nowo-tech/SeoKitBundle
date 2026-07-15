@@ -1,0 +1,14 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+    prefix: /{_locale}
+    requirements:
+        _locale: en|es|fr
+    defaults:
+        _locale: en
+
+nowo_seo_kit:
+    resource: .
+    type: nowo_seo_kit

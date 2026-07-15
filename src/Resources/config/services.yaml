@@ -1,0 +1,46 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Nowo\SeoKitBundle\Service\SeoRuntime:
+        shared: true
+
+    Nowo\SeoKitBundle\Service\SeoTemplateRenderer: ~
+
+    Nowo\SeoKitBundle\Service\SeoPathBuilder:
+        arguments:
+            $config: '%nowo_seo_kit.config%'
+
+    Nowo\SeoKitBundle\Service\SeoMetadataResolver:
+        arguments:
+            $config: '%nowo_seo_kit.config%'
+
+    Nowo\SeoKitBundle\Service\SitemapGenerator:
+        arguments:
+            $config: '%nowo_seo_kit.config%'
+
+    Nowo\SeoKitBundle\Service\RobotsTxtGenerator:
+        arguments:
+            $config: '%nowo_seo_kit.config%'
+
+    Nowo\SeoKitBundle\Controller\SeoKitController:
+        arguments:
+            $config: '%nowo_seo_kit.config%'
+        tags: ['controller.service_arguments']
+        public: true
+
+    Nowo\SeoKitBundle\Twig\SeoKitExtension:
+        arguments:
+            $enabled: '%nowo_seo_kit.enabled%'
+            $templates: '%nowo_seo_kit.templates%'
+        tags: ['twig.extension']
+
+    Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber:
+        tags: ['kernel.event_subscriber']
+
+    Nowo\SeoKitBundle\Routing\SeoStaticRouteLoader:
+        arguments:
+            $config: '%nowo_seo_kit.config%'
+        tags: ['routing.loader']

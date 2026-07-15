@@ -1,0 +1,4 @@
+  * Add {{ nowo_seo_head() }} to your base layout <head>.
+  * Configure pages, slug_routes, and slugs in config/packages/nowo_seo_kit.yaml.
+  * Verify /sitemap.xml and /robots.txt after cache warmup.
+  * See docs/CONFIGURATION.md and docs/SERVERS.md for FrankenPHP, Nginx, and php-fpm.
