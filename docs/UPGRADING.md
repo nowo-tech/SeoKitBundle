@@ -1,6 +1,6 @@
 # Upgrading
 
-## Unreleased → 1.0.0
+## To 1.0.0
 
 First public release. No prior versions.
 

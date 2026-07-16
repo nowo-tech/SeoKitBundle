@@ -21,7 +21,7 @@ final class SeoKitBundle extends Bundle
         $container->addCompilerPass(new TwigPathsPass());
     }
 
-    public function getContainerExtension(): ?ExtensionInterface
+    public function getContainerExtension(): ExtensionInterface
     {
         return new SeoKitExtension();
     }

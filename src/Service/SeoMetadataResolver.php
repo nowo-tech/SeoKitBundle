@@ -11,40 +11,43 @@ use ReflectionMethod;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Throwable;
 
 use function is_array;
+use function is_scalar;
 use function is_string;
+use function strlen;
 
 /**
  * Merges SEO layers: defaults → slug_routes → pages → slugs → attribute → runtime.
  */
-final class SeoMetadataResolver
+final readonly class SeoMetadataResolver
 {
     /**
      * @param array<string, mixed> $config
      */
     public function __construct(
-        private readonly array $config,
-        private readonly RequestStack $requestStack,
-        private readonly SeoRuntime $runtime,
-        private readonly SeoTemplateRenderer $templates,
-        private readonly SeoPathBuilder $paths,
-        private readonly UrlGeneratorInterface $urlGenerator,
+        private array $config,
+        private RequestStack $requestStack,
+        private SeoRuntime $runtime,
+        private SeoTemplateRenderer $templates,
+        private SeoPathBuilder $paths,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
     public function resolve(?Request $request = null): SeoMetadata
     {
         $request ??= $this->requestStack->getCurrentRequest();
-        if ($request === null || !($this->config['enabled'] ?? true)) {
+        if (!$request instanceof Request || !($this->config['enabled'] ?? true)) {
             return $this->emptyMetadata();
         }
 
-        $route = (string) $request->attributes->get('_route', '');
-        $locale = (string) ($request->attributes->get('_locale') ?? $request->getLocale() ?: ($this->config['default_locale'] ?? 'en'));
+        $route    = (string) $request->attributes->get('_route', '');
+        $locale   = (string) ($request->attributes->get('_locale') ?? $request->getLocale() ?: ($this->config['default_locale'] ?? 'en'));
         $defaults = is_array($this->config['defaults'] ?? null) ? $this->config['defaults'] : [];
 
-        $slugParam = 'slug';
+        $slugParam    = 'slug';
         $slugRouteCfg = is_array($this->config['slug_routes'][$route] ?? null) ? $this->config['slug_routes'][$route] : null;
         if (is_array($slugRouteCfg) && isset($slugRouteCfg['slug_parameter']) && is_string($slugRouteCfg['slug_parameter'])) {
             $slugParam = $slugRouteCfg['slug_parameter'];
@@ -58,8 +61,8 @@ final class SeoMetadataResolver
         $source = 'defaults';
 
         if (is_array($slugRouteCfg)) {
-            $merged = $this->mergeLayer($merged, $slugRouteCfg);
-            $source = 'slug_routes';
+            $merged     = $this->mergeLayer($merged, $slugRouteCfg);
+            $source     = 'slug_routes';
             $localeSlug = $slugRouteCfg['locales'][$locale] ?? null;
             if (is_array($localeSlug)) {
                 $merged = $this->mergeLayer($merged, $localeSlug);
@@ -68,8 +71,8 @@ final class SeoMetadataResolver
 
         $pageCfg = is_array($this->config['pages'][$route] ?? null) ? $this->config['pages'][$route] : null;
         if (is_array($pageCfg)) {
-            $merged = $this->mergeLayer($merged, $pageCfg);
-            $source = 'pages';
+            $merged     = $this->mergeLayer($merged, $pageCfg);
+            $source     = 'pages';
             $pageLocale = $pageCfg['locales'][$locale] ?? null;
             if (is_array($pageLocale)) {
                 $merged = $this->mergeLayer($merged, $pageLocale);
@@ -78,8 +81,8 @@ final class SeoMetadataResolver
 
         if ($slug !== null && is_array($this->config['slugs'][$route][$slug] ?? null)) {
             $slugCfg = $this->config['slugs'][$route][$slug];
-            $merged = $this->mergeLayer($merged, $slugCfg);
-            $source = 'slugs';
+            $merged  = $this->mergeLayer($merged, $slugCfg);
+            $source  = 'slugs';
             if (($slugCfg['noindex'] ?? false) === true) {
                 $merged['robots'] = 'noindex,nofollow';
             }
@@ -110,8 +113,8 @@ final class SeoMetadataResolver
             [
                 'site_name' => (string) ($defaults['site_name'] ?? ''),
                 'separator' => (string) ($defaults['title_separator'] ?? ' | '),
-                'locale' => $locale,
-                'slug' => $slug ?? '',
+                'locale'    => $locale,
+                'slug'      => $slug ?? '',
             ],
         );
 
@@ -131,7 +134,7 @@ final class SeoMetadataResolver
 
         // Avoid trailing separator when site_name empty
         $separator = (string) ($defaults['title_separator'] ?? ' | ');
-        $siteName = (string) ($defaults['site_name'] ?? '');
+        $siteName  = (string) ($defaults['site_name'] ?? '');
         if ($siteName === '' && str_ends_with($title, $separator)) {
             $title = substr($title, 0, -strlen($separator));
         }
@@ -148,42 +151,41 @@ final class SeoMetadataResolver
             ? $merged['robots']
             : 'index,follow';
 
-        $canonicalPath = $this->resolveCanonicalPath($request, $route, $locale, $slug, $merged);
+        $canonicalPath    = $this->resolveCanonicalPath($request, $route, $locale, $slug, $merged);
         $canonicalEnabled = (bool) ($defaults['canonical_enabled'] ?? true);
-        $canonical = null;
-        if ($canonicalEnabled && $canonicalPath !== null) {
-            $canonical = $this->paths->absoluteUrl($request, $canonicalPath);
-        }
+        $canonical        = $canonicalEnabled
+            ? $this->paths->absoluteUrl($request, $canonicalPath)
+            : null;
 
         $alternates = [];
         if (($defaults['hreflang_enabled'] ?? true) === true) {
             $alternates = $this->buildAlternates($request, $route, $slug, $locale);
         }
 
-        $og = is_array($merged['open_graph'] ?? null) ? $merged['open_graph'] : [];
-        $tw = is_array($merged['twitter'] ?? null) ? $merged['twitter'] : [];
+        $og      = is_array($merged['open_graph'] ?? null) ? $merged['open_graph'] : [];
+        $tw      = is_array($merged['twitter'] ?? null) ? $merged['twitter'] : [];
         $ogImage = is_string($merged['og_image'] ?? null) ? $merged['og_image'] : ($og['image'] ?? null);
 
         $openGraph = [
-            'enabled' => (bool) ($og['enabled'] ?? true),
-            'type' => (string) ($og['type'] ?? 'website'),
-            'title' => $title,
+            'enabled'     => (bool) ($og['enabled'] ?? true),
+            'type'        => (string) ($og['type'] ?? 'website'),
+            'title'       => $title,
             'description' => $description,
-            'image' => is_string($ogImage) ? $this->paths->absoluteUrl($request, $ogImage) : null,
-            'url' => $canonical,
-            'site_name' => is_string($og['site_name'] ?? null) ? $og['site_name'] : ($defaults['site_name'] ?? null),
-            'locale' => $locale,
+            'image'       => is_string($ogImage) ? $this->paths->absoluteUrl($request, $ogImage) : null,
+            'url'         => $canonical,
+            'site_name'   => is_string($og['site_name'] ?? null) ? $og['site_name'] : ($defaults['site_name'] ?? null),
+            'locale'      => $locale,
         ];
 
         $twitter = [
-            'enabled' => (bool) ($tw['enabled'] ?? true),
-            'card' => (string) ($tw['card'] ?? 'summary_large_image'),
-            'title' => $title,
+            'enabled'     => (bool) ($tw['enabled'] ?? true),
+            'card'        => (string) ($tw['card'] ?? 'summary_large_image'),
+            'title'       => $title,
             'description' => $description,
-            'image' => is_string($tw['image'] ?? null)
+            'image'       => is_string($tw['image'] ?? null)
                 ? $this->paths->absoluteUrl($request, $tw['image'])
                 : $openGraph['image'],
-            'site' => is_string($tw['site'] ?? null) ? $tw['site'] : null,
+            'site'    => is_string($tw['site'] ?? null) ? $tw['site'] : null,
             'creator' => is_string($tw['creator'] ?? null) ? $tw['creator'] : null,
         ];
 
@@ -213,7 +215,7 @@ final class SeoMetadataResolver
     private function mergeLayer(array $base, array $layer): array
     {
         foreach (['title', 'description', 'robots', 'canonical', 'keywords', 'author', 'title_template', 'description_template', 'og_image'] as $key) {
-            if (isset($layer[$key]) && $layer[$key] !== null && $layer[$key] !== '') {
+            if (isset($layer[$key]) && $layer[$key] !== '') {
                 $base[$key] = $layer[$key];
             }
         }
@@ -244,7 +246,7 @@ final class SeoMetadataResolver
     /**
      * @param array<string, mixed> $merged
      */
-    private function resolveCanonicalPath(Request $request, string $route, string $locale, ?string $slug, array $merged): ?string
+    private function resolveCanonicalPath(Request $request, string $route, string $locale, ?string $slug, array $merged): string
     {
         if (isset($merged['canonical']) && is_string($merged['canonical']) && $merged['canonical'] !== '') {
             return $merged['canonical'];
@@ -257,7 +259,7 @@ final class SeoMetadataResolver
             }
         }
 
-        $pagePath = $this->paths->pagePath($route, $locale, $request->getPathInfo());
+        $pagePath = $this->paths->pagePath($route, $locale);
         if ($pagePath !== null) {
             return $pagePath;
         }
@@ -270,9 +272,9 @@ final class SeoMetadataResolver
      */
     private function buildAlternates(Request $request, string $route, ?string $slug, string $currentLocale): array
     {
-        $locales = is_array($this->config['locales'] ?? null) ? $this->config['locales'] : [$currentLocale];
+        $locales       = is_array($this->config['locales'] ?? null) ? $this->config['locales'] : [$currentLocale];
         $defaultLocale = (string) ($this->config['default_locale'] ?? 'en');
-        $alternates = [];
+        $alternates    = [];
 
         foreach ($locales as $locale) {
             if (!is_string($locale)) {
@@ -293,17 +295,17 @@ final class SeoMetadataResolver
                 try {
                     $params = array_filter(
                         $request->attributes->get('_route_params', []),
-                        static fn ($v) => is_scalar($v),
+                        is_scalar(...),
                     );
                     $params['_locale'] = $locale;
-                    $path = $this->urlGenerator->generate($route, $params);
-                } catch (\Throwable) {
+                    $path              = $this->urlGenerator->generate($route, $params);
+                } catch (Throwable) {
                     continue;
                 }
             }
             $alternates[] = [
-                'locale' => $locale,
-                'url' => $this->paths->absoluteUrl($request, $path),
+                'locale'   => $locale,
+                'url'      => $this->paths->absoluteUrl($request, $path),
                 'hreflang' => str_replace('_', '-', $locale),
             ];
         }
@@ -313,8 +315,8 @@ final class SeoMetadataResolver
             foreach ($alternates as $alt) {
                 if ($alt['locale'] === $defaultLocale) {
                     $alternates[] = [
-                        'locale' => 'x-default',
-                        'url' => $alt['url'],
+                        'locale'   => 'x-default',
+                        'url'      => $alt['url'],
                         'hreflang' => 'x-default',
                     ];
                     break;
@@ -332,9 +334,9 @@ final class SeoMetadataResolver
      */
     private function buildJsonLd(array $defaults, Request $request, ?string $canonical, string $title, string $description): array
     {
-        $cfg = is_array($defaults['json_ld'] ?? null) ? $defaults['json_ld'] : [];
+        $cfg     = is_array($defaults['json_ld'] ?? null) ? $defaults['json_ld'] : [];
         $enabled = (bool) ($cfg['enabled'] ?? true);
-        $graph = [];
+        $graph   = [];
 
         $org = is_array($cfg['organization'] ?? null) ? $cfg['organization'] : [];
         if ($org !== []) {
@@ -342,10 +344,10 @@ final class SeoMetadataResolver
         }
 
         $graph[] = [
-            '@type' => 'WebPage',
-            'name' => $title,
+            '@type'       => 'WebPage',
+            'name'        => $title,
             'description' => $description,
-            'url' => $canonical ?? $this->paths->absoluteUrl($request, $request->getPathInfo()),
+            'url'         => $canonical ?? $this->paths->absoluteUrl($request, $request->getPathInfo()),
         ];
 
         $extra = is_array($cfg['extra'] ?? null) ? $cfg['extra'] : [];
@@ -373,15 +375,11 @@ final class SeoMetadataResolver
             return null;
         }
 
-        try {
-            $refClass = new ReflectionClass($class);
-            $attrs = $refClass->getAttributes(Seo::class);
-            if ($refClass->hasMethod($method)) {
-                $refMethod = new ReflectionMethod($class, $method);
-                $attrs = array_merge($attrs, $refMethod->getAttributes(Seo::class));
-            }
-        } catch (\Throwable) {
-            return null;
+        $refClass = new ReflectionClass($class);
+        $attrs    = $refClass->getAttributes(Seo::class);
+        if ($refClass->hasMethod($method)) {
+            $refMethod = new ReflectionMethod($class, $method);
+            $attrs     = array_merge($attrs, $refMethod->getAttributes(Seo::class));
         }
 
         if ($attrs === []) {
@@ -391,13 +389,13 @@ final class SeoMetadataResolver
         /** @var Seo $seo */
         $seo = $attrs[array_key_last($attrs)]->newInstance();
         $out = array_filter([
-            'title' => $seo->title,
+            'title'       => $seo->title,
             'description' => $seo->description,
-            'robots' => $seo->robots,
-            'canonical' => $seo->canonical,
-            'keywords' => $seo->keywords,
-            'author' => $seo->author,
-        ], static fn ($v) => $v !== null);
+            'robots'      => $seo->robots,
+            'canonical'   => $seo->canonical,
+            'keywords'    => $seo->keywords,
+            'author'      => $seo->author,
+        ], static fn (?string $v): bool => $v !== null);
 
         if ($seo->noindex) {
             $out['robots'] = 'noindex,nofollow';

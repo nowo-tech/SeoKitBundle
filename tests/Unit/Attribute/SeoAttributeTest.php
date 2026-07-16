@@ -19,30 +19,30 @@ final class SeoAttributeTest extends TestCase
     public function testAttributeOverridesTitle(): void
     {
         $config = [
-            'enabled' => true,
+            'enabled'        => true,
             'default_locale' => 'en',
-            'locales' => ['en'],
-            'base_url' => 'https://example.com',
-            'defaults' => [
-                'site_name' => 'Site',
-                'title_separator' => ' | ',
-                'title_template' => '{title}{separator}{site_name}',
-                'canonical_enabled' => true,
-                'hreflang_enabled' => false,
+            'locales'        => ['en'],
+            'base_url'       => 'https://example.com',
+            'defaults'       => [
+                'site_name'          => 'Site',
+                'title_separator'    => ' | ',
+                'title_template'     => '{title}{separator}{site_name}',
+                'canonical_enabled'  => true,
+                'hreflang_enabled'   => false,
                 'x_default_hreflang' => false,
-                'open_graph' => ['enabled' => false, 'type' => 'website', 'image' => null, 'site_name' => null],
-                'twitter' => ['enabled' => false, 'card' => 'summary', 'site' => null, 'creator' => null, 'image' => null],
-                'json_ld' => ['enabled' => false, 'organization' => [], 'extra' => []],
+                'open_graph'         => ['enabled' => false, 'type' => 'website', 'image' => null, 'site_name' => null],
+                'twitter'            => ['enabled' => false, 'card' => 'summary', 'site' => null, 'creator' => null, 'image' => null],
+                'json_ld'            => ['enabled' => false, 'organization' => [], 'extra' => []],
             ],
-            'pages' => [],
+            'pages'       => [],
             'slug_routes' => [],
-            'slugs' => [],
+            'slugs'       => [],
         ];
 
-        $stack = new RequestStack();
+        $stack   = new RequestStack();
         $request = Request::create('/contact');
         $request->attributes->set('_route', 'app_contact');
-        $request->attributes->set('_controller', SeoAttributeFixtureController::class.'::index');
+        $request->attributes->set('_controller', SeoAttributeFixtureController::class . '::index');
         $request->setLocale('en');
         $stack->push($request);
 
@@ -59,12 +59,70 @@ final class SeoAttributeTest extends TestCase
         self::assertStringContainsString('Contact Us', $seo->title);
         self::assertSame('attribute', $seo->source);
     }
+
+    public function testAttributeAppliesNoindexOpenGraphAndTwitter(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'base_url'       => 'https://example.com',
+            'defaults'       => [
+                'site_name'          => 'Site',
+                'title_separator'    => ' | ',
+                'title_template'     => '{title}{separator}{site_name}',
+                'canonical_enabled'  => true,
+                'hreflang_enabled'   => false,
+                'x_default_hreflang' => false,
+                'open_graph'         => ['enabled' => true, 'type' => 'website', 'image' => null, 'site_name' => null],
+                'twitter'            => ['enabled' => true, 'card' => 'summary', 'site' => null, 'creator' => null, 'image' => null],
+                'json_ld'            => ['enabled' => false, 'organization' => [], 'extra' => []],
+            ],
+            'pages'       => [],
+            'slug_routes' => [],
+            'slugs'       => [],
+        ];
+
+        $stack   = new RequestStack();
+        $request = Request::create('/private');
+        $request->attributes->set('_route', 'app_private');
+        $request->attributes->set('_controller', SeoAttributeSocialFixtureController::class . '::show');
+        $request->setLocale('en');
+        $stack->push($request);
+
+        $resolver = new SeoMetadataResolver(
+            $config,
+            $stack,
+            new SeoRuntime(),
+            new SeoTemplateRenderer(),
+            new SeoPathBuilder($config),
+            $this->createMock(UrlGeneratorInterface::class),
+        );
+
+        $seo = $resolver->resolve();
+
+        self::assertSame('noindex,nofollow', $seo->robots);
+        self::assertSame('product', $seo->openGraph['type']);
+        self::assertSame('https://example.com/private-og.png', $seo->openGraph['image']);
+        self::assertSame('https://example.com/private-twitter.png', $seo->twitter['image']);
+        self::assertSame('@creator', $seo->twitter['creator']);
+    }
 }
 
+#[Seo(title: 'Contact Us', description: 'Get in touch')]
 final class SeoAttributeFixtureController
 {
-    #[Seo(title: 'Contact Us', description: 'Get in touch')]
-    public function index(): void
+    public function index(): int
     {
+        return 0;
+    }
+}
+
+final class SeoAttributeSocialFixtureController
+{
+    #[Seo(title: 'Private page', openGraph: ['type' => 'product', 'image' => '/private-og.png'], twitter: ['image' => '/private-twitter.png', 'creator' => '@creator'], noindex: true)]
+    public function show(): int
+    {
+        return 0;
     }
 }

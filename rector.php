@@ -6,11 +6,11 @@ use Rector\Config\RectorConfig;
 
 return RectorConfig::configure()
     ->withPaths([
-        __DIR__.'/src',
-        __DIR__.'/tests',
+        __DIR__ . '/src',
+        __DIR__ . '/tests',
     ])
     ->withSkip([
-        __DIR__.'/demo',
+        __DIR__ . '/demo',
     ])
     ->withPhpSets(php82: true)
     ->withPreparedSets(

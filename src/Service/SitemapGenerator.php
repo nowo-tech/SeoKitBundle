@@ -9,17 +9,19 @@ use Symfony\Component\HttpFoundation\Request;
 use function is_array;
 use function is_string;
 
+use const ENT_XML1;
+
 /**
  * Builds sitemap.xml entries from configured static pages and explicit slugs.
  */
-final class SitemapGenerator
+final readonly class SitemapGenerator
 {
     /**
      * @param array<string, mixed> $config
      */
     public function __construct(
-        private readonly array $config,
-        private readonly SeoPathBuilder $paths,
+        private array $config,
+        private SeoPathBuilder $paths,
     ) {
     }
 
@@ -50,9 +52,9 @@ final class SitemapGenerator
                         continue;
                     }
                     $entries[] = [
-                        'loc' => $this->paths->absoluteUrl($request, $path),
+                        'loc'        => $this->paths->absoluteUrl($request, $path),
                         'changefreq' => (string) ($page['sitemap_changefreq'] ?? 'weekly'),
-                        'priority' => number_format((float) ($page['sitemap_priority'] ?? 0.8), 1, '.', ''),
+                        'priority'   => number_format((float) ($page['sitemap_priority'] ?? 0.8), 1, '.', ''),
                     ];
                 }
             }
@@ -77,9 +79,9 @@ final class SitemapGenerator
                             continue;
                         }
                         $entries[] = [
-                            'loc' => $this->paths->absoluteUrl($request, $path),
+                            'loc'        => $this->paths->absoluteUrl($request, $path),
                             'changefreq' => (string) ($slugRoute['sitemap_changefreq'] ?? 'weekly'),
-                            'priority' => number_format((float) ($slugRoute['sitemap_priority'] ?? 0.6), 1, '.', ''),
+                            'priority'   => number_format((float) ($slugRoute['sitemap_priority'] ?? 0.6), 1, '.', ''),
                         ];
                     }
                 }
@@ -94,17 +96,16 @@ final class SitemapGenerator
      */
     public function toXml(array $entries): string
     {
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
         foreach ($entries as $entry) {
             $xml .= "  <url>\n";
-            $xml .= '    <loc>'.htmlspecialchars($entry['loc'], ENT_XML1)."</loc>\n";
-            $xml .= '    <changefreq>'.htmlspecialchars($entry['changefreq'], ENT_XML1)."</changefreq>\n";
-            $xml .= '    <priority>'.htmlspecialchars($entry['priority'], ENT_XML1)."</priority>\n";
+            $xml .= '    <loc>' . htmlspecialchars($entry['loc'], ENT_XML1) . "</loc>\n";
+            $xml .= '    <changefreq>' . htmlspecialchars($entry['changefreq'], ENT_XML1) . "</changefreq>\n";
+            $xml .= '    <priority>' . htmlspecialchars($entry['priority'], ENT_XML1) . "</priority>\n";
             $xml .= "  </url>\n";
         }
-        $xml .= '</urlset>';
 
-        return $xml;
+        return $xml . '</urlset>';
     }
 }

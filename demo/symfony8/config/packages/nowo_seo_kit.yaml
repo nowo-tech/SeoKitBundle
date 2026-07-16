@@ -26,7 +26,7 @@ nowo_seo_kit:
         app_home:
             title: Home
             description: Welcome to the SEO Kit FrankenPHP demo
-            path: /
+            path: /en
             in_sitemap: true
             sitemap_priority: 1.0
             locales:
@@ -41,18 +41,21 @@ nowo_seo_kit:
         app_about:
             title: About
             description: About this demonstration application
-            path: /about
+            path: /en/about
             locales:
                 es:
                     title: Acerca de
-                    path: /es/acerca
+                    path: /es/about
+                fr:
+                    title: À propos
+                    path: /fr/about
 
     slug_routes:
         app_blog_show:
             slug_parameter: slug
             title_template: '{title} — Blog'
             description_template: 'Article: {slug}'
-            path_pattern: '/blog/{slug}'
+            path_pattern: '/en/blog/{slug}'
             sitemap_priority: 0.7
             locales:
                 es:

@@ -22,7 +22,7 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
         self::assertNotSame([], $runtime->getOverrides());
 
         $subscriber = new SeoRuntimeClearSubscriber($runtime);
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel     = $this->createMock(HttpKernelInterface::class);
         $subscriber->onTerminate(new TerminateEvent($kernel, Request::create('/'), new Response()));
 
         self::assertSame([], $runtime->getOverrides());

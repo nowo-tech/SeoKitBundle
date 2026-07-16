@@ -29,7 +29,7 @@ final class SeoTemplateRendererTest extends TestCase
     public function testRenderReplacesPlaceholders(): void
     {
         $result = $this->renderer->render('{title}{separator}{site_name}', [
-            'title' => 'Home',
+            'title'     => 'Home',
             'separator' => ' | ',
             'site_name' => 'Demo',
         ]);

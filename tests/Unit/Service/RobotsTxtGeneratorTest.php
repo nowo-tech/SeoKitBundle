@@ -15,19 +15,19 @@ final class RobotsTxtGeneratorTest extends TestCase
     {
         $config = [
             'base_url' => 'https://example.com',
-            'robots' => [
-                'user_agent' => '*',
-                'allow' => ['/'],
-                'disallow' => ['/admin'],
+            'robots'   => [
+                'user_agent'   => '*',
+                'allow'        => ['/'],
+                'disallow'     => ['/admin'],
                 'sitemap_link' => true,
             ],
             'sitemap' => [
                 'enabled' => true,
-                'path' => '/sitemap.xml',
+                'path'    => '/sitemap.xml',
             ],
         ];
         $generator = new RobotsTxtGenerator($config, new SeoPathBuilder($config));
-        $request = Request::create('https://example.com/');
+        $request   = Request::create('https://example.com/');
 
         $output = $generator->generate($request);
 
@@ -40,11 +40,11 @@ final class RobotsTxtGeneratorTest extends TestCase
     public function testGenerateOmitsSitemapWhenDisabled(): void
     {
         $config = [
-            'robots' => ['sitemap_link' => true],
+            'robots'  => ['sitemap_link' => true],
             'sitemap' => ['enabled' => false, 'path' => '/sitemap.xml'],
         ];
         $generator = new RobotsTxtGenerator($config, new SeoPathBuilder($config));
-        $request = Request::create('https://example.com/');
+        $request   = Request::create('https://example.com/');
 
         $this->assertStringNotContainsString('Sitemap:', $generator->generate($request));
     }

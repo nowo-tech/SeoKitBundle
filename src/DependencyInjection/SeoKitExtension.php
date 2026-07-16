@@ -18,11 +18,11 @@ final class SeoKitExtension extends Extension
     {
         $config = $this->processConfiguration(new Configuration(), $configs);
 
-        $container->setParameter(Configuration::ALIAS.'.config', $config);
-        $container->setParameter(Configuration::ALIAS.'.enabled', $config['enabled']);
-        $container->setParameter(Configuration::ALIAS.'.templates', $config['templates']);
+        $container->setParameter(Configuration::ALIAS . '.config', $config);
+        $container->setParameter(Configuration::ALIAS . '.enabled', $config['enabled']);
+        $container->setParameter(Configuration::ALIAS . '.templates', $config['templates']);
 
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
     }
 

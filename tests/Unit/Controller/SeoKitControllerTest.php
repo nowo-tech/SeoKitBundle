@@ -16,20 +16,20 @@ final class SeoKitControllerTest extends TestCase
     public function testSitemapAndRobots(): void
     {
         $config = [
-            'locales' => ['en'],
+            'locales'        => ['en'],
             'default_locale' => 'en',
-            'base_url' => 'https://example.com',
-            'pages' => [
+            'base_url'       => 'https://example.com',
+            'pages'          => [
                 'app_home' => ['path' => '/', 'in_sitemap' => true, 'sitemap_priority' => 1.0, 'sitemap_changefreq' => 'daily'],
             ],
             'slug_routes' => [],
-            'slugs' => [],
-            'sitemap' => ['enabled' => true, 'path' => '/sitemap.xml', 'include_static_pages' => true, 'include_configured_slugs' => true],
-            'robots' => ['enabled' => true, 'user_agent' => '*', 'allow' => ['/'], 'disallow' => [], 'sitemap_link' => true],
+            'slugs'       => [],
+            'sitemap'     => ['enabled' => true, 'path' => '/sitemap.xml', 'include_static_pages' => true, 'include_configured_slugs' => true],
+            'robots'      => ['enabled' => true, 'user_agent' => '*', 'allow' => ['/'], 'disallow' => [], 'sitemap_link' => true],
         ];
-        $paths = new SeoPathBuilder($config);
+        $paths      = new SeoPathBuilder($config);
         $controller = new SeoKitController(new SitemapGenerator($config, $paths), new RobotsTxtGenerator($config, $paths), $config);
-        $request = Request::create('https://example.com/sitemap.xml');
+        $request    = Request::create('https://example.com/sitemap.xml');
 
         $sitemap = $controller->sitemap($request);
         self::assertSame(200, $sitemap->getStatusCode());
@@ -46,14 +46,14 @@ final class SeoKitControllerTest extends TestCase
     {
         $config = [
             'sitemap' => ['enabled' => false],
-            'robots' => ['enabled' => false],
-            'pages' => [],
-            'slugs' => [],
+            'robots'  => ['enabled' => false],
+            'pages'   => [],
+            'slugs'   => [],
             'locales' => ['en'],
         ];
-        $paths = new SeoPathBuilder($config);
+        $paths      = new SeoPathBuilder($config);
         $controller = new SeoKitController(new SitemapGenerator($config, $paths), new RobotsTxtGenerator($config, $paths), $config);
-        $request = Request::create('/');
+        $request    = Request::create('/');
 
         self::assertSame(404, $controller->sitemap($request)->getStatusCode());
         self::assertSame(404, $controller->robots($request)->getStatusCode());

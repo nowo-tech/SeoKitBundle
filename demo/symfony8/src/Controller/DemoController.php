@@ -28,7 +28,7 @@ final class DemoController extends AbstractController
     public function blogShow(string $slug): Response
     {
         return $this->render('demo/blog_show.html.twig', [
-            'slug' => $slug,
+            'slug'  => $slug,
             'title' => ucfirst(str_replace('-', ' ', $slug)),
         ]);
     }

@@ -8,7 +8,7 @@
 | `make down-symfony8` | Stop containers |
 | `make shell-symfony8` | Shell in PHP container |
 | `make update-bundle-symfony8` | Sync bundle autoload + clear cache |
-| `make release-check` | Healthcheck: `/`, sitemap, robots |
+| `make release-check` | Healthcheck: `/en/`, sitemap, robots |
 
 Demo sources: [`symfony8/`](symfony8/).
 

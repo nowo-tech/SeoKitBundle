@@ -29,7 +29,7 @@ make strip-cursor-coauthor-from-history
 git push --force-with-lease origin main
 ```
 
-See [GITLAB_CI.md](GITLAB_CI.md) and `.cursor/rules/01-git-commits.mdc`.
+See [GITHUB_CI.md](GITHUB_CI.md) and `.cursor/rules/01-git-commits.mdc`.
 
 ## Quality checks
 

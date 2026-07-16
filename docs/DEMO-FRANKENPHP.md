@@ -26,9 +26,9 @@ The demo mounts the bundle at `/var/seo-kit-bundle` and uses a Composer path rep
 ## Verify SEO endpoints
 
 ```bash
+curl -s http://localhost:8050/en/ | grep -i '<title>'
 curl -s http://localhost:8050/sitemap.xml | head
 curl -s http://localhost:8050/robots.txt
-curl -s http://localhost:8050/ | grep -i '<title>'
 ```
 
 ## Worker mode note

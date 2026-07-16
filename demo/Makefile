@@ -29,7 +29,7 @@ release-check:
 	@PORT=$$(grep "^PORT=" symfony8/.env 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
 	[ -z "$$PORT" ] && PORT=$$(grep "^PORT=" symfony8/.env.example 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
 	[ -z "$$PORT" ] && PORT=8050; \
-	curl -sf "http://localhost:$$PORT/" >/dev/null && \
+	curl -sf "http://localhost:$$PORT/en/" >/dev/null && \
 	curl -sf "http://localhost:$$PORT/sitemap.xml" | grep -q '<urlset' && \
 	curl -sf "http://localhost:$$PORT/robots.txt" | grep -q 'User-agent' && \
 	echo "Symfony 8 SEO demo healthcheck OK (port $$PORT)" || \

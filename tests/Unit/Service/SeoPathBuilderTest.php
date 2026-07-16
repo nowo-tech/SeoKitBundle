@@ -41,9 +41,9 @@ final class SeoPathBuilderTest extends TestCase
     {
         $config = [
             'default_locale' => 'en',
-            'pages' => [
+            'pages'          => [
                 'app_home' => [
-                    'path' => '/',
+                    'path'    => '/',
                     'locales' => [
                         'es' => ['path' => '/es'],
                     ],
@@ -69,7 +69,7 @@ final class SeoPathBuilderTest extends TestCase
             'slug_routes' => [
                 'app_blog_show' => [
                     'path_pattern' => '/blog/{slug}',
-                    'locales' => [
+                    'locales'      => [
                         'es' => ['path_pattern' => '/es/blog/{slug}'],
                     ],
                 ],
@@ -94,7 +94,7 @@ final class SeoPathBuilderTest extends TestCase
     {
         $config = [
             'slug_routes' => [],
-            'slugs' => [
+            'slugs'       => [
                 'app_blog_show' => [
                     'custom' => ['path' => '/special/custom'],
                 ],
@@ -109,7 +109,7 @@ final class SeoPathBuilderTest extends TestCase
     {
         $config = [
             'slug_routes' => ['app_blog_show' => ['path_pattern' => '/blog/{slug}']],
-            'slugs' => [
+            'slugs'       => [
                 'app_blog_show' => [
                     'custom' => ['path' => '/special/custom'],
                 ],
@@ -118,5 +118,54 @@ final class SeoPathBuilderTest extends TestCase
         $builder = new SeoPathBuilder($config);
 
         $this->assertSame('/blog/custom', $builder->slugPath('app_blog_show', 'en', 'custom'));
+    }
+
+    public function testPagePathReturnsFallbackForNonDefaultLocaleWithoutLocalePath(): void
+    {
+        $config = [
+            'default_locale' => 'en',
+            'pages'          => [
+                'app_home' => [
+                    'path' => '/',
+                ],
+            ],
+        ];
+        $builder = new SeoPathBuilder($config);
+
+        $this->assertSame('/fallback', $builder->pagePath('app_home', 'es', '/fallback'));
+    }
+
+    public function testSlugPathUsesSpecificPathWhenPatternMissing(): void
+    {
+        $config = [
+            'slug_routes' => [
+                'app_blog_show' => [],
+            ],
+            'slugs' => [
+                'app_blog_show' => [
+                    'custom' => [
+                        'path'    => '/special/custom',
+                        'locales' => [
+                            'es' => ['path' => '/es/especial/custom'],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $builder = new SeoPathBuilder($config);
+
+        $this->assertSame('/special/custom', $builder->slugPath('app_blog_show', 'en', 'custom'));
+        $this->assertSame('/es/especial/custom', $builder->slugPath('app_blog_show', 'es', 'custom'));
+    }
+
+    public function testSlugPathReturnsNullWhenPatternAndSpecificPathMissing(): void
+    {
+        $config = [
+            'slug_routes' => ['app_blog_show' => []],
+            'slugs'       => ['app_blog_show' => ['custom' => []]],
+        ];
+        $builder = new SeoPathBuilder($config);
+
+        $this->assertNull($builder->slugPath('app_blog_show', 'en', 'custom'));
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Routing;
 
+use Nowo\SeoKitBundle\Controller\SeoKitController;
+use RuntimeException;
 use Symfony\Component\Config\Loader\Loader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -12,11 +14,11 @@ use function is_array;
 use function is_string;
 
 /**
- * Registers optional static SEO paths from `pages.*.path` / per-locale paths
- * when `controller` is set on the page config (optional advanced use).
+ * Registers sitemap.xml / robots.txt and optional static SEO paths from
+ * `pages.*.path` when `controller` is set on the page config.
  *
  * Primary path i18n for apps is still Symfony routes + `_locale`; this loader
- * helps when you declare pure CMS-like static URLs only in SEO config.
+ * also helps when you declare pure CMS-like static URLs only in SEO config.
  */
 final class SeoStaticRouteLoader extends Loader
 {
@@ -35,11 +37,13 @@ final class SeoStaticRouteLoader extends Loader
     public function load(mixed $resource, ?string $type = null): RouteCollection
     {
         if ($this->loaded) {
-            throw new \RuntimeException('SeoStaticRouteLoader already loaded.');
+            throw new RuntimeException('SeoStaticRouteLoader already loaded.');
         }
         $this->loaded = true;
 
         $collection = new RouteCollection();
+        $this->addSitemapAndRobotsRoutes($collection);
+
         $defaultLocale = (string) ($this->config['default_locale'] ?? 'en');
 
         foreach ($this->config['pages'] ?? [] as $routeName => $page) {
@@ -59,7 +63,7 @@ final class SeoStaticRouteLoader extends Loader
                 if (!is_array($localeCfg) || !isset($localeCfg['path']) || !is_string($localeCfg['path'])) {
                     continue;
                 }
-                $name = (string) $routeName.'.'.$locale;
+                $name = $routeName . '.' . $locale;
                 $collection->add(
                     $name,
                     new Route($localeCfg['path'], ['_controller' => $controller, '_locale' => (string) $locale]),
@@ -73,5 +77,30 @@ final class SeoStaticRouteLoader extends Loader
     public function supports(mixed $resource, ?string $type = null): bool
     {
         return $type === 'nowo_seo_kit';
+    }
+
+    private function addSitemapAndRobotsRoutes(RouteCollection $collection): void
+    {
+        $sitemap = is_array($this->config['sitemap'] ?? null) ? $this->config['sitemap'] : [];
+        if (($sitemap['enabled'] ?? true) === true) {
+            $path = is_string($sitemap['path'] ?? null) && $sitemap['path'] !== ''
+                ? $sitemap['path']
+                : '/sitemap.xml';
+            $collection->add(
+                'nowo_seo_kit_sitemap',
+                new Route($path, ['_controller' => SeoKitController::class . '::sitemap'], methods: ['GET']),
+            );
+        }
+
+        $robots = is_array($this->config['robots'] ?? null) ? $this->config['robots'] : [];
+        if (($robots['enabled'] ?? true) === true) {
+            $path = is_string($robots['path'] ?? null) && $robots['path'] !== ''
+                ? $robots['path']
+                : '/robots.txt';
+            $collection->add(
+                'nowo_seo_kit_robots',
+                new Route($path, ['_controller' => SeoKitController::class . '::robots'], methods: ['GET']),
+            );
+        }
     }
 }

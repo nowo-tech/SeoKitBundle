@@ -6,16 +6,19 @@ namespace Nowo\SeoKitBundle\Service;
 
 use Symfony\Component\HttpFoundation\Request;
 
+use function is_array;
+use function is_string;
+
 /**
  * Builds absolute/relative SEO paths and locale alternates.
  */
-final class SeoPathBuilder
+final readonly class SeoPathBuilder
 {
     /**
      * @param array<string, mixed> $config Full processed nowo_seo_kit config
      */
     public function __construct(
-        private readonly array $config,
+        private array $config,
     ) {
     }
 
@@ -27,10 +30,10 @@ final class SeoPathBuilder
 
         $base = $this->config['base_url'] ?? null;
         if (is_string($base) && $base !== '') {
-            return rtrim($base, '/').'/'.ltrim($path, '/');
+            return rtrim($base, '/') . '/' . ltrim($path, '/');
         }
 
-        return $request->getSchemeAndHttpHost().'/'.ltrim($path, '/');
+        return $request->getSchemeAndHttpHost() . '/' . ltrim($path, '/');
     }
 
     /**
@@ -65,7 +68,7 @@ final class SeoPathBuilder
             return null;
         }
 
-        $pattern = null;
+        $pattern   = null;
         $localeCfg = $slugRoute['locales'][$locale] ?? null;
         if (is_array($localeCfg) && isset($localeCfg['path_pattern']) && is_string($localeCfg['path_pattern'])) {
             $pattern = $localeCfg['path_pattern'];
@@ -88,7 +91,7 @@ final class SeoPathBuilder
         $translatedSlug = $this->config['slugs'][$route][$slug]['locales'][$locale]['slug'] ?? $slug;
 
         return strtr($pattern, [
-            '{slug}' => (string) $translatedSlug,
+            '{slug}'   => (string) $translatedSlug,
             '{locale}' => $locale,
         ]);
     }

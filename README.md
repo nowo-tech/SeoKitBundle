@@ -1,6 +1,6 @@
 # Seo Kit Bundle
 
-[![CI](https://github.com/nowo-tech/SeoKitBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/SeoKitBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/seo-kit-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/seo-kit-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/seo-kit-bundle.svg)](https://packagist.org/packages/nowo-tech/seo-kit-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.4%20%7C%208.0%20%7C%208.1%2B-000000?logo=symfony)](https://symfony.com) [![Coverage](https://img.shields.io/badge/Coverage-TBD-lightgrey)](#tests-and-coverage)
+[![CI](https://github.com/nowo-tech/SeoKitBundle/actions/workflows/ci.yml/badge.svg)](https://github.com/nowo-tech/SeoKitBundle/actions/workflows/ci.yml) [![Packagist Version](https://img.shields.io/packagist/v/nowo-tech/seo-kit-bundle.svg?style=flat)](https://packagist.org/packages/nowo-tech/seo-kit-bundle) [![Packagist Downloads](https://img.shields.io/packagist/dt/nowo-tech/seo-kit-bundle.svg)](https://packagist.org/packages/nowo-tech/seo-kit-bundle) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php)](https://php.net) [![Symfony](https://img.shields.io/badge/Symfony-7.4%20%7C%208.0%20%7C%208.1%2B-000000?logo=symfony)](https://symfony.com) [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen)](#tests-and-coverage)
 
 > ⭐ **Found this useful?** Give it a star on GitHub! It helps us maintain and improve the project.
 
@@ -43,7 +43,7 @@ Add to your base layout:
 
 ## Documentation
 
-- [GitLab CI requirements](docs/GITLAB_CI.md)
+- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Usage](docs/USAGE.md)
@@ -66,7 +66,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
-| 1.0.x | >= 8.2 | 7.0 – 8.1+ | In development |
+| 1.0.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 
 ## Demos
 
@@ -82,7 +82,7 @@ make test-coverage
 ```
 
 - Tests: PHPUnit (unit)
-- PHP: TBD (run `make test-coverage`)
+- - PHP: **100%** lines (`make test-coverage`)
 
 ## License
 

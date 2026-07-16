@@ -12,10 +12,10 @@ use Symfony\Component\HttpKernel\KernelEvents;
 /**
  * Clears request-scoped SEO overrides after the response is sent.
  */
-final class SeoRuntimeClearSubscriber implements EventSubscriberInterface
+final readonly class SeoRuntimeClearSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly SeoRuntime $runtime,
+        private SeoRuntime $runtime,
     ) {
     }
 

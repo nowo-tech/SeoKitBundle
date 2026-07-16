@@ -38,8 +38,8 @@ final class ConfigurationTest extends TestCase
         $input = [
             'pages' => [
                 'app_home' => [
-                    'title' => 'Home',
-                    'path' => '/',
+                    'title'   => 'Home',
+                    'path'    => '/',
                     'locales' => [
                         'es' => ['title' => 'Inicio', 'path' => '/es'],
                     ],
@@ -49,13 +49,13 @@ final class ConfigurationTest extends TestCase
                 'app_blog_show' => [
                     'slug_parameter' => 'slug',
                     'title_template' => '{title}',
-                    'path_pattern' => '/blog/{slug}',
+                    'path_pattern'   => '/blog/{slug}',
                 ],
             ],
             'slugs' => [
                 'app_blog_show' => [
                     'my_post' => [
-                        'title' => 'My Post',
+                        'title'   => 'My Post',
                         'noindex' => false,
                     ],
                 ],

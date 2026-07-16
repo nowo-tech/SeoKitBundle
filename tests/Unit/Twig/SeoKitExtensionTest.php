@@ -20,8 +20,8 @@ final class SeoKitExtensionTest extends TestCase
 {
     public function testRenderHead(): void
     {
-        $config = $this->minimalConfig();
-        $stack = new RequestStack();
+        $config  = $this->minimalConfig();
+        $stack   = new RequestStack();
         $request = Request::create('/');
         $request->attributes->set('_route', 'app_home');
         $request->setLocale('en');
@@ -48,8 +48,8 @@ final class SeoKitExtensionTest extends TestCase
 
     public function testDisabledHeadIsEmpty(): void
     {
-        $config = $this->minimalConfig();
-        $stack = new RequestStack();
+        $config   = $this->minimalConfig();
+        $stack    = new RequestStack();
         $resolver = new SeoMetadataResolver(
             $config,
             $stack,
@@ -59,7 +59,7 @@ final class SeoKitExtensionTest extends TestCase
             $this->createMock(UrlGeneratorInterface::class),
         );
         $twig = new Environment(new ArrayLoader([]));
-        $ext = new SeoKitExtension(false, $resolver, $twig, ['head' => 'head.twig']);
+        $ext  = new SeoKitExtension(false, $resolver, $twig, ['head' => 'head.twig']);
         self::assertSame('', $ext->renderHead());
     }
 
@@ -69,26 +69,26 @@ final class SeoKitExtensionTest extends TestCase
     private function minimalConfig(): array
     {
         return [
-            'enabled' => true,
+            'enabled'        => true,
             'default_locale' => 'en',
-            'locales' => ['en'],
-            'base_url' => 'https://example.com',
-            'defaults' => [
-                'site_name' => 'Site',
-                'title_separator' => ' | ',
-                'title_template' => '{title}{separator}{site_name}',
-                'canonical_enabled' => true,
-                'hreflang_enabled' => false,
+            'locales'        => ['en'],
+            'base_url'       => 'https://example.com',
+            'defaults'       => [
+                'site_name'          => 'Site',
+                'title_separator'    => ' | ',
+                'title_template'     => '{title}{separator}{site_name}',
+                'canonical_enabled'  => true,
+                'hreflang_enabled'   => false,
                 'x_default_hreflang' => false,
-                'open_graph' => ['enabled' => false, 'type' => 'website', 'image' => null, 'site_name' => null],
-                'twitter' => ['enabled' => false, 'card' => 'summary', 'site' => null, 'creator' => null, 'image' => null],
-                'json_ld' => ['enabled' => false, 'organization' => [], 'extra' => []],
+                'open_graph'         => ['enabled' => false, 'type' => 'website', 'image' => null, 'site_name' => null],
+                'twitter'            => ['enabled' => false, 'card' => 'summary', 'site' => null, 'creator' => null, 'image' => null],
+                'json_ld'            => ['enabled' => false, 'organization' => [], 'extra' => []],
             ],
             'pages' => [
                 'app_home' => ['title' => 'Home', 'path' => '/'],
             ],
             'slug_routes' => [],
-            'slugs' => [],
+            'slugs'       => [],
         ];
     }
 }

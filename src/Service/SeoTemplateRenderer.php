@@ -20,7 +20,7 @@ final class SeoTemplateRenderer
 
         $replacements = [];
         foreach ($variables as $key => $value) {
-            $replacements['{'.$key.'}'] = (string) ($value ?? '');
+            $replacements['{' . $key . '}'] = (string) ($value ?? '');
         }
 
         return strtr($template, $replacements);

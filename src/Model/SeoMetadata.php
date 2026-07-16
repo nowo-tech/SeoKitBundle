@@ -12,28 +12,28 @@ namespace Nowo\SeoKitBundle\Model;
  * @phpstan-type JsonLdArray array{enabled: bool, graph: list<array<string, mixed>>}
  * @phpstan-type AlternateArray array{locale: string, url: string, hreflang: string}
  */
-final class SeoMetadata
+final readonly class SeoMetadata
 {
     /**
-     * @param list<AlternateArray>    $alternates
-     * @param OpenGraphArray          $openGraph
-     * @param TwitterArray            $twitter
-     * @param JsonLdArray             $jsonLd
-     * @param array<string, mixed>    $extra
+     * @param list<AlternateArray> $alternates
+     * @param OpenGraphArray $openGraph
+     * @param TwitterArray $twitter
+     * @param JsonLdArray $jsonLd
+     * @param array<string, mixed> $extra
      */
     public function __construct(
-        public readonly string $title,
-        public readonly string $description,
-        public readonly string $robots,
-        public readonly ?string $canonical,
-        public readonly array $alternates,
-        public readonly array $openGraph,
-        public readonly array $twitter,
-        public readonly array $jsonLd,
-        public readonly ?string $keywords = null,
-        public readonly ?string $author = null,
-        public readonly array $extra = [],
-        public readonly string $source = 'defaults',
+        public string $title,
+        public string $description,
+        public string $robots,
+        public ?string $canonical,
+        public array $alternates,
+        public array $openGraph,
+        public array $twitter,
+        public array $jsonLd,
+        public ?string $keywords = null,
+        public ?string $author = null,
+        public array $extra = [],
+        public string $source = 'defaults',
     ) {
     }
 
@@ -43,18 +43,18 @@ final class SeoMetadata
     public function toArray(): array
     {
         return [
-            'title' => $this->title,
+            'title'       => $this->title,
             'description' => $this->description,
-            'robots' => $this->robots,
-            'canonical' => $this->canonical,
-            'alternates' => $this->alternates,
-            'open_graph' => $this->openGraph,
-            'twitter' => $this->twitter,
-            'json_ld' => $this->jsonLd,
-            'keywords' => $this->keywords,
-            'author' => $this->author,
-            'extra' => $this->extra,
-            'source' => $this->source,
+            'robots'      => $this->robots,
+            'canonical'   => $this->canonical,
+            'alternates'  => $this->alternates,
+            'open_graph'  => $this->openGraph,
+            'twitter'     => $this->twitter,
+            'json_ld'     => $this->jsonLd,
+            'keywords'    => $this->keywords,
+            'author'      => $this->author,
+            'extra'       => $this->extra,
+            'source'      => $this->source,
         ];
     }
 }

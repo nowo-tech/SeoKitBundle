@@ -12,12 +12,15 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Serves sitemap.xml and robots.txt from Symfony (works behind FrankenPHP, php-fpm, Nginx).
  */
-final class SeoKitController
+final readonly class SeoKitController
 {
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(
-        private readonly SitemapGenerator $sitemapGenerator,
-        private readonly RobotsTxtGenerator $robotsTxtGenerator,
-        private readonly array $config,
+        private SitemapGenerator $sitemapGenerator,
+        private RobotsTxtGenerator $robotsTxtGenerator,
+        private array $config,
     ) {
     }
 
@@ -28,7 +31,7 @@ final class SeoKitController
         }
 
         $entries = $this->sitemapGenerator->entries($request);
-        $xml = $this->sitemapGenerator->toXml($entries);
+        $xml     = $this->sitemapGenerator->toXml($entries);
 
         return new Response($xml, Response::HTTP_OK, [
             'Content-Type' => 'application/xml; charset=UTF-8',
