@@ -54,6 +54,9 @@ final readonly class SeoMetadataResolver
         }
         $slug = $request->attributes->get($slugParam);
         $slug = is_string($slug) ? $slug : null;
+        if ($slug !== null) {
+            $slug = $this->paths->resolveCanonicalSlug($route, $slug);
+        }
 
         $merged = $defaults;
         // Document title wrapper ({title}{separator}{site_name}) is applied later — do not treat it as page title.

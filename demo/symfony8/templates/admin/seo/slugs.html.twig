@@ -1,0 +1,56 @@
+{% extends 'admin/seo/layout.html.twig' %}
+
+{% block title %}SEO Admin · Slugs / URLs{% endblock %}
+
+{% block body %}
+    <div class="toolbar">
+        <p class="note" style="margin:0;">Per-slug SEO + translated URL slugs (<code>slugs.*</code>).</p>
+        <a class="btn btn-primary" href="{{ path('admin_seo_slug_new') }}">New slug</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Route / slug</th>
+                <th>Meta</th>
+                <th>SEO URLs</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route, bySlug in slugs %}
+                {% for slug, cfg in bySlug %}
+                    <tr>
+                        <td>
+                            <code>{{ route }}</code><br>
+                            <code>{{ slug }}</code>
+                        </td>
+                        <td>
+                            {{ cfg.title|default('—') }}<br>
+                            <span class="meta">
+                                sitemap: {{ cfg.in_sitemap|default(true) ? 'yes' : 'no' }}
+                                · noindex: {{ cfg.noindex|default(false) ? 'yes' : 'no' }}
+                            </span>
+                        </td>
+                        <td>
+                            <ul class="urls">
+                                {% for locale, url in slug_urls[route][slug]|default({}) %}
+                                    <li><span class="mono">{{ locale }}</span>:
+                                        {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td class="actions">
+                            <a class="btn" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
+                            <form method="post" action="{{ path('admin_seo_slug_delete', {route: route, slug: slug}) }}" onsubmit="return confirm('Delete slug {{ slug }}?');">
+                                <button class="btn btn-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="4">No slugs configured.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

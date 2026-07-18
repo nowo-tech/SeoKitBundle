@@ -1,0 +1,77 @@
+{% extends 'admin/seo/layout.html.twig' %}
+
+{% block title %}SEO Admin · {{ is_new ? 'New slug' : 'Edit slug' }}{% endblock %}
+
+{% block body %}
+    <p class="note">Canonical slug key + per-locale translated <code>slug</code> / optional absolute <code>path</code>.</p>
+
+    {% if slug_urls is not empty %}
+        <fieldset>
+            <legend>Resolved SEO URLs</legend>
+            <ul class="urls">
+                {% for locale, url in slug_urls %}
+                    <li><span class="mono">{{ locale }}</span>: {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}</li>
+                {% endfor %}
+            </ul>
+        </fieldset>
+    {% endif %}
+
+    <form class="stack" method="post">
+        <div class="row">
+            <div>
+                <label for="route">Route</label>
+                {% if is_new and slug_routes is not empty %}
+                    <select id="route" name="route" required>
+                        {% for r in slug_routes %}
+                            <option value="{{ r }}" {% if route == r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                {% else %}
+                    <input id="route" name="route" type="text" required value="{{ route|default('') }}" {% if not is_new %}readonly{% endif %}>
+                {% endif %}
+            </div>
+            <div>
+                <label for="slug">Canonical slug</label>
+                <input id="slug" name="slug" type="text" required value="{{ slug|default('') }}" {% if not is_new %}readonly{% endif %} placeholder="hello-world">
+            </div>
+        </div>
+
+        <label for="title">Title</label>
+        <input id="title" name="title" type="text" value="{{ data.title|default('') }}">
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="2">{{ data.description|default('') }}</textarea>
+
+        <div class="row">
+            <div style="padding-top:0.5rem;">
+                <label><input type="checkbox" name="in_sitemap" value="1" {% if data.in_sitemap|default(true) %}checked{% endif %}> In sitemap</label>
+            </div>
+            <div style="padding-top:0.5rem;">
+                <label><input type="checkbox" name="noindex" value="1" {% if data.noindex|default(false) %}checked{% endif %}> noindex</label>
+            </div>
+        </div>
+
+        {% for locale in locales %}
+            <fieldset>
+                <legend>Locale {{ locale }}</legend>
+                <div class="row">
+                    <div>
+                        <label for="locale_{{ locale }}_title">Title</label>
+                        <input id="locale_{{ locale }}_title" name="locale_{{ locale }}_title" type="text" value="{{ data.locales[locale].title|default('') }}">
+                    </div>
+                    <div>
+                        <label for="locale_{{ locale }}_slug">Translated slug</label>
+                        <input id="locale_{{ locale }}_slug" name="locale_{{ locale }}_slug" type="text" value="{{ data.locales[locale].slug|default('') }}" placeholder="hola-mundo">
+                    </div>
+                </div>
+                <label for="locale_{{ locale }}_path">Optional full path override</label>
+                <input id="locale_{{ locale }}_path" name="locale_{{ locale }}_path" type="text" value="{{ data.locales[locale].path|default('') }}">
+            </fieldset>
+        {% endfor %}
+
+        <div class="actions" style="margin-top:1.25rem;">
+            <button class="btn btn-primary" type="submit">Save</button>
+            <a class="btn" href="{{ path('admin_seo_slugs') }}">Cancel</a>
+        </div>
+    </form>
+{% endblock %}

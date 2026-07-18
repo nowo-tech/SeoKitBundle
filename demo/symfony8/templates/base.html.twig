@@ -6,21 +6,58 @@
     {{ nowo_seo_head() }}
     <style>
         body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+        .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.25rem; margin-bottom: 1.5rem; }
         nav a { margin-right: 1rem; }
+        nav a:last-child { margin-right: 0; }
+        .locale-switch { display: inline-flex; gap: 0.35rem; align-items: center; }
+        .locale-switch a {
+            margin: 0;
+            padding: 0.2rem 0.55rem;
+            text-decoration: none;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .locale-switch a:hover { border-color: #64748b; }
+        .locale-switch a.is-active {
+            color: #0f172a;
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
         footer { margin-top: 2rem; color: #64748b; font-size: 0.875rem; }
     </style>
 </head>
 <body>
-    <nav>
-        <a href="{{ path('app_home') }}">Home</a>
-        <a href="{{ path('app_about') }}">About</a>
-        <a href="{{ path('app_blog_show', {slug: 'hello-world'}) }}">Blog sample</a>
-    </nav>
+    {% set locale = app.request.locale|default('en') %}
+    {% set seo = nowo_seo_metadata() %}
+    {% set blog_slugs = { en: 'hello-world', es: 'hola-mundo', fr: 'bonjour-le-monde' } %}
+    <div class="top">
+        <nav aria-label="Main">
+            <a href="{{ path('app_home', {_locale: locale}) }}">Home</a>
+            <a href="{{ path('app_about', {_locale: locale}) }}">About</a>
+            <a href="{{ path('app_blog_show', {_locale: locale, slug: blog_slugs[locale]|default('hello-world')}) }}">Blog sample</a>
+            <a href="{{ path('admin_seo_dashboard') }}">SEO Admin</a>
+        </nav>
+        <nav class="locale-switch" aria-label="Language">
+            {% for alt in seo.alternates %}
+                {% if alt.hreflang != 'x-default' %}
+                    <a href="{{ alt.url }}"
+                       hreflang="{{ alt.hreflang }}"
+                       lang="{{ alt.locale }}"
+                       class="{{ alt.locale == locale ? 'is-active' : '' }}"
+                       {% if alt.locale == locale %}aria-current="true"{% endif %}>{{ alt.locale|upper }}</a>
+                {% endif %}
+            {% endfor %}
+        </nav>
+    </div>
     <main>
         {% block body %}{% endblock %}
     </main>
     <footer>
-        <a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a>
+        <a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">Robots</a> · <a href="{{ path('admin_seo_dashboard') }}">SEO Admin</a>
     </footer>
 </body>
 </html>

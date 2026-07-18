@@ -59,7 +59,41 @@ final readonly class SeoPathBuilder
     }
 
     /**
+     * Map a request slug (canonical or translated) to the configured slug key.
+     */
+    public function resolveCanonicalSlug(string $route, string $slug): string
+    {
+        $slugs = $this->config['slugs'][$route] ?? null;
+        if (!is_array($slugs)) {
+            return $slug;
+        }
+
+        if (isset($slugs[$slug]) && is_array($slugs[$slug])) {
+            return $slug;
+        }
+
+        foreach ($slugs as $canonical => $cfg) {
+            if (!is_array($cfg)) {
+                continue;
+            }
+            $locales = $cfg['locales'] ?? null;
+            if (!is_array($locales)) {
+                continue;
+            }
+            foreach ($locales as $localeCfg) {
+                if (is_array($localeCfg) && ($localeCfg['slug'] ?? null) === $slug) {
+                    return (string) $canonical;
+                }
+            }
+        }
+
+        return $slug;
+    }
+
+    /**
      * Build path from slug_routes path_pattern for locale + slug.
+     *
+     * `$slug` may be the canonical config key or a translated locale slug.
      */
     public function slugPath(string $route, string $locale, string $slug): ?string
     {
@@ -67,6 +101,8 @@ final readonly class SeoPathBuilder
         if (!is_array($slugRoute)) {
             return null;
         }
+
+        $canonical = $this->resolveCanonicalSlug($route, $slug);
 
         $pattern   = null;
         $localeCfg = $slugRoute['locales'][$locale] ?? null;
@@ -78,8 +114,8 @@ final readonly class SeoPathBuilder
 
         if ($pattern === null || $pattern === '') {
             // Specific slug path override
-            $specific = $this->config['slugs'][$route][$slug]['locales'][$locale]['path']
-                ?? $this->config['slugs'][$route][$slug]['path']
+            $specific = $this->config['slugs'][$route][$canonical]['locales'][$locale]['path']
+                ?? $this->config['slugs'][$route][$canonical]['path']
                 ?? null;
             if (is_string($specific) && $specific !== '') {
                 return $specific;
@@ -88,7 +124,7 @@ final readonly class SeoPathBuilder
             return null;
         }
 
-        $translatedSlug = $this->config['slugs'][$route][$slug]['locales'][$locale]['slug'] ?? $slug;
+        $translatedSlug = $this->config['slugs'][$route][$canonical]['locales'][$locale]['slug'] ?? $canonical;
 
         return strtr($pattern, [
             '{slug}'   => (string) $translatedSlug,

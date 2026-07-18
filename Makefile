@@ -33,7 +33,7 @@ help:
 	@echo "  release-check Pre-release: co-author audit, cs-fix, cs-check, rector-dry, phpstan, test-coverage, demo healthchecks"
 	@echo "  composer-sync Validate composer.json and align composer.lock (no install)"
 	@echo "  clean         Remove vendor and cache"
-	@echo "  update-deps   Update composer dependencies (REQ-MAKE-008)"
+	@echo "  update-deps   Update composer dependencies in bundle + demos (REQ-MAKE-008)"
 	@echo "  validate      Run composer validate --strict"
 	@echo "  validate-translations Validate translation YAML files"
 	@echo "  assets        No-op (no frontend assets in this bundle)"
@@ -147,4 +147,4 @@ strip-cursor-coauthor-from-history:
 
 # REQ-MAKE-008: update-deps (REQ-MAKE-008)
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-include $(BUNDLE_ROOT)/../.scripts/Makefile.update-deps.mk
+include $(BUNDLE_ROOT)/.scripts/Makefile.update-deps.mk

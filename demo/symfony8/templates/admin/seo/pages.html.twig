@@ -1,0 +1,48 @@
+{% extends 'admin/seo/layout.html.twig' %}
+
+{% block title %}SEO Admin · Pages{% endblock %}
+
+{% block body %}
+    <div class="toolbar">
+        <p class="note" style="margin:0;">Static route SEO (<code>pages.*</code>) with locale paths for hreflang / sitemap.</p>
+        <a class="btn btn-primary" href="{{ path('admin_seo_page_new') }}">New page</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Route</th>
+                <th>Default path</th>
+                <th>SEO URLs</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route, page in pages %}
+                <tr>
+                    <td>
+                        <code>{{ route }}</code><br>
+                        <span class="meta">{{ page.title|default('') }}</span>
+                    </td>
+                    <td><code>{{ page.path|default('—') }}</code></td>
+                    <td>
+                        <ul class="urls">
+                            {% for locale, url in page_urls[route]|default({}) %}
+                                <li><span class="mono">{{ locale }}</span>:
+                                    {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td class="actions">
+                        <a class="btn" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
+                        <form method="post" action="{{ path('admin_seo_page_delete', {route: route}) }}" onsubmit="return confirm('Delete page {{ route }}?');">
+                            <button class="btn btn-danger" type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4">No pages configured.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

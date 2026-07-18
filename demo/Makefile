@@ -29,12 +29,14 @@ release-check:
 	@PORT=$$(grep "^PORT=" symfony8/.env 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
 	[ -z "$$PORT" ] && PORT=$$(grep "^PORT=" symfony8/.env.example 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
 	[ -z "$$PORT" ] && PORT=8050; \
-	curl -sf "http://localhost:$$PORT/en/" >/dev/null && \
+	curl -sf "http://localhost:$$PORT/" >/dev/null && \
+	curl -sf "http://localhost:$$PORT/en" >/dev/null && \
 	curl -sf "http://localhost:$$PORT/sitemap.xml" | grep -q '<urlset' && \
 	curl -sf "http://localhost:$$PORT/robots.txt" | grep -q 'User-agent' && \
 	echo "Symfony 8 SEO demo healthcheck OK (port $$PORT)" || \
 	(echo "Symfony 8 SEO demo healthcheck failed" && exit 1)
 
+# REQ-MAKE-008: update-deps-all (REQ-MAKE-008)
 DEMOS := symfony8
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-include $(BUNDLE_ROOT)/../.scripts/Makefile.demo-aggregate-update-deps.mk
+include $(BUNDLE_ROOT)/.scripts/Makefile.demo-aggregate-update-deps.mk

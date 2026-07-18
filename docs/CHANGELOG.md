@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-18
+
+### Added
+
+- `SeoPathBuilder::resolveCanonicalSlug()` — maps a request slug (canonical or translated) to the configured slug key
+- Demo: locale switch (EN / ES / FR) using SEO alternates (locale + localized path / translated slug)
+- Demo: optional `_locale` on home (`/` → default locale) via `trailing_slash_on_root: false`
+- Demo: SEO Admin CRUD at `/admin/seo` for `pages`, `slug_routes`, and `slugs` (writes `nowo_seo_kit.yaml`)
+- Bundle-local `make update-deps` scripts (REQ-MAKE-008): composer update in the bundle **and** demos
+
+### Fixed
+
+- Preserve hyphenated keys under `slugs.*` (e.g. `hello-world`); Symfony Config no longer normalizes them to underscores
+- Hreflang / sitemap / metadata for translated slug URLs (e.g. `/es/blog/hola-mundo`) resolve via the canonical slug config
+
+### Documentation
+
+- Demo FrankenPHP docs: root URL, locale switch, SEO Admin
+- Upgrading notes for hyphenated slug keys
+
 ## [1.0.0] - 2026-07-16
 
 ### Added
@@ -20,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.1.0
 [1.0.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.0.0

@@ -12,7 +12,7 @@
             "dist": {
                 "type": "path",
                 "url": "/var/seo-kit-bundle",
-                "reference": "73e9c31fe9aeaf29afce894a4e2426578090a2ef"
+                "reference": "3a4d4429e6d481417308c20ad4bf87457e1306b5"
             },
             "require": {
                 "php": ">=8.2 <8.6",
@@ -3317,12 +3317,12 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": ">=8.2,<8.6"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.9.0"
 }

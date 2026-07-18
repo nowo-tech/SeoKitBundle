@@ -47,5 +47,6 @@ update-bundle: ensure-up
 	@$(COMPOSE) exec -T $(SERVICE_PHP) composer dump-autoload --optimize
 	@$(COMPOSE) exec -T $(SERVICE_PHP) php bin/console cache:clear --env=dev --no-warmup || true
 
+# REQ-MAKE-008: update-deps (REQ-MAKE-008)
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
-include $(BUNDLE_ROOT)/../.scripts/Makefile.demo-update-deps.mk
+include $(BUNDLE_ROOT)/.scripts/Makefile.demo-update-deps.mk

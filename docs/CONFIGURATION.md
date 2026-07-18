@@ -74,7 +74,9 @@ General rules for routes with a slug parameter:
 
 ## slugs
 
-Specific slug values under a route:
+Specific slug values under a route. **Keys keep hyphens** (e.g. `my-post`); they are not normalized to underscores.
+
+When the request slug is a translated value (`locales.<locale>.slug`), the resolver maps it back to the canonical key for metadata, hreflang, and sitemap path building.
 
 ```yaml
 slugs:

@@ -1,0 +1,70 @@
+{% extends 'admin/seo/layout.html.twig' %}
+
+{% block title %}SEO Admin · {{ is_new ? 'New page' : 'Edit page' }}{% endblock %}
+
+{% block body %}
+    <p class="note">{% if is_new %}Create a <code>pages.&lt;route&gt;</code> entry.{% else %}Editing <code>pages.{{ route }}</code>.{% endif %}</p>
+
+    {% if page_urls is not empty %}
+        <fieldset>
+            <legend>Resolved SEO URLs</legend>
+            <ul class="urls">
+                {% for locale, url in page_urls %}
+                    <li><span class="mono">{{ locale }}</span>: {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}</li>
+                {% endfor %}
+            </ul>
+        </fieldset>
+    {% endif %}
+
+    <form class="stack" method="post">
+        <label for="route">Route name</label>
+        <input id="route" name="route" type="text" required value="{{ route|default(data.route|default('')) }}" {% if not is_new %}readonly{% endif %} placeholder="app_home">
+
+        <div class="row">
+            <div>
+                <label for="title">Title</label>
+                <input id="title" name="title" type="text" value="{{ data.title|default('') }}">
+            </div>
+            <div>
+                <label for="path">Default locale path</label>
+                <input id="path" name="path" type="text" value="{{ data.path|default('') }}" placeholder="/">
+            </div>
+        </div>
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="2">{{ data.description|default('') }}</textarea>
+
+        <div class="row">
+            <div>
+                <label for="sitemap_priority">Sitemap priority</label>
+                <input id="sitemap_priority" name="sitemap_priority" type="number" min="0" max="1" step="0.1" value="{{ data.sitemap_priority|default(0.8) }}">
+            </div>
+            <div style="padding-top:1.8rem;">
+                <label><input type="checkbox" name="in_sitemap" value="1" {% if data.in_sitemap|default(true) %}checked{% endif %}> In sitemap</label>
+            </div>
+        </div>
+
+        {% for locale in locales %}
+            <fieldset>
+                <legend>Locale {{ locale }}</legend>
+                <div class="row">
+                    <div>
+                        <label for="locale_{{ locale }}_title">Title</label>
+                        <input id="locale_{{ locale }}_title" name="locale_{{ locale }}_title" type="text" value="{{ data.locales[locale].title|default('') }}">
+                    </div>
+                    <div>
+                        <label for="locale_{{ locale }}_path">Path</label>
+                        <input id="locale_{{ locale }}_path" name="locale_{{ locale }}_path" type="text" value="{{ data.locales[locale].path|default('') }}" placeholder="/{{ locale }}">
+                    </div>
+                </div>
+                <label for="locale_{{ locale }}_description">Description</label>
+                <input id="locale_{{ locale }}_description" name="locale_{{ locale }}_description" type="text" value="{{ data.locales[locale].description|default('') }}">
+            </fieldset>
+        {% endfor %}
+
+        <div class="actions" style="margin-top:1.25rem;">
+            <button class="btn btn-primary" type="submit">Save</button>
+            <a class="btn" href="{{ path('admin_seo_pages') }}">Cancel</a>
+        </div>
+    </form>
+{% endblock %}

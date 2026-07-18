@@ -69,3 +69,15 @@ make -C demo up-symfony8
 ```
 
 Open the URL printed by the Makefile (default port from `demo/symfony8/.env.example`).
+
+- Home without locale prefix: `http://localhost:8050/` (default locale)
+- Locale switch in the layout (uses SEO alternates)
+- SEO Admin CRUD: `http://localhost:8050/admin/seo`
+
+See [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md).
+
+## Dependency updates (maintainers)
+
+```bash
+make update-deps   # bundle + demos (REQ-MAKE-008)
+```

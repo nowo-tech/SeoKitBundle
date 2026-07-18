@@ -26,10 +26,15 @@ The demo mounts the bundle at `/var/seo-kit-bundle` and uses a Composer path rep
 ## Verify SEO endpoints
 
 ```bash
-curl -s http://localhost:8050/en/ | grep -i '<title>'
+curl -s http://localhost:8050/ | grep -i '<title>'
+curl -s http://localhost:8050/en | grep -i '<title>'
 curl -s http://localhost:8050/sitemap.xml | head
 curl -s http://localhost:8050/robots.txt
 ```
+
+## SEO Admin (demo CRUD)
+
+Browse [http://localhost:8050/admin/seo](http://localhost:8050/admin/seo) to list/edit `pages`, `slug_routes`, and `slugs` (SEO URL definitions) stored in `config/packages/nowo_seo_kit.yaml`. Disallowed in `robots.txt` under `/admin`.
 
 ## Worker mode note
 

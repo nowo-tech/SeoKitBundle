@@ -163,6 +163,8 @@ final class Configuration implements ConfigurationInterface
             ->info('Specific slug overrides. Outer key = route name, inner key = slug value.')
             ->useAttributeAsKey('route')
             ->arrayPrototype()
+                // Keep URL slugs with hyphens (hello-world); Symfony normalizes "-" to "_" by default.
+                ->normalizeKeys(false)
                 ->useAttributeAsKey('slug')
                 ->arrayPrototype()
                     ->children()

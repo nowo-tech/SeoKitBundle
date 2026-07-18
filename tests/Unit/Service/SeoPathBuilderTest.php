@@ -88,6 +88,28 @@ final class SeoPathBuilderTest extends TestCase
 
         $this->assertSame('/blog/hello-world', $builder->slugPath('app_blog_show', 'en', 'hello-world'));
         $this->assertSame('/es/blog/hola-mundo', $builder->slugPath('app_blog_show', 'es', 'hello-world'));
+        // Request slug may already be the translated value (locale switch / deep link).
+        $this->assertSame('hello-world', $builder->resolveCanonicalSlug('app_blog_show', 'hola-mundo'));
+        $this->assertSame('/blog/hello-world', $builder->slugPath('app_blog_show', 'en', 'hola-mundo'));
+        $this->assertSame('/es/blog/hola-mundo', $builder->slugPath('app_blog_show', 'es', 'hola-mundo'));
+    }
+
+    public function testResolveCanonicalSlugFallsBackWhenUnknownOrMalformed(): void
+    {
+        $builder = new SeoPathBuilder([
+            'slugs' => [
+                'app_blog_show' => [
+                    'hello-world' => [
+                        'locales' => 'invalid',
+                    ],
+                    'other' => 'not-an-array',
+                ],
+            ],
+        ]);
+
+        $this->assertSame('unknown', $builder->resolveCanonicalSlug('app_blog_show', 'unknown'));
+        $this->assertSame('hello-world', $builder->resolveCanonicalSlug('missing_route', 'hello-world'));
+        $this->assertSame('hello-world', $builder->resolveCanonicalSlug('app_blog_show', 'hello-world'));
     }
 
     public function testSlugPathReturnsNullWhenSlugRouteMissing(): void

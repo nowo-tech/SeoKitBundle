@@ -66,6 +66,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.1.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.0.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 
 ## Demos
@@ -73,6 +74,8 @@ Add to your base layout:
 ```bash
 make -C demo up-symfony8   # http://localhost:8050 (default PORT)
 ```
+
+Demo extras: locale switch, `/` default-locale home, SEO Admin at `/admin/seo`. See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md).
 
 ## Tests and coverage
 

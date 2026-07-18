@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ nowo_seo_head() }}
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --ink: #0f172a;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --accent: #0f766e;
+            --danger: #b91c1c;
+            --ok: #166534;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            color: var(--ink);
+            background: var(--bg);
+            line-height: 1.5;
+        }
+        .wrap { max-width: 64rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+        header {
+            display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem;
+            align-items: center; justify-content: space-between;
+            margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line);
+        }
+        header h1 { font-size: 1.25rem; margin: 0; }
+        .nav a { margin-right: 0.85rem; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+        .nav a:hover { text-decoration: underline; }
+        .meta { color: var(--muted); font-size: 0.85rem; }
+        .flash { padding: 0.65rem 0.85rem; border-radius: 0.35rem; margin-bottom: 1rem; }
+        .flash.success { background: #dcfce7; color: var(--ok); }
+        .flash.error { background: #fee2e2; color: var(--danger); }
+        table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); }
+        th, td { text-align: left; padding: 0.55rem 0.65rem; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 0.9rem; }
+        th { background: #f1f5f9; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+        code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; }
+        .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .btn {
+            display: inline-block; padding: 0.35rem 0.7rem; border-radius: 0.3rem;
+            border: 1px solid var(--line); background: #fff; color: var(--ink);
+            text-decoration: none; font-size: 0.85rem; cursor: pointer;
+        }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .btn-danger { background: #fff; border-color: #fecaca; color: var(--danger); }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        form.stack label { display: block; font-weight: 600; font-size: 0.85rem; margin: 0.85rem 0 0.25rem; }
+        form.stack input[type="text"], form.stack input[type="number"], form.stack select, form.stack textarea {
+            width: 100%; max-width: 36rem; padding: 0.45rem 0.55rem; border: 1px solid var(--line); border-radius: 0.3rem;
+        }
+        form.stack .row { display: flex; flex-wrap: wrap; gap: 1rem; }
+        form.stack .row > div { flex: 1 1 14rem; }
+        fieldset { border: 1px solid var(--line); border-radius: 0.4rem; margin: 1rem 0; padding: 0.75rem 1rem 1rem; background: #fff; }
+        legend { font-weight: 700; padding: 0 0.35rem; }
+        .urls { margin: 0; padding-left: 1.1rem; }
+        .urls li { margin: 0.15rem 0; }
+        .note { color: var(--muted); font-size: 0.85rem; margin: 0.5rem 0 1rem; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <div>
+                <h1>{% block title %}SEO Admin{% endblock %}</h1>
+                <p class="meta">Demo CRUD · config + SEO URL definitions</p>
+            </div>
+            <nav class="nav" aria-label="SEO admin">
+                <a href="{{ path('admin_seo_dashboard') }}">Dashboard</a>
+                <a href="{{ path('admin_seo_pages') }}">Pages</a>
+                <a href="{{ path('admin_seo_slug_routes') }}">Slug routes</a>
+                <a href="{{ path('admin_seo_slugs') }}">Slugs / URLs</a>
+                <a href="{{ path('app_home') }}">← Demo</a>
+            </nav>
+        </header>
+
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="flash {{ label }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        {% block body %}{% endblock %}
+    </div>
+</body>
+</html>

@@ -6,6 +6,10 @@ framework:
         log: true
     router:
         default_uri: '%env(DEFAULT_URI)%'
+    session:
+        handler_id: null
+        cookie_secure: auto
+        cookie_samesite: lax
 
 when@test:
     framework:

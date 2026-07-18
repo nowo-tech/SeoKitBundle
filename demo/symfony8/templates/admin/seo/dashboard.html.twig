@@ -1,0 +1,114 @@
+{% extends 'admin/seo/layout.html.twig' %}
+
+{% block title %}SEO Admin · Dashboard{% endblock %}
+
+{% block body %}
+    <p class="note">
+        File: <code>{{ config_file }}</code>
+        · locales: <code>{{ locales|join(', ') }}</code>
+        · default: <code>{{ root.default_locale|default('en') }}</code>
+    </p>
+
+    <div class="toolbar">
+        <h2 style="margin:0;font-size:1.05rem;">Pages</h2>
+        <a class="btn btn-primary" href="{{ path('admin_seo_page_new') }}">New page</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Route</th>
+                <th>Title</th>
+                <th>SEO URLs</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route, page in pages %}
+                <tr>
+                    <td><code>{{ route }}</code></td>
+                    <td>{{ page.title|default('—') }}</td>
+                    <td>
+                        <ul class="urls">
+                            {% for locale, url in page_urls[route]|default({}) %}
+                                <li><span class="mono">{{ locale }}</span>:
+                                    {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td class="actions">
+                        <a class="btn" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4">No pages configured.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="toolbar" style="margin-top:2rem;">
+        <h2 style="margin:0;font-size:1.05rem;">Slug routes</h2>
+        <a class="btn btn-primary" href="{{ path('admin_seo_slug_route_new') }}">New slug route</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Route</th>
+                <th>Path pattern</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route, cfg in slug_routes %}
+                <tr>
+                    <td><code>{{ route }}</code></td>
+                    <td><code>{{ cfg.path_pattern|default('—') }}</code></td>
+                    <td class="actions">
+                        <a class="btn" href="{{ path('admin_seo_slug_route_edit', {route: route}) }}">Edit</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3">No slug routes configured.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="toolbar" style="margin-top:2rem;">
+        <h2 style="margin:0;font-size:1.05rem;">Slugs (URL SEO)</h2>
+        <a class="btn btn-primary" href="{{ path('admin_seo_slug_new') }}">New slug</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Route / slug</th>
+                <th>Title</th>
+                <th>SEO URLs</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route, bySlug in slugs %}
+                {% for slug, cfg in bySlug %}
+                    <tr>
+                        <td><code>{{ route }}</code><br><code>{{ slug }}</code></td>
+                        <td>{{ cfg.title|default('—') }}</td>
+                        <td>
+                            <ul class="urls">
+                                {% for locale, url in slug_urls[route][slug]|default({}) %}
+                                    <li><span class="mono">{{ locale }}</span>:
+                                        {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td class="actions">
+                            <a class="btn" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="4">No slugs configured.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

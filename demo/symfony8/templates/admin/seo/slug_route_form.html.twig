@@ -1,0 +1,49 @@
+{% extends 'admin/seo/layout.html.twig' %}
+
+{% block title %}SEO Admin · {{ is_new ? 'New slug route' : 'Edit slug route' }}{% endblock %}
+
+{% block body %}
+    <p class="note">Defines <code>path_pattern</code> / title templates used by slug SEO URLs.</p>
+
+    <form class="stack" method="post">
+        <label for="route">Route name</label>
+        <input id="route" name="route" type="text" required value="{{ route|default('') }}" {% if not is_new %}readonly{% endif %} placeholder="app_blog_show">
+
+        <div class="row">
+            <div>
+                <label for="slug_parameter">Slug parameter</label>
+                <input id="slug_parameter" name="slug_parameter" type="text" value="{{ data.slug_parameter|default('slug') }}">
+            </div>
+            <div>
+                <label for="sitemap_priority">Sitemap priority</label>
+                <input id="sitemap_priority" name="sitemap_priority" type="number" min="0" max="1" step="0.1" value="{{ data.sitemap_priority|default(0.6) }}">
+            </div>
+        </div>
+
+        <label for="path_pattern">Default path pattern</label>
+        <input id="path_pattern" name="path_pattern" type="text" value="{{ data.path_pattern|default('') }}" placeholder="/en/blog/{slug}">
+
+        <label for="title_template">Title template</label>
+        <input id="title_template" name="title_template" type="text" value="{{ data.title_template|default('') }}" placeholder="{title} — Blog">
+
+        <label for="description_template">Description template</label>
+        <input id="description_template" name="description_template" type="text" value="{{ data.description_template|default('') }}" placeholder="Article: {slug}">
+
+        <label><input type="checkbox" name="in_sitemap" value="1" {% if data.in_sitemap|default(true) %}checked{% endif %}> In sitemap</label>
+
+        {% for locale in locales %}
+            <fieldset>
+                <legend>Locale {{ locale }}</legend>
+                <label for="locale_{{ locale }}_path_pattern">Path pattern</label>
+                <input id="locale_{{ locale }}_path_pattern" name="locale_{{ locale }}_path_pattern" type="text" value="{{ data.locales[locale].path_pattern|default('') }}" placeholder="/{{ locale }}/blog/{slug}">
+                <label for="locale_{{ locale }}_title_template">Title template</label>
+                <input id="locale_{{ locale }}_title_template" name="locale_{{ locale }}_title_template" type="text" value="{{ data.locales[locale].title_template|default('') }}">
+            </fieldset>
+        {% endfor %}
+
+        <div class="actions" style="margin-top:1.25rem;">
+            <button class="btn btn-primary" type="submit">Save</button>
+            <a class="btn" href="{{ path('admin_seo_slug_routes') }}">Cancel</a>
+        </div>
+    </form>
+{% endblock %}

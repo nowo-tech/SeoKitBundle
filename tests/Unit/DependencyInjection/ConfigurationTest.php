@@ -82,4 +82,24 @@ final class ConfigurationTest extends TestCase
             ],
         ]]);
     }
+
+    public function testSlugKeysPreserveHyphens(): void
+    {
+        $config = $this->processor->processConfiguration(new Configuration(), [[
+            'slugs' => [
+                'app_blog_show' => [
+                    'hello-world' => [
+                        'title'   => 'Hello',
+                        'locales' => [
+                            'es' => ['slug' => 'hola-mundo'],
+                        ],
+                    ],
+                ],
+            ],
+        ]]);
+
+        $this->assertArrayHasKey('hello-world', $config['slugs']['app_blog_show']);
+        $this->assertArrayNotHasKey('hello_world', $config['slugs']['app_blog_show']);
+        $this->assertSame('hola-mundo', $config['slugs']['app_blog_show']['hello-world']['locales']['es']['slug']);
+    }
 }
