@@ -116,7 +116,7 @@ slugs:
 
 | Key | Default |
 | --- | --- |
-| `head` | `@NowoSeoKit/seo/head.html.twig` |
+| `head` | `@NowoSeoKitBundle/seo/head.html.twig` |
 
 Override in your app: `templates/bundles/NowoSeoKitBundle/seo/head.html.twig`.
 

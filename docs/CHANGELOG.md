@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-22
+
+### Changed
+
+- **Twig namespace** — templates resolve under `@NowoSeoKitBundle/...` (was `@NowoSeoKit/...`)
+- Default `templates.head` is now `@NowoSeoKitBundle/seo/head.html.twig`
+
+### Added
+
+- Application overrides via `templates/bundles/NowoSeoKitBundle/` are prepended so they win over bundle views (REQ-TWIG-002)
+- `TwigPathsPass` resolves `twig.loader.native` alias and common filesystem loader service ids
+
+### Documentation
+
+- [CONFIGURATION.md](CONFIGURATION.md) and [UPGRADING.md](UPGRADING.md) updated for the Twig namespace rename
+
 ## [1.1.0] - 2026-07-18
 
 ### Added
@@ -40,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.2.0
 [1.1.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.1.0
 [1.0.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.0.0

@@ -1,5 +1,25 @@
 # Upgrading
 
+## To 1.2.0
+
+### Twig namespace rename
+
+Logical Twig names moved from `@NowoSeoKit/...` to `@NowoSeoKitBundle/...`.
+
+1. If you set `nowo_seo_kit.templates.head` explicitly, update it to `@NowoSeoKitBundle/seo/head.html.twig` (or your custom path).
+2. Move application overrides from `templates/bundles/NowoSeoKit/` to `templates/bundles/NowoSeoKitBundle/`.
+3. Clear cache: `php bin/console cache:clear`
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.2
+php bin/console cache:clear
+```
+
+### Breaking changes
+
+- Default Twig namespace and default `templates.head` value changed (`NowoSeoKit` → `NowoSeoKitBundle`).
+- Override directory path changed to match Symfony’s `BundleName` convention.
+
 ## To 1.1.0
 
 ### Hyphenated slug keys

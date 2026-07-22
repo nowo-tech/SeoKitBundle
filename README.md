@@ -66,6 +66,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.2.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.1.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.0.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 
@@ -85,7 +86,7 @@ make test-coverage
 ```
 
 - Tests: PHPUnit (unit)
-- - PHP: **100%** lines (`make test-coverage`)
+- PHP: **100%** lines (`make test-coverage`)
 
 ## License
 

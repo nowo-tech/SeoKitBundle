@@ -30,7 +30,7 @@ final class ConfigurationTest extends TestCase
         $this->assertSame('/sitemap.xml', $config['sitemap']['path']);
         $this->assertTrue($config['robots']['enabled']);
         $this->assertSame('/robots.txt', $config['robots']['path']);
-        $this->assertSame('@NowoSeoKit/seo/head.html.twig', $config['templates']['head']);
+        $this->assertSame('@NowoSeoKitBundle/seo/head.html.twig', $config['templates']['head']);
     }
 
     public function testProcessConfigurationMergesPagesAndSlugRoutes(): void

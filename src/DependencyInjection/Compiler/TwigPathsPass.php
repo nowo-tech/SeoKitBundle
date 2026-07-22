@@ -8,24 +8,72 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 use function dirname;
+use function is_dir;
+use function is_string;
+use function rtrim;
 
 /**
- * Ensures Twig can resolve @NowoSeoKit/… templates (REQ-TWIG-001).
+ * Ensures Twig can resolve @NowoSeoKitBundle/... templates and
+ * application overrides win (REQ-TWIG-001, REQ-TWIG-002).
  */
 final class TwigPathsPass implements CompilerPassInterface
 {
+    private const TWIG_NAMESPACE = 'NowoSeoKitBundle';
+
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition('twig.loader.native_filesystem')
-            && !$container->hasDefinition('twig.loader.filesystem')) {
+        $loaderId = $this->getNativeLoaderServiceId($container);
+        if ($loaderId === null) {
             return;
         }
 
-        $path = dirname(__DIR__, 2) . '/Resources/views';
-        $id   = $container->hasDefinition('twig.loader.native_filesystem')
-            ? 'twig.loader.native_filesystem'
-            : 'twig.loader.filesystem';
+        $viewsPath  = dirname(__DIR__, 2) . '/Resources/views';
+        $definition = $container->getDefinition($loaderId);
 
-        $container->getDefinition($id)->addMethodCall('addPath', [$path, 'NowoSeoKit']);
+        if ($container->hasParameter('kernel.project_dir')) {
+            $projectDirParam = $container->getParameter('kernel.project_dir');
+            if (is_string($projectDirParam)) {
+                $projectDir   = rtrim($projectDirParam, '/\\');
+                $overridePath = $projectDir . '/templates/bundles/NowoSeoKitBundle';
+                if (is_dir($overridePath)) {
+                    $definition->addMethodCall('prependPath', [$overridePath, self::TWIG_NAMESPACE]);
+                }
+            }
+        }
+
+        $definition->addMethodCall('addPath', [$viewsPath, self::TWIG_NAMESPACE]);
+    }
+
+    private function getNativeLoaderServiceId(ContainerBuilder $container): ?string
+    {
+        if ($container->hasAlias('twig.loader.native')) {
+            $resolved = $this->resolveDefinitionId($container, (string) $container->getAlias('twig.loader.native'));
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        if ($container->hasDefinition('twig.loader.native')) {
+            return 'twig.loader.native';
+        }
+
+        if ($container->hasDefinition('twig.loader.native_filesystem')) {
+            return 'twig.loader.native_filesystem';
+        }
+
+        if ($container->hasDefinition('twig.loader.filesystem')) {
+            return 'twig.loader.filesystem';
+        }
+
+        return null;
+    }
+
+    private function resolveDefinitionId(ContainerBuilder $container, string $id): ?string
+    {
+        for ($i = 0; $i < 32 && $container->hasAlias($id); ++$i) {
+            $id = (string) $container->getAlias($id);
+        }
+
+        return $container->hasDefinition($id) ? $id : null;
     }
 }

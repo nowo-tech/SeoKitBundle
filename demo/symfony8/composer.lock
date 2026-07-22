@@ -12,7 +12,7 @@
             "dist": {
                 "type": "path",
                 "url": "/var/seo-kit-bundle",
-                "reference": "3a4d4429e6d481417308c20ad4bf87457e1306b5"
+                "reference": "16c822e741037b714d75594a18ab6e0261672827"
             },
             "require": {
                 "php": ">=8.2 <8.6",

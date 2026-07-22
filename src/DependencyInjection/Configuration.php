@@ -235,7 +235,7 @@ final class Configuration implements ConfigurationInterface
             ->arrayNode('templates')
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('head')->defaultValue('@NowoSeoKit/seo/head.html.twig')->end()
+                ->scalarNode('head')->defaultValue('@NowoSeoKitBundle/seo/head.html.twig')->end()
             ->end();
     }
 

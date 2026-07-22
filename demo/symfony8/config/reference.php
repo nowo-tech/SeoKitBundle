@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // This file is auto-generated and is for apps only. Bundles SHOULD NOT rely on its content.
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
@@ -869,7 +871,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         sitemap_link?: bool|Param, // Default: true
  *     },
  *     templates?: array{
- *         head?: scalar|Param|null, // Default: "@NowoSeoKit/seo/head.html.twig"
+ *         head?: scalar|Param|null, // Default: "@NowoSeoKitBundle/seo/head.html.twig"
  *     },
  * }
  * @psalm-type WebProfilerConfig = array{
