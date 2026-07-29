@@ -5,7 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Table of contents
+
+- [[Unreleased]](#unreleased)
+- [[1.3.0] - 2026-07-29](#130-2026-07-29)
+  - [Added](#added)
+  - [Changed](#changed)
+  - [Documentation](#documentation)
+- [[1.2.0] - 2026-07-22](#120-2026-07-22)
+  - [Changed](#changed-1)
+  - [Added](#added-1)
+  - [Documentation](#documentation-1)
+- [[1.1.0] - 2026-07-18](#110-2026-07-18)
+  - [Added](#added-2)
+  - [Fixed](#fixed)
+  - [Documentation](#documentation-2)
+- [[1.0.0] - 2026-07-16](#100-2026-07-16)
+  - [Added](#added-3)
+
 ## [Unreleased]
+
+## [1.3.0] - 2026-07-29
+
+### Added
+
+- `SeoPathBuilderInterface` (+ service alias) so other bundles (e.g. RoutingKit) can decorate path resolution for canonical/hreflang.
+- FrankenPHP Friendly Worker Mode banner in README (REQ-DOCS-017).
+- `make down-dev`; Compose V2→V1 detection (REQ-MAKE-007 / REQ-MAKE-010).
+- **REQ-CS-005:** `nowo-tech/phpstan-frankenphp` in `require-dev` with classic + worker rulesets.
+- Maintainer scripts / GitHub hygiene: `check-open-prs`, Dependabot, `pr-lint` / `stale` workflows.
+
+### Changed
+
+- Demo Symfony 8: external `docker/entrypoint.sh`; Twig Inspector in demo `require-dev`.
+
+### Documentation
+
+- TOC additions across docs; [UPGRADING.md](UPGRADING.md) **To 1.3.0**; [RELEASE.md](RELEASE.md) updated.
 
 ## [1.2.0] - 2026-07-22
 
@@ -56,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.3.0
 [1.2.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.2.0
 [1.1.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.1.0
 [1.0.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.0.0

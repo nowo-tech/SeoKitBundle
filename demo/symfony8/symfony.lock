@@ -2,6 +2,9 @@
     "nowo-tech/seo-kit-bundle": {
         "version": "dev-main"
     },
+    "nowo-tech/twig-inspector-bundle": {
+        "version": "v1.0.40"
+    },
     "symfony/console": {
         "version": "8.1",
         "recipe": {

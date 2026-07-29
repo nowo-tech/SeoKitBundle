@@ -1,5 +1,20 @@
 # Upgrading
 
+## To 1.3.0
+
+### SeoPathBuilderInterface (non-breaking)
+
+`SeoPathBuilder` now implements `SeoPathBuilderInterface`, and the container exposes an alias for decoration (e.g. RoutingKit path overrides for canonical/hreflang).
+
+**No action required** for typical consumers. Continue requiring `nowo-tech/seo-kit-bundle: ^1.2` or bump to `^1.3`.
+
+Optional: type-hint / decorate `Nowo\SeoKitBundle\Service\SeoPathBuilderInterface` instead of the concrete class.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.3
+php bin/console cache:clear
+```
+
 ## To 1.2.0
 
 ### Twig namespace rename

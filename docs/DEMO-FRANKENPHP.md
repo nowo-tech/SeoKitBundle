@@ -2,6 +2,15 @@
 
 The Symfony 8 demo runs as a **single FrankenPHP container** (no separate Nginx).
 
+## Table of contents
+
+- [Quick start](#quick-start)
+- [Development vs production Caddyfile](#development-vs-production-caddyfile)
+- [Bundle path repository](#bundle-path-repository)
+- [Verify SEO endpoints](#verify-seo-endpoints)
+- [SEO Admin (demo CRUD)](#seo-admin-demo-crud)
+- [Worker mode note](#worker-mode-note)
+
 ## Quick start
 
 ```bash
@@ -17,7 +26,7 @@ Default URL: `http://localhost:8050` (see `demo/symfony8/.env.example`).
 | `APP_ENV=dev` (default) | `Caddyfile.dev` | `php_server` — no workers, file changes visible immediately |
 | `APP_ENV=prod` | `Caddyfile` | Can use `php_server { worker … }` for FrankenPHP workers |
 
-The Docker entrypoint copies `Caddyfile.dev` when `APP_ENV=dev`.
+The Docker entrypoint selects the Caddyfile from `FRANKENPHP_MODE` (`classic`|`worker`).
 
 ## Bundle path repository
 

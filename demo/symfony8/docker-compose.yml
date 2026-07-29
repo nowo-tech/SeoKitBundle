@@ -20,6 +20,7 @@ services:
       - APP_ENV=dev
       - APP_DEBUG=1
       - APP_SECRET=${APP_SECRET:-demo-secret}
+      - FRANKENPHP_MODE=${FRANKENPHP_MODE:-worker}
       - DEFAULT_URI=http://localhost:${PORT:-8050}
     dns:
       - 8.8.8.8

@@ -3,10 +3,12 @@
 # All dev targets use the root docker-compose.yml (single file).
 
 COMPOSE_FILE := docker-compose.yml
-COMPOSE := docker-compose -f $(COMPOSE_FILE)
+# Prefer Compose V2 plugin (GitHub Actions / modern Docker Desktop); fall back to docker-compose V1 (REQ-MAKE-010).
+COMPOSE_BIN := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
+COMPOSE     := $(COMPOSE_BIN) -f $(COMPOSE_FILE)
 SERVICE_PHP := php
 
-.PHONY: help ensure-up up down build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps
+.PHONY: help ensure-up up down down-dev build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps
 
 # Default target
 help:
@@ -18,6 +20,7 @@ help:
 	@echo "  ensure-up     Start container if not running"
 	@echo "  up            Start Docker container"
 	@echo "  down          Stop Docker container"
+	@echo "  down-dev      Stop containers (keep volumes; REQ-MAKE-007)"
 	@echo "  build         Rebuild Docker image (no cache)"
 	@echo "  shell         Open shell in container"
 	@echo "  install       Install Composer dependencies (starts container if needed)"
@@ -56,6 +59,10 @@ up:
 
 down:
 	$(COMPOSE) down
+
+# Stop containers without removing volumes (REQ-MAKE-007)
+down-dev:
+	$(COMPOSE) down --remove-orphans
 
 shell: ensure-up
 	$(COMPOSE) exec $(SERVICE_PHP) sh

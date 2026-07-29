@@ -12,7 +12,7 @@ use function is_string;
 /**
  * Builds absolute/relative SEO paths and locale alternates.
  */
-final readonly class SeoPathBuilder
+final readonly class SeoPathBuilder implements SeoPathBuilderInterface
 {
     /**
      * @param array<string, mixed> $config Full processed nowo_seo_kit config

@@ -6,6 +6,22 @@
 
 Symfony SEO kit: multilingual static routes, slug SEO layers (defaults / pages / slug patterns / specific slugs), head tags, hreflang, sitemap and robots for FrankenPHP, php-fpm and Nginx.
 
+![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
+
+This bundle is **FrankenPHP worker mode friendly**.
+
+## Table of contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Requirements](#requirements)
+- [Documentation](#documentation)
+  - [Additional documentation](#additional-documentation)
+- [Version information](#version-information)
+- [Demos](#demos)
+- [Tests and coverage](#tests-and-coverage)
+- [License](#license)
+
 ## Features
 
 - ✅ **Hierarchical SEO config** — defaults → slug_routes → pages → slugs → attribute → runtime

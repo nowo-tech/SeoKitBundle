@@ -2,6 +2,16 @@
 
 SeoKitBundle serves `/sitemap.xml`, `/robots.txt`, and application pages through Symfony. No special static files are required on disk.
 
+## Table of contents
+
+- [FrankenPHP](#frankenphp)
+- [Nginx + php-fpm](#nginx-php-fpm)
+  - [Trusted proxies](#trusted-proxies)
+- [php-fpm only (Apache / other front controllers)](#php-fpm-only-apache-other-front-controllers)
+- [Caching](#caching)
+- [Multilingual routes](#multilingual-routes)
+- [Checklist](#checklist)
+
 ## FrankenPHP
 
 Recommended for demos and many production setups.

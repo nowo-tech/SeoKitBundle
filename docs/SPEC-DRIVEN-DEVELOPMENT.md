@@ -6,6 +6,13 @@ SeoKitBundle uses three layers of specification:
 2. **Code inventory** — `specs/001-baseline/code-inventory.md` (100% `src/` traceability)
 3. **Integrator docs** — `docs/CONFIGURATION.md`, `docs/USAGE.md`, etc.
 
+## Table of contents
+
+- [Workflow](#workflow)
+- [REQ-* traceability](#req-traceability)
+- [Engram](#engram)
+- [GitHub Spec Kit](#github-spec-kit)
+
 ## Workflow
 
 1. Clarify behavior in the baseline spec (or a new `specs/00N-*` folder).

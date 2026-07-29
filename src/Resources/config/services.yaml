@@ -13,6 +13,9 @@ services:
         arguments:
             $config: '%nowo_seo_kit.config%'
 
+    Nowo\SeoKitBundle\Service\SeoPathBuilderInterface:
+        alias: Nowo\SeoKitBundle\Service\SeoPathBuilder
+
     Nowo\SeoKitBundle\Service\SeoMetadataResolver:
         arguments:
             $config: '%nowo_seo_kit.config%'

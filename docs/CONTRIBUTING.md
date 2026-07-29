@@ -2,6 +2,14 @@
 
 Thank you for contributing to SeoKitBundle.
 
+## Table of contents
+
+- [Setup](#setup)
+- [Git hygiene (REQ-GIT-001)](#git-hygiene-req-git-001)
+- [Quality checks](#quality-checks)
+- [Code of Conduct](#code-of-conduct)
+- [Pull requests](#pull-requests)
+
 ## Setup
 
 ```bash

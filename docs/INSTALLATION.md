@@ -1,5 +1,14 @@
 # Installation
 
+## Table of contents
+
+- [Requirements](#requirements)
+- [Composer](#composer)
+- [Register the bundle](#register-the-bundle)
+- [Routes](#routes)
+- [Twig](#twig)
+- [Docker development (bundle contributors)](#docker-development-bundle-contributors)
+
 ## Requirements
 
 - PHP >= 8.2, < 8.6

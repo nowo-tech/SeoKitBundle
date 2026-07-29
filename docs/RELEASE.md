@@ -1,5 +1,13 @@
 # Release process
 
+## Table of contents
+
+- [Pre-release checklist](#pre-release-checklist)
+- [Version bump](#version-bump)
+- [Tag and GitHub release](#tag-and-github-release)
+- [Packagist](#packagist)
+- [Sync missing releases](#sync-missing-releases)
+
 ## Pre-release checklist
 
 ```bash
@@ -25,8 +33,9 @@ make release-check
 ## Tag and GitHub release
 
 ```bash
-git tag -a v1.2.0 -m "Release v1.2.0"
-git push origin v1.2.0
+git tag -a v1.3.0 -m "Release v1.3.0 - SeoPathBuilderInterface, FrankenPHP banner"
+git push origin main
+git push origin v1.3.0
 ```
 
 GitHub Actions `release.yml` creates a release from the tag message and changelog section.

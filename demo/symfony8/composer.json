@@ -27,6 +27,7 @@
         "symfony/yaml": "^8.0"
     },
     "require-dev": {
+        "nowo-tech/twig-inspector-bundle": "^1.0",
         "symfony/debug-bundle": "^8.0",
         "symfony/var-dumper": "^8.0",
         "symfony/web-profiler-bundle": "^8.0"
@@ -34,7 +35,8 @@
     "config": {
         "allow-plugins": {
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "phpstan/extension-installer": true
         },
         "sort-packages": true
     },

@@ -2,6 +2,13 @@
 
 [Engram](https://github.com/gannonh/engram) provides persistent memory for AI assistants via MCP.
 
+## Table of contents
+
+- [Setup](#setup)
+- [Usage in Cursor](#usage-in-cursor)
+- [Configuration](#configuration)
+- [Privacy](#privacy)
+
 ## Setup
 
 1. Install Engram CLI on your machine.

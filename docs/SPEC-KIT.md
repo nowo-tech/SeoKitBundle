@@ -2,6 +2,13 @@
 
 This bundle is prepared for [GitHub Spec Kit](https://github.com/github/spec-kit) with Cursor Agent integration.
 
+## Table of contents
+
+- [Baseline artifacts](#baseline-artifacts)
+- [Cursor skills](#cursor-skills)
+- [Adding a new feature spec](#adding-a-new-feature-spec)
+- [Related](#related)
+
 ## Baseline artifacts
 
 | Path | Purpose |

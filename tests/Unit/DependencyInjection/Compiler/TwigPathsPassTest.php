@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Twig\Loader\FilesystemLoader;
 
 use function dirname;
 
@@ -17,7 +18,7 @@ final class TwigPathsPassTest extends TestCase
     public function testProcessAddsTwigNamespaceWhenNativeFilesystemLoaderExists(): void
     {
         $container = new ContainerBuilder();
-        $loader    = new Definition(\Twig\Loader\FilesystemLoader::class);
+        $loader    = new Definition(FilesystemLoader::class);
         $container->setDefinition('twig.loader.native_filesystem', $loader);
 
         (new TwigPathsPass())->process($container);
@@ -31,7 +32,7 @@ final class TwigPathsPassTest extends TestCase
     public function testProcessPrependsOverridePathWhenPresent(): void
     {
         $container  = new ContainerBuilder();
-        $loader     = new Definition(\Twig\Loader\FilesystemLoader::class);
+        $loader     = new Definition(FilesystemLoader::class);
         $projectDir = sys_get_temp_dir() . '/seo-kit-twig-paths-' . bin2hex(random_bytes(4));
         mkdir($projectDir . '/templates/bundles/NowoSeoKitBundle', 0777, true);
 
@@ -59,7 +60,7 @@ final class TwigPathsPassTest extends TestCase
     public function testProcessUsesNativeLoaderAlias(): void
     {
         $container = new ContainerBuilder();
-        $loader    = new Definition(\Twig\Loader\FilesystemLoader::class);
+        $loader    = new Definition(FilesystemLoader::class);
         $container->setDefinition('twig.loader.native_filesystem', $loader);
         $container->setAlias('twig.loader.native.mid', new Alias('twig.loader.native_filesystem'));
         $container->setAlias('twig.loader.native', new Alias('twig.loader.native.mid'));
@@ -75,7 +76,7 @@ final class TwigPathsPassTest extends TestCase
     public function testProcessUsesNativeLoaderDefinition(): void
     {
         $container = new ContainerBuilder();
-        $loader    = new Definition(\Twig\Loader\FilesystemLoader::class);
+        $loader    = new Definition(FilesystemLoader::class);
         $container->setDefinition('twig.loader.native', $loader);
 
         (new TwigPathsPass())->process($container);
@@ -89,7 +90,7 @@ final class TwigPathsPassTest extends TestCase
     public function testProcessFallsBackWhenNativeAliasTargetMissing(): void
     {
         $container = new ContainerBuilder();
-        $loader    = new Definition(\Twig\Loader\FilesystemLoader::class);
+        $loader    = new Definition(FilesystemLoader::class);
         $container->setAlias('twig.loader.native', new Alias('twig.loader.missing'));
         $container->setDefinition('twig.loader.filesystem', $loader);
 
@@ -104,7 +105,7 @@ final class TwigPathsPassTest extends TestCase
     public function testProcessUsesFilesystemLoaderWhenNativeLoaderMissing(): void
     {
         $container = new ContainerBuilder();
-        $loader    = new Definition(\Twig\Loader\FilesystemLoader::class);
+        $loader    = new Definition(FilesystemLoader::class);
         $container->setDefinition('twig.loader.filesystem', $loader);
 
         (new TwigPathsPass())->process($container);

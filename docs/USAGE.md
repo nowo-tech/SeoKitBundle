@@ -1,5 +1,15 @@
 # Usage
 
+## Table of contents
+
+- [Twig](#twig)
+- [PHP attribute](#php-attribute)
+- [Runtime overrides](#runtime-overrides)
+- [Sitemap and robots](#sitemap-and-robots)
+- [Translations](#translations)
+- [Demo](#demo)
+- [Dependency updates (maintainers)](#dependency-updates-maintainers)
+
 ## Twig
 
 ```twig

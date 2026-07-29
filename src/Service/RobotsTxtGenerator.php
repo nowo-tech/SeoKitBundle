@@ -19,7 +19,7 @@ final readonly class RobotsTxtGenerator
      */
     public function __construct(
         private array $config,
-        private SeoPathBuilder $paths,
+        private SeoPathBuilderInterface $paths,
     ) {
     }
 

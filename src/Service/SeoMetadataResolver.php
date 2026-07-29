@@ -31,7 +31,7 @@ final readonly class SeoMetadataResolver
         private RequestStack $requestStack,
         private SeoRuntime $runtime,
         private SeoTemplateRenderer $templates,
-        private SeoPathBuilder $paths,
+        private SeoPathBuilderInterface $paths,
         private UrlGeneratorInterface $urlGenerator,
     ) {
     }

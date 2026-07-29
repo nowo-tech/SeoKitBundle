@@ -2,6 +2,19 @@
 
 Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 
+## Table of contents
+
+- [Resolution order](#resolution-order)
+- [Top-level keys](#top-level-keys)
+- [defaults](#defaults)
+- [pages](#pages)
+- [slug_routes](#slug_routes)
+- [slugs](#slugs)
+- [sitemap](#sitemap)
+- [robots](#robots)
+- [templates](#templates)
+- [Web servers](#web-servers)
+
 ## Resolution order
 
 Later layers override earlier ones:
