@@ -131,7 +131,7 @@ slugs:
 | --- | --- |
 | `head` | `@NowoSeoKitBundle/seo/head.html.twig` |
 
-Override in your app: `templates/bundles/NowoSeoKitBundle/seo/head.html.twig`.
+Set `templates.head` to another logical Twig path to swap the head partial without a full-file vendor override. Full-file overrides under `templates/bundles/NowoSeoKitBundle/` (REQ-TWIG-001): [USAGE.md — Overriding templates](USAGE.md#overriding-templates-req-twig-001).
 
 ## Web servers
 

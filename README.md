@@ -59,7 +59,6 @@ Add to your base layout:
 
 ## Documentation
 
-- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Usage](docs/USAGE.md)
@@ -77,11 +76,13 @@ Add to your base layout:
 
 - [Demo with FrankenPHP](docs/DEMO-FRANKENPHP.md) (includes worker mode)
 - [Server cookbook (Nginx, php-fpm, FrankenPHP)](docs/SERVERS.md)
+- [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 
 ## Version information
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.3.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.2.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.1.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.0.x | >= 8.2 | 7.0 – 8.1+ | Stable |

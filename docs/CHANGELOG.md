@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.3.1] - 2026-07-30](#131---2026-07-30)
 - [[1.3.0] - 2026-07-29](#130-2026-07-29)
   - [Added](#added)
   - [Changed](#changed)
@@ -24,6 +25,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - [Added](#added-3)
 
 ## [Unreleased]
+
+## [1.3.1] - 2026-07-30
+
+### Documentation
+
+- USAGE: **Overriding templates (REQ-TWIG-001)** — namespace `@NowoSeoKitBundle`, freeze rule, prefer `templates.head` config over full-file forks; CONFIGURATION points to USAGE.
+- README: documentation link order (REQ-DOCS-019); version table includes **1.3.x**.
+
+### Changed
+
+- Dev / CI dependency bumps (Dependabot): php-cs-fixer, Rector, PHPStan group, Symfony PHPUnit bridge, `nowo-tech/phpstan-frankenphp`.
+- Demo Symfony 8: php-cs-fixer on config; Flex-style `bundles.php` alignment.
 
 ## [1.3.0] - 2026-07-29
 
@@ -92,8 +105,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.3.0...HEAD
-[1.3.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.3.0
-[1.2.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.2.0
-[1.1.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.1.0
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.0.0

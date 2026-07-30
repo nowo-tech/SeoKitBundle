@@ -1,5 +1,26 @@
 # Upgrading
 
+## Table of contents
+
+- [To 1.3.1](#to-131)
+- [To 1.3.0](#to-130)
+- [To 1.2.0](#to-120)
+- [To 1.1.0](#to-110)
+- [To 1.0.0](#to-100)
+
+## To 1.3.1
+
+Documentation and maintainer dependency bumps only. **No config or API migration** for integrators.
+
+### Install / update
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.3.1
+php bin/console cache:clear
+```
+
+Twig override guidance (freeze rule, prefer `templates.head`) is in [USAGE.md](USAGE.md#overriding-templates-req-twig-001). Hosts already on **1.3.0** need no further changes.
+
 ## To 1.3.0
 
 ### SeoPathBuilderInterface (non-breaking)

@@ -6,6 +6,7 @@
 - [PHP attribute](#php-attribute)
 - [Runtime overrides](#runtime-overrides)
 - [Sitemap and robots](#sitemap-and-robots)
+- [Overriding templates (REQ-TWIG-001)](#overriding-templates-req-twig-001)
 - [Translations](#translations)
 - [Demo](#demo)
 - [Dependency updates (maintainers)](#dependency-updates-maintainers)
@@ -67,6 +68,32 @@ After configuration, verify:
 curl -s https://your-host/sitemap.xml | head
 curl -s https://your-host/robots.txt
 ```
+
+## Overriding templates (REQ-TWIG-001)
+
+The bundle registers the Twig namespace **`@NowoSeoKitBundle/`**. Application files under **`templates/bundles/NowoSeoKitBundle/`** **always win** over the copies inside the package (`TwigPathsPass` prepends the app override directory when present, then registers the bundle views path).
+
+**Freeze rule:** a full-file override hides vendor updates for that `<subpath>` until you delete or manually merge it. Prefer pointing **`nowo_seo_kit.templates.head`** at your own template (see [CONFIGURATION.md — templates](CONFIGURATION.md#templates)) when you only need a different head markup without freezing the vendor file.
+
+**Procedure**
+
+1. Identify the `<subpath>` from the table below (path relative to `src/Resources/views/`).
+2. Create in your application: `templates/bundles/NowoSeoKitBundle/<subpath>` (same relative path and filename).
+3. Clear the cache in dev if needed: `php bin/console cache:clear`.
+
+Example:
+
+```text
+templates/bundles/NowoSeoKitBundle/seo/head.html.twig
+```
+
+Logical name: `@NowoSeoKitBundle/seo/head.html.twig` (used by `nowo_seo_head()` via the `templates.head` config default).
+
+**Overridable templates**
+
+| Subpath | Purpose |
+| --- | --- |
+| `seo/head.html.twig` | HTML head tags rendered by `nowo_seo_head()` (title, meta, Open Graph, Twitter, JSON-LD, alternates) |
 
 ## Translations
 

@@ -8,6 +8,8 @@
 - [Packagist](#packagist)
 - [Sync missing releases](#sync-missing-releases)
 
+Current stable target: **v1.3.1**.
+
 ## Pre-release checklist
 
 ```bash
@@ -33,9 +35,9 @@ make release-check
 ## Tag and GitHub release
 
 ```bash
-git tag -a v1.3.0 -m "Release v1.3.0 - SeoPathBuilderInterface, FrankenPHP banner"
+git tag -a v1.3.1 -m "Release v1.3.1 - docs: Twig overrides, README order; deps bumps"
 git push origin main
-git push origin v1.3.0
+git push origin v1.3.1
 ```
 
 GitHub Actions `release.yml` creates a release from the tag message and changelog section.
