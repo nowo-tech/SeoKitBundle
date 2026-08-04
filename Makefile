@@ -8,7 +8,7 @@ COMPOSE_BIN := $(shell docker compose version >/dev/null 2>&1 && echo "docker co
 COMPOSE     := $(COMPOSE_BIN) -f $(COMPOSE_FILE)
 SERVICE_PHP := php
 
-.PHONY: help ensure-up up down down-dev build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps
+.PHONY: help ensure-up up down down-dev build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps check-twig-extra
 
 # Default target
 help:
@@ -106,7 +106,11 @@ phpstan: ensure-up
 qa: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer qa
 
-release-check: ensure-up check-no-cursor-coauthor composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
+
+check-twig-extra:
+	@chmod +x .scripts/check-twig-extra.sh
+	@./.scripts/check-twig-extra.sh
+release-check: ensure-up check-no-cursor-coauthor check-twig-extra composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
 
 check-no-cursor-coauthor:
 	@chmod +x .scripts/check-no-cursor-coauthor.sh
@@ -155,3 +159,6 @@ strip-cursor-coauthor-from-history:
 # REQ-MAKE-008: update-deps (REQ-MAKE-008)
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(BUNDLE_ROOT)/.scripts/Makefile.update-deps.mk
+
+twig-lint: ensure-up
+	@$(COMPOSE) exec -T $(SERVICE_PHP) composer twig:lint || $(COMPOSE) exec -T $(SERVICE_PHP) ./vendor/bin/twig-cs-fixer lint --config=.twig-cs-fixer.php

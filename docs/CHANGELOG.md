@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.4.0] - 2026-08-04](#140---2026-08-04)
 - [[1.3.1] - 2026-07-30](#131---2026-07-30)
 - [[1.3.0] - 2026-07-29](#130-2026-07-29)
   - [Added](#added)
@@ -25,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - [Added](#added-3)
 
 ## [Unreleased]
+
+## [1.4.0] - 2026-08-04
+
+### Added
+- **REQ-TWIG-004:** require `twig/extra-bundle` + `twig/string-extra`; `make check-twig-extra` in `release-check`; demos register `TwigExtraBundle`.
+- **Twig-CS-Fixer:** `vincentlanglet/twig-cs-fixer`, `.twig-cs-fixer.php`, `composer twig:lint` / `twig:fix`.
+
+[1.4.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.0
 
 ## [1.3.1] - 2026-07-30
 

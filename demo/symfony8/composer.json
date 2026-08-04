@@ -15,16 +15,18 @@
         }
     ],
     "require": {
-        "php": ">=8.2,<8.6",
         "nowo-tech/seo-kit-bundle": "*",
+        "php": ">=8.2,<8.6",
         "symfony/console": "^8.0",
         "symfony/dotenv": "^8.0",
         "symfony/flex": "^2.0",
         "symfony/framework-bundle": "^8.0",
-        "symfony/runtime": "^8.0",
         "symfony/routing": "^8.0",
+        "symfony/runtime": "^8.0",
         "symfony/twig-bundle": "^8.0",
-        "symfony/yaml": "^8.0"
+        "symfony/yaml": "^8.0",
+        "twig/extra-bundle": "^3.12",
+        "twig/string-extra": "^3.12"
     },
     "require-dev": {
         "nowo-tech/twig-inspector-bundle": "^1.0",
@@ -50,8 +52,12 @@
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
-        "post-install-cmd": ["@auto-scripts"],
-        "post-update-cmd": ["@auto-scripts"]
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ]
     },
     "conflict": {
         "symfony/symfony": "*"

@@ -2,11 +2,40 @@
 
 ## Table of contents
 
+- [Unreleased](#unreleased)
+- [To 1.4.0](#to-140)
 - [To 1.3.1](#to-131)
 - [To 1.3.0](#to-130)
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+
+## Unreleased
+
+## To 1.4.0
+
+From **1.3.1** — Adds required Twig Extra (REQ-TWIG-004) and Twig-CS-Fixer. Register TwigExtraBundle if Flex did not.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+php bin/console cache:clear
+```
+
+### Twig Extra Bundle (REQ-TWIG-004)
+
+Hosts that render this bundle's Twig templates must install:
+
+```bash
+composer require twig/extra-bundle twig/string-extra
+```
+
+and enable `Twig\Extra\TwigExtraBundle\TwigExtraBundle`. Flex recipes usually register it automatically.
+
+### Twig-CS-Fixer (maintainers)
+
+Package maintainers: `composer twig:lint` / `composer twig:fix` use `.twig-cs-fixer.php` over `src/` (and `templates/` when present).
+
 
 ## To 1.3.1
 
