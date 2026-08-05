@@ -6,6 +6,7 @@
 - [Integrator guidance](#integrator-guidance)
 - [Dependencies](#dependencies)
 - [Release security checklist (12.4.1)](#release-security-checklist-1241)
+- [AI security audit (REQ-SEC-004)](#ai-security-audit-req-sec-004)
 
 ## Reporting vulnerabilities
 
@@ -44,3 +45,16 @@ Before tagging a release, confirm:
 | **AI security audit** | Grade recorded in org `BUNDLES_SECURITY_ANALYSIS.md` when applicable (REQ-SEC-004). |
 
 Record confirmation in the release PR or tag notes.
+
+
+## AI security audit (REQ-SEC-004)
+
+| Field | Value |
+|-------|--------|
+| Date | 2026-07-29 |
+| Method | Cursor / Nowo campaign static AI security review |
+| Grade | **Pass (good)** |
+| Overall risk | **Low** |
+| Open Critical / High / Medium | None |
+| Residual | JSON-LD may use Twig `|raw` for structured data; no UGC in SEO config by default — keep overrides trusted |
+| Notes | Docs/checklist alignment; no auth surface beyond host routes |
