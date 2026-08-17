@@ -82,6 +82,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.4.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.3.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.2.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.1.x | >= 8.2 | 7.0 – 8.1+ | Stable |
