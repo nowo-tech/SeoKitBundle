@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.4.1](#to-141)
 - [To 1.4.0](#to-140)
 - [To 1.3.1](#to-131)
 - [To 1.3.0](#to-130)
@@ -12,6 +13,14 @@
 
 
 ## Unreleased
+
+## To 1.4.1
+
+From **1.4.0** — No application upgrade steps. **Demos only:** Hot Reload Bundle `^1.4` (FrankenPHP Mercure/`hot_reload`, `dev`/`test`).
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 ## To 1.4.0
 
