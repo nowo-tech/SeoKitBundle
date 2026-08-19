@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.4.2](#to-142)
 - [To 1.4.1](#to-141)
 - [To 1.4.0](#to-140)
 - [To 1.3.1](#to-131)
@@ -13,6 +14,14 @@
 
 
 ## Unreleased
+
+## To 1.4.2
+
+From **1.4.1** — No application upgrade steps.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 ## To 1.4.1
 
