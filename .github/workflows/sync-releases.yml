@@ -1,83 +1,229 @@
-name: Sync Releases
+name: Sync Missing Releases
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * 1'
+    - cron: '0 2 * * *'
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   sync-releases:
+    name: Sync Missing Releases
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Sync missing/incomplete releases
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Fetch all tags
+        run: git fetch --tags --force || true
+
+      - name: Get all tags
+        id: tags
         run: |
-          set -euo pipefail
+          TAGS=$(git tag -l 'v*' | sort -V)
+          echo "TAGS<<EOF" >> $GITHUB_OUTPUT
+          echo "$TAGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "Found tags: $TAGS"
 
-          owner_repo="${GITHUB_REPOSITORY}"
-          tags="$(git tag -l 'v*' | sort -V)"
+      - name: Check existing releases
+        id: check-releases
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
 
-          if [ -z "${tags}" ]; then
-            echo "No v* tags found."
-            exit 0
-          fi
+            const existingReleaseTags = releases.map(r => r.tag_name);
+            const releasesMap = {};
+            releases.forEach(r => {
+              releasesMap[r.tag_name] = {
+                id: r.id,
+                body: r.body || '',
+                hasChangelog: (r.body || '').includes('## Changelog')
+              };
+            });
 
-          for tag in ${tags}; do
-            version="${tag#v}"
-            tag_message="$(git tag -l --format='%(contents)' "${tag}" 2>/dev/null || true)"
-            if [ -z "${tag_message}" ]; then
-              tag_message="Release ${tag}"
-            fi
+            console.log('Existing releases:', existingReleaseTags);
 
-            changelog=""
-            if [ -f docs/CHANGELOG.md ]; then
-              version_esc="$(printf '%s\n' "${version}" | sed 's/[.]/\\./g')"
-              changelog="$(awk -v ver="${version_esc}" '
-                $0 ~ "^## \\[" ver "\\]" { flag=1; next }
-                /^## \[/ && flag { flag=0 }
-                flag
-              ' docs/CHANGELOG.md || true)"
-            fi
+            core.setOutput('tags', JSON.stringify(existingReleaseTags));
+            core.setOutput('releases_map', JSON.stringify(releasesMap));
 
-            body="${tag_message}"
-            if [ -n "${changelog}" ]; then
-              body="${body}
+      - name: Find missing and outdated releases
+        id: missing
+        uses: actions/github-script@v8
+        env:
+          TAGS: ${{ steps.tags.outputs.TAGS }}
+          EXISTING_RELEASES: ${{ steps.check-releases.outputs.tags }}
+          RELEASES_MAP: ${{ steps.check-releases.outputs.releases_map }}
+        with:
+          script: |
+            const tags = (process.env.TAGS || '').trim().split('\n').filter(t => t);
+            const existingReleases = JSON.parse(process.env.EXISTING_RELEASES || '[]');
+            const releasesMap = JSON.parse(process.env.RELEASES_MAP || '{}');
 
-## Changelog
+            const missingTags = tags.filter(tag => !existingReleases.includes(tag));
+            const outdatedTags = tags.filter(tag => {
+              const release = releasesMap[tag];
+              return release && !release.hasChangelog;
+            });
 
-${changelog}"
-            fi
+            const allTagsToProcess = [...new Set([...missingTags, ...outdatedTags])];
 
-            release_json="$(gh api "repos/${owner_repo}/releases/tags/${tag}" --silent 2>/dev/null || true)"
+            if (allTagsToProcess.length > 0) {
+              console.log('Missing releases for tags:', missingTags);
+              console.log('Outdated releases (missing changelog) for tags:', outdatedTags);
+              core.setOutput('missing_tags', missingTags.join('\n'));
+              core.setOutput('outdated_tags', outdatedTags.join('\n'));
+              core.setOutput('all_tags', allTagsToProcess.join('\n'));
+              core.setOutput('found_missing', 'true');
+            } else {
+              console.log('All tags have releases with changelog ✅');
+              core.setOutput('found_missing', 'false');
+            }
 
-            if [ -z "${release_json}" ]; then
-              echo "Creating missing release for ${tag}"
-              gh release create "${tag}" --title "Release ${tag}" --notes "${body}"
-              continue
-            fi
+      - name: Create or update releases
+        if: steps.missing.outputs.found_missing == 'true'
+        uses: actions/github-script@v8
+        env:
+          ALL_TAGS: ${{ steps.missing.outputs.all_tags }}
+          MISSING_TAGS: ${{ steps.missing.outputs.missing_tags }}
+          OUTDATED_TAGS: ${{ steps.missing.outputs.outdated_tags }}
+          RELEASES_MAP: ${{ steps.check-releases.outputs.releases_map }}
+        with:
+          script: |
+            const allTags = (process.env.ALL_TAGS || '').trim().split('\n').filter(t => t);
+            const missingTags = (process.env.MISSING_TAGS || '').trim().split('\n').filter(t => t);
+            const outdatedTags = (process.env.OUTDATED_TAGS || '').trim().split('\n').filter(t => t);
+            const releasesMap = JSON.parse(process.env.RELEASES_MAP || '{}');
 
-            release_id="$(printf '%s' "${release_json}" | jq -r '.id')"
-            existing_body="$(printf '%s' "${release_json}" | jq -r '.body // ""')"
+            const fs = require('fs');
+            const { execSync } = require('child_process');
 
-            if [ -n "${changelog}" ] && ! printf '%s' "${existing_body}" | grep -q "## Changelog"; then
-              echo "Updating incomplete release for ${tag}"
-              gh api \
-                --method PATCH \
-                "repos/${owner_repo}/releases/${release_id}" \
-                -f body="${existing_body}
+            for (const tag of allTags) {
+              const isMissing = missingTags.includes(tag);
+              const isOutdated = outdatedTags.includes(tag);
 
-## Changelog
+              const version = tag.replace(/^v/, '');
 
-${changelog}" >/dev/null
-            else
-              echo "Release ${tag} already synchronized."
-            fi
-          done
+              let tagMessage = '';
+              try {
+                const gitCommand = 'git tag -l --format=\'%(contents)\' ' + tag;
+                tagMessage = execSync(gitCommand, { encoding: 'utf-8' }).trim();
+              } catch (e) {
+                tagMessage = 'Release ' + tag;
+              }
+
+              if (!tagMessage) {
+                tagMessage = 'Release ' + tag;
+              }
+
+              let changelogEntry = '';
+              if (fs.existsSync('docs/CHANGELOG.md')) {
+                const changelog = fs.readFileSync('docs/CHANGELOG.md', 'utf-8');
+                const versionEscaped = version.replace(/\./g, '\\.');
+                const regexPattern = '^## \\[' + versionEscaped + '\\]([\\s\\S]*?)(?=^## \\[?[0-9]|$)';
+                const regex = new RegExp(regexPattern);
+                const match = changelog.match(regex);
+                if (match) {
+                  changelogEntry = match[1].trim();
+                }
+              }
+
+              let releaseBody = tagMessage;
+              if (changelogEntry) {
+                releaseBody = tagMessage + '\n\n## Changelog\n\n' + changelogEntry;
+              }
+
+              const isPrerelease = tag.includes('-alpha') || tag.includes('-beta') || tag.includes('-rc');
+
+              if (isMissing) {
+                try {
+                  console.log('Creating release for tag: ' + tag);
+                  await github.rest.repos.createRelease({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    tag_name: tag,
+                    name: 'Release ' + tag,
+                    body: releaseBody,
+                    draft: false,
+                    prerelease: isPrerelease,
+                    generate_release_notes: false
+                  });
+                  console.log('✅ Created release for ' + tag);
+                } catch (error) {
+                  if (error.status === 422 && error.response?.data?.errors?.[0]?.code === 'already_exists') {
+                    console.log('⚠️ Release for ' + tag + ' already exists, updating body instead');
+                    const { data: existing } = await github.rest.repos.getReleaseByTag({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      tag: tag
+                    });
+                    await github.rest.repos.updateRelease({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      release_id: existing.id,
+                      body: releaseBody,
+                      prerelease: isPrerelease
+                    });
+                    console.log('✅ Updated existing release for ' + tag);
+                  } else {
+                    throw error;
+                  }
+                }
+              } else if (isOutdated) {
+                const release = releasesMap[tag];
+                console.log('Updating release for tag: ' + tag + ' (release ID: ' + release.id + ')');
+                await github.rest.repos.updateRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.id,
+                  body: releaseBody,
+                  prerelease: isPrerelease
+                });
+                console.log('✅ Updated release for ' + tag + ' with changelog');
+              }
+            }
+
+      - name: Summary
+        if: always()
+        uses: actions/github-script@v8
+        env:
+          FOUND_MISSING: ${{ steps.missing.outputs.found_missing }}
+          MISSING_TAGS: ${{ steps.missing.outputs.missing_tags }}
+          OUTDATED_TAGS: ${{ steps.missing.outputs.outdated_tags }}
+        with:
+          script: |
+            const foundMissing = process.env.FOUND_MISSING === 'true';
+            const missingTags = foundMissing ? (process.env.MISSING_TAGS || '').trim().split('\n').filter(t => t) : [];
+            const outdatedTags = foundMissing ? (process.env.OUTDATED_TAGS || '').trim().split('\n').filter(t => t) : [];
+
+            let summary = '';
+            if (foundMissing) {
+              let parts = [];
+              if (missingTags.length > 0) {
+                parts.push('Created releases for the following tags:\n```\n' + missingTags.join('\n') + '\n```');
+              }
+              if (outdatedTags.length > 0) {
+                parts.push('Updated releases (added changelog) for the following tags:\n```\n' + outdatedTags.join('\n') + '\n```');
+              }
+              summary = '## ✅ Sync Complete\n\n' + parts.join('\n\n');
+            } else {
+              summary = '## ✅ All tags have releases with changelog\n\nNo missing or outdated releases found. Everything is in sync! 🎉';
+            }
+
+            core.summary.addRaw(summary);
+            await core.summary.write();
+
+# Maintainer: Héctor Franco Aceituno (@HecFranco)
+# Organization: nowo-tech (https://github.com/nowo-tech)
