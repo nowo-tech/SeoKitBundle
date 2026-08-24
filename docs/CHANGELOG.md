@@ -28,6 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.4.3] - 2026-08-24
+
+### Changed
+
+- **QA:** add `phpstan-frankenphp` extension (REQ-CS-005).
+- **Docs:** PHP-FIG PSR evaluation (REQ-CS-007).
+- **Dependencies:** routine Composer/npm bumps (Dependabot).
+
+### Notes
+
+- **No API or configuration changes** for integrators unless noted above.
+
+[1.4.3]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.3
+
 ## [1.4.2] - 2026-08-19
 
 ### Security
