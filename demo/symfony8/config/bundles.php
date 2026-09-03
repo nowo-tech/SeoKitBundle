@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Bundle\WebProfilerBundle\WebProfilerBundle;
 use Twig\Extra\TwigExtraBundle\TwigExtraBundle;
+
 return [
     FrameworkBundle::class         => ['all' => true],
     TwigBundle::class              => ['all' => true],
