@@ -890,6 +890,13 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         head?: scalar|Param|null, // Default: "@NowoSeoKitBundle/seo/head.html.twig"
  *         head_includes_title?: bool|Param, // When false, the head partial omits <title> so the host layout can own the title block. // Default: true
  *     },
+ *     persistence?: array{ // Optional Doctrine-backed site settings + surface overrides (requires doctrine/orm).
+ *         enabled?: bool|Param, // When true, register SeoSiteSettings / SeoSurface entities, config provider, and defaults SPI. // Default: false
+ *         fallback_robots?: scalar|Param|null, // Default: "index, follow"
+ *         fallback_contact_email?: scalar|Param|null, // Default: ""
+ *         fallback_site_name?: scalar|Param|null, // Default: ""
+ *         register_audit_command?: bool|Param, // Register nowo:seo:audit (always available when persistence is enabled; uses tagged audit subjects). // Default: true
+ *     },
  * }
  * @psalm-type WebProfilerConfig = array{
  *     toolbar?: bool|array{ // Profiler toolbar configuration

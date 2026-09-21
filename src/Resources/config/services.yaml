@@ -51,3 +51,11 @@ services:
         arguments:
             $config: '%nowo_seo_kit.config%'
         tags: ['routing.loader']
+
+    Nowo\SeoKitBundle\Service\StructuredData\SiteStructuredDataFactory: ~
+
+    Nowo\SeoKitBundle\Service\Audit\SeoAuditRules: ~
+
+    Nowo\SeoKitBundle\Service\Audit\SeoAuditor:
+        arguments:
+            $subjectProviders: !tagged_iterator nowo_seo_kit.audit_subject_provider

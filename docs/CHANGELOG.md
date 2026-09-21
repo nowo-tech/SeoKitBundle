@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.6.0] - 2026-09-21](#160---2026-09-21)
 - [[1.5.0] - 2026-09-21](#150---2026-09-21)
 - [[1.4.3] - 2026-08-24](#143---2026-08-24)
 - [[1.4.2] - 2026-08-19](#142---2026-08-19)
@@ -20,6 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.6.0] - 2026-09-21
+
+### Added
+
+- **Doctrine persistence (opt-in):** `nowo_seo_kit.persistence.enabled` registers `SeoSiteSettings` / `SeoSiteSettingsTranslation` / `SeoSurface`, repositories, `SeoSiteConfigProvider`, and `DoctrineSeoDefaultsProvider` (SPI defaults + indexability)
+- **Typed JSON-LD:** `Nowo\SeoKitBundle\Model\StructuredData\*` nodes + CSP-safe `StructuredDataGraph::toJson()`, plus `SiteStructuredDataFactory`
+- **Audit CLI:** `nowo:seo:audit` with `SeoAuditRules` / `SeoAuditor` and host tag `nowo_seo_kit.audit_subject_provider`
+- **`SeoSiteConfig`** cacheable snapshot DTO (`composeTitle` with `%page%` / `%site%`)
+
+### Notes
+
+- Persistence requires `doctrine/orm` + `doctrine/doctrine-bundle` (Composer `suggest`). Tables: `nowo_seo_site_settings`, `nowo_seo_site_settings_translation`, `nowo_seo_surface`.
+- Branch alias `dev-main` → `1.6.x-dev`.
+- Additive / opt-in: default `persistence.enabled: false` keeps 1.5.x behaviour.
 
 ## [1.5.0] - 2026-09-21
 
@@ -161,7 +177,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.6.0
 [1.5.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.5.0
 [1.4.3]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.3
 [1.4.2]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.2

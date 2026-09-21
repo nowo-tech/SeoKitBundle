@@ -14,6 +14,7 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 - [sitemap](#sitemap)
 - [robots](#robots)
 - [templates](#templates)
+- [persistence](#persistence)
 - [Web servers](#web-servers)
 
 ## Resolution order
@@ -44,6 +45,7 @@ Later layers override earlier ones:
 | `nowo_seo_kit.defaults_provider` (`SeoDefaultsProviderInterface`) | Merge DB-driven site defaults (name, verification, OG image, organization JSON-LD) |
 | `nowo_seo_kit.indexability_provider` (`SiteIndexabilityProviderInterface`) | Site-wide indexability master switch |
 | `nowo_seo_kit.sitemap_url_provider` (`SitemapUrlProviderInterface`) | CMS / blog absolute URLs (optional `xhtml:link` alternates) |
+| `nowo_seo_kit.audit_subject_provider` (`SeoAuditSubjectProviderInterface`) | Subjects for `nowo:seo:audit` |
 
 Runtime overrides may set `title_final`, `alternates`, and `json_ld.json` (pre-encoded safe JSON-LD).
 
@@ -146,8 +148,25 @@ slugs:
 | Key | Default |
 | --- | --- |
 | `head` | `@NowoSeoKitBundle/seo/head.html.twig` |
+| `head_includes_title` | `true` |
 
 Set `templates.head` to another logical Twig path to swap the head partial without a full-file vendor override. Full-file overrides under `templates/bundles/NowoSeoKitBundle/` (REQ-TWIG-001): [USAGE.md — Overriding templates](USAGE.md#overriding-templates-req-twig-001).
+
+## persistence
+
+Opt-in Doctrine site settings (requires `doctrine/orm` + `doctrine/doctrine-bundle`).
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `enabled` | `false` | Register entities, repositories, `SeoSiteConfigProvider`, `DoctrineSeoDefaultsProvider` |
+| `fallback_robots` | `index, follow` | Used when DB row missing |
+| `fallback_site_name` | `''` | Used when DB row missing |
+| `fallback_contact_email` | `''` | Used when DB row missing |
+| `register_audit_command` | `true` | Register `nowo:seo:audit` |
+
+Tables: `nowo_seo_site_settings`, `nowo_seo_site_settings_translation`, `nowo_seo_surface`.
+
+Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
 
 ## Web servers
 

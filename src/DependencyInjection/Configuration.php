@@ -53,8 +53,30 @@ final class Configuration implements ConfigurationInterface
         $this->addSitemapNode($root);
         $this->addRobotsNode($root);
         $this->addTemplatesNode($root);
+        $this->addPersistenceNode($root);
 
         return $treeBuilder;
+    }
+
+    private function addPersistenceNode(ArrayNodeDefinition $root): void
+    {
+        $root->children()
+            ->arrayNode('persistence')
+            ->info('Optional Doctrine-backed site settings + surface overrides (requires doctrine/orm).')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->booleanNode('enabled')
+                    ->info('When true, register SeoSiteSettings / SeoSurface entities, config provider, and defaults SPI.')
+                    ->defaultFalse()
+                ->end()
+                ->scalarNode('fallback_robots')->defaultValue('index, follow')->end()
+                ->scalarNode('fallback_contact_email')->defaultValue('')->end()
+                ->scalarNode('fallback_site_name')->defaultValue('')->end()
+                ->booleanNode('register_audit_command')
+                    ->info('Register nowo:seo:audit (always available when persistence is enabled; uses tagged audit subjects).')
+                    ->defaultTrue()
+                ->end()
+            ->end();
     }
 
     private function addDefaultsNode(ArrayNodeDefinition $root): void

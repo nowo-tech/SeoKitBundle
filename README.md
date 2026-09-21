@@ -30,6 +30,8 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Sitemap & robots** — `/sitemap.xml` and `/robots.txt` served by Symfony
 - ✅ **Runtime overrides** — `SeoRuntime` for dynamic titles from controllers
 - ✅ **Host providers** — defaults, indexability, and sitemap URL extension points
+- ✅ **Optional Doctrine site settings** — `persistence.enabled` + `SeoSiteConfig` snapshot
+- ✅ **Typed JSON-LD + audit CLI** — structured data nodes and `nowo:seo:audit`
 - ✅ **PHP 8 attribute** — `#[Seo]` on controllers
 - ✅ **FrankenPHP-ready demo** — single-container Symfony 8 demo
 
@@ -84,6 +86,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.6.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.5.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.4.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.3.x | >= 8.2 | 7.0 – 8.1+ | Stable |

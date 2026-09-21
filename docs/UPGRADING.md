@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [To 1.6.0](#to-160)
 - [To 1.5.0](#to-150)
 - [From 1.4.2 to 1.4.3](#from-142-to-143)
 - [To 1.4.2](#to-142)
@@ -12,6 +13,56 @@
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+## To 1.6.0
+
+From **1.5.x** — additive / opt-in. **No required migration** unless you enable persistence or the audit CLI.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.6
+php bin/console cache:clear
+```
+
+### Optional Doctrine persistence
+
+```bash
+composer require doctrine/orm doctrine/doctrine-bundle
+```
+
+```yaml
+# config/packages/nowo_seo_kit.yaml
+nowo_seo_kit:
+    persistence:
+        enabled: true
+        # fallback_robots: 'index, follow'
+        # fallback_site_name: ''
+        # fallback_contact_email: ''
+        # register_audit_command: true
+```
+
+Then run your usual Doctrine migrations for:
+
+- `nowo_seo_site_settings`
+- `nowo_seo_site_settings_translation`
+- `nowo_seo_surface`
+
+When enabled, the bundle prepends ORM attribute mappings and registers `DoctrineSeoDefaultsProvider` + `SeoSiteConfigProvider`.
+
+### Optional audit CLI
+
+`nowo:seo:audit` is registered when `persistence.register_audit_command` is `true` (default). Hosts can tag `SeoAuditSubjectProviderInterface` services as `nowo_seo_kit.audit_subject_provider`.
+
+```bash
+php bin/console nowo:seo:audit
+```
+
+### Typed JSON-LD helpers
+
+Optional PHP API under `Nowo\SeoKitBundle\Model\StructuredData\` and `SiteStructuredDataFactory` — no YAML change required.
+
+### Breaking changes
+
+None for default configuration (`persistence.enabled: false`).
 
 ## To 1.5.0
 

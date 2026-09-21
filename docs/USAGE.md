@@ -61,7 +61,23 @@ public function show(SeoRuntime $seo, string $slug): Response
 
 Runtime is cleared automatically at the end of each request.
 
-Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapUrlProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
+Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapUrlProviderInterface`, `SeoAuditSubjectProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
+
+## Optional Doctrine persistence
+
+Enable with `nowo_seo_kit.persistence.enabled: true` (requires Doctrine ORM). See [CONFIGURATION.md — persistence](CONFIGURATION.md#persistence) and [UPGRADING.md — To 1.6.0](UPGRADING.md#to-160).
+
+## Audit CLI
+
+```bash
+php bin/console nowo:seo:audit
+```
+
+Register subjects via `SeoAuditSubjectProviderInterface` (`nowo_seo_kit.audit_subject_provider`).
+
+## Typed JSON-LD
+
+Use `Nowo\SeoKitBundle\Model\StructuredData\*` nodes and `SiteStructuredDataFactory` to build CSP-safe graphs (`StructuredDataGraph::toJson()`).
 
 ## Sitemap and robots
 
