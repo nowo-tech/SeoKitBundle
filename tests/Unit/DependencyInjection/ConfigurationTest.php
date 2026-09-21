@@ -23,14 +23,20 @@ final class ConfigurationTest extends TestCase
         $config = $this->processor->processConfiguration(new Configuration(), [[]]);
 
         $this->assertTrue($config['enabled']);
+        $this->assertTrue($config['indexable']);
         $this->assertSame('en', $config['default_locale']);
         $this->assertSame(['en', 'es', 'fr', 'de', 'it', 'pt', 'nl'], $config['locales']);
         $this->assertSame(' | ', $config['defaults']['title_separator']);
+        $this->assertNull($config['defaults']['verification']['google']);
+        $this->assertNull($config['defaults']['verification']['bing']);
         $this->assertTrue($config['sitemap']['enabled']);
         $this->assertSame('/sitemap.xml', $config['sitemap']['path']);
         $this->assertTrue($config['robots']['enabled']);
         $this->assertSame('/robots.txt', $config['robots']['path']);
         $this->assertSame('@NowoSeoKitBundle/seo/head.html.twig', $config['templates']['head']);
+        $this->assertTrue($config['templates']['head_includes_title']);
+        $this->assertNull($config['defaults']['open_graph']['image_width']);
+        $this->assertSame([], $config['defaults']['open_graph']['locale_alternates']);
     }
 
     public function testProcessConfigurationMergesPagesAndSlugRoutes(): void

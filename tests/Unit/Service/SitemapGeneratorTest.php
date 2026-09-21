@@ -6,6 +6,7 @@ namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
 use Nowo\SeoKitBundle\Service\SitemapGenerator;
+use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -131,5 +132,67 @@ final class SitemapGeneratorTest extends TestCase
         $generator = new SitemapGenerator($config, new SeoPathBuilder($config));
 
         $this->assertSame([], $generator->entries(Request::create('https://example.com/')));
+    }
+
+    public function testEntriesEmptyWhenNotIndexable(): void
+    {
+        $config = [
+            'indexable' => false,
+            'locales'   => ['en'],
+            'sitemap'   => ['enabled' => true, 'include_static_pages' => true],
+            'pages'     => ['app_home' => ['path' => '/', 'in_sitemap' => true]],
+        ];
+        $generator = new SitemapGenerator($config, new SeoPathBuilder($config));
+
+        $this->assertFalse($generator->isIndexable());
+        $this->assertSame([], $generator->entries(Request::create('/')));
+    }
+
+    public function testUrlProviderEntriesAndXhtmlAlternates(): void
+    {
+        $config = [
+            'locales' => ['en'],
+            'sitemap' => [
+                'enabled'                  => true,
+                'include_static_pages'     => false,
+                'include_configured_slugs' => false,
+            ],
+            'pages' => [],
+            'slugs' => [],
+        ];
+        $provider = new class implements SitemapUrlProviderInterface {
+            public function getEntries(Request $request): array
+            {
+                /** @var list<array{loc: string, changefreq?: string, priority?: string, lastmod?: string, alternates?: list<array{hreflang: string, href: string}>}> $entries */
+                $entries = [
+                    [
+                        'loc'        => 'https://example.com/cms/page',
+                        'changefreq' => 'daily',
+                        'priority'   => '0.9',
+                        'lastmod'    => '2026-09-21',
+                        'alternates' => [
+                            ['hreflang' => 'es', 'href' => 'https://example.com/es/cms/page'],
+                        ],
+                    ],
+                    ['loc' => ''],
+                ];
+
+                return $entries;
+            }
+        };
+        $generator = new SitemapGenerator($config, new SeoPathBuilder($config), [$provider]);
+        $entries   = $generator->entries(Request::create('/'));
+
+        $this->assertCount(1, $entries);
+        $this->assertSame('https://example.com/cms/page', $entries[0]['loc']);
+        $this->assertArrayHasKey('lastmod', $entries[0]);
+        $this->assertSame('2026-09-21', $entries[0]['lastmod']);
+        $this->assertArrayHasKey('alternates', $entries[0]);
+        $this->assertCount(1, $entries[0]['alternates']);
+
+        $xml = $generator->toXml($entries);
+        $this->assertStringContainsString('xmlns:xhtml=', $xml);
+        $this->assertStringContainsString('xhtml:link rel="alternate"', $xml);
+        $this->assertStringContainsString('hreflang="es"', $xml);
     }
 }

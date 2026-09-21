@@ -2,9 +2,8 @@
 
 ## Table of contents
 
-
+- [To 1.5.0](#to-150)
 - [From 1.4.2 to 1.4.3](#from-142-to-143)
-- [Unreleased](#unreleased)
 - [To 1.4.2](#to-142)
 - [To 1.4.1](#to-141)
 - [To 1.4.0](#to-140)
@@ -14,6 +13,40 @@
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
 
+## To 1.5.0
+
+From **1.4.x** — additive features. **No required migration** unless you adopt the new options.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.5
+php bin/console cache:clear
+```
+
+### Optional configuration
+
+| Key | Purpose |
+| --- | --- |
+| `indexable: false` | Site-wide noindex + disallow `/` + empty/404 sitemap |
+| `defaults.verification.google` / `bing` | Webmaster meta tags |
+| `defaults.open_graph.image_width` / `image_height` / `image_alt` / `locale_alternates` | Richer OG tags |
+| `templates.head_includes_title: false` | Host layout owns `<title>` |
+
+### Optional services (autoconfigured tags)
+
+Implement and register (or rely on `#[AutoconfigureTag]`):
+
+- `SeoDefaultsProviderInterface` → `nowo_seo_kit.defaults_provider`
+- `SiteIndexabilityProviderInterface` → `nowo_seo_kit.indexability_provider`
+- `SitemapUrlProviderInterface` → `nowo_seo_kit.sitemap_url_provider`
+
+### Runtime extras
+
+`SeoRuntime::set()` may include `title_final`, `alternates`, and `json_ld.json` / `json_ld.document` for hosts that precompose title or JSON-LD.
+
+### Breaking changes
+
+None for default YAML. New Open Graph / JSON-LD array shapes are additive (`image_*`, `locale_alternates`, `json` / `document`).
+
 ## From 1.4.2 to 1.4.3
 
 No breaking changes. **No application upgrade steps.**
@@ -21,17 +54,6 @@ No breaking changes. **No application upgrade steps.**
 ```bash
 composer update nowo-tech/seo-kit-bundle
 ```
-
-## From 1.4.2 to 1.4.3
-
-No breaking changes. **No application upgrade steps.**
-
-```bash
-composer update nowo-tech/seo-kit-bundle
-```
-
-
-## Unreleased
 
 ## To 1.4.2
 
@@ -71,7 +93,6 @@ and enable `Twig\Extra\TwigExtraBundle\TwigExtraBundle`. Flex recipes usually re
 ### Twig-CS-Fixer (maintainers)
 
 Package maintainers: `composer twig:lint` / `composer twig:fix` use `.twig-cs-fixer.php` over `src/` (and `templates/` when present).
-
 
 ## To 1.3.1
 

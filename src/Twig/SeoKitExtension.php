@@ -16,7 +16,7 @@ use Twig\TwigFunction;
 final class SeoKitExtension extends AbstractExtension
 {
     /**
-     * @param array{head: string} $templates
+     * @param array{head: string, head_includes_title?: bool} $templates
      */
     public function __construct(
         private readonly bool $enabled,
@@ -46,8 +46,10 @@ final class SeoKitExtension extends AbstractExtension
             return '';
         }
 
-        $seo = $this->resolver->resolve();
-
-        return $this->twig->render($this->templates['head'], ['seo' => $seo]);
+        return $this->twig->render($this->templates['head'], [
+            'seo'               => $this->resolver->resolve(),
+            'seo_include_title' => (bool) ($this->templates['head_includes_title'] ?? true),
+            'csp_nonce'         => null,
+        ]);
     }
 }

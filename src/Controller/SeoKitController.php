@@ -26,7 +26,7 @@ final readonly class SeoKitController
 
     public function sitemap(Request $request): Response
     {
-        if (!($this->config['sitemap']['enabled'] ?? true)) {
+        if (!($this->config['sitemap']['enabled'] ?? true) || !$this->sitemapGenerator->isIndexable()) {
             return new Response('Not Found', Response::HTTP_NOT_FOUND);
         }
 
@@ -34,7 +34,8 @@ final readonly class SeoKitController
         $xml     = $this->sitemapGenerator->toXml($entries);
 
         return new Response($xml, Response::HTTP_OK, [
-            'Content-Type' => 'application/xml; charset=UTF-8',
+            'Content-Type'  => 'application/xml; charset=UTF-8',
+            'Cache-Control' => 'public, max-age=3600',
         ]);
     }
 

@@ -6,6 +6,7 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 
 - [Resolution order](#resolution-order)
 - [Top-level keys](#top-level-keys)
+- [Host extension points](#host-extension-points)
 - [defaults](#defaults)
 - [pages](#pages)
 - [slug_routes](#slug_routes)
@@ -31,9 +32,22 @@ Later layers override earlier ones:
 | Key | Default | Description |
 | --- | --- | --- |
 | `enabled` | `true` | Master switch |
+| `indexable` | `true` | When false (or a `SiteIndexabilityProviderInterface` returns false), robots disallow `/` and sitemap is empty/404 |
 | `default_locale` | `en` | Fallback locale |
 | `locales` | `en, es, fr, de, it, pt, nl` | Locales for hreflang and sitemap |
 | `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests) |
+
+## Host extension points
+
+| Tag / interface | Purpose |
+| --- | --- |
+| `nowo_seo_kit.defaults_provider` (`SeoDefaultsProviderInterface`) | Merge DB-driven site defaults (name, verification, OG image, organization JSON-LD) |
+| `nowo_seo_kit.indexability_provider` (`SiteIndexabilityProviderInterface`) | Site-wide indexability master switch |
+| `nowo_seo_kit.sitemap_url_provider` (`SitemapUrlProviderInterface`) | CMS / blog absolute URLs (optional `xhtml:link` alternates) |
+
+Runtime overrides may set `title_final`, `alternates`, and `json_ld.json` (pre-encoded safe JSON-LD).
+
+`templates.head_includes_title` (default `true`): set `false` when the host layout owns the `<title>` block.
 
 ## defaults
 
@@ -45,8 +59,10 @@ Later layers override earlier ones:
 | `canonical_enabled` | `true` | Emit canonical link |
 | `hreflang_enabled` | `true` | Emit alternate links |
 | `x_default_hreflang` | `true` | Add `x-default` hreflang |
+| `verification.google` | `null` | Google Search Console meta content |
+| `verification.bing` | `null` | Bing Webmaster `msvalidate.01` content |
 
-Nested `open_graph`, `twitter`, and `json_ld` blocks have sensible defaults (see `Configuration.php`).
+Nested `open_graph` (includes `image`, `image_width`, `image_height`, `image_alt`, `locale_alternates`), `twitter`, and `json_ld` blocks have sensible defaults (see `Configuration.php`).
 
 ## pages
 

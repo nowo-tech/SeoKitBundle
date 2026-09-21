@@ -8,12 +8,16 @@ use Nowo\SeoKitBundle\Attribute\Seo;
 use Nowo\SeoKitBundle\Model\SeoMetadata;
 use ReflectionClass;
 use ReflectionMethod;
+use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Throwable;
 
+use function array_key_exists;
 use function is_array;
+use function is_bool;
+use function is_int;
 use function is_scalar;
 use function is_string;
 use function strlen;
@@ -25,6 +29,7 @@ final readonly class SeoMetadataResolver
 {
     /**
      * @param array<string, mixed> $config
+     * @param iterable<SeoDefaultsProviderInterface> $defaultsProviders
      */
     public function __construct(
         private array $config,
@@ -33,6 +38,8 @@ final readonly class SeoMetadataResolver
         private SeoTemplateRenderer $templates,
         private SeoPathBuilderInterface $paths,
         private UrlGeneratorInterface $urlGenerator,
+        #[TaggedIterator('nowo_seo_kit.defaults_provider')]
+        private iterable $defaultsProviders = [],
     ) {
     }
 
@@ -46,6 +53,11 @@ final readonly class SeoMetadataResolver
         $route    = (string) $request->attributes->get('_route', '');
         $locale   = (string) ($request->attributes->get('_locale') ?? $request->getLocale() ?: ($this->config['default_locale'] ?? 'en'));
         $defaults = is_array($this->config['defaults'] ?? null) ? $this->config['defaults'] : [];
+        $defaults = $this->mergeDefaultsProviders($defaults);
+
+        if (($this->config['indexable'] ?? true) !== true && (!isset($defaults['robots']) || $defaults['robots'] === '')) {
+            $defaults['robots'] = 'noindex,nofollow';
+        }
 
         $slugParam    = 'slug';
         $slugRouteCfg = is_array($this->config['slug_routes'][$route] ?? null) ? $this->config['slug_routes'][$route] : null;
@@ -130,16 +142,23 @@ final readonly class SeoMetadataResolver
             $titleBase = (string) ($defaults['site_name'] ?? '');
         }
 
-        $title = $this->templates->render(
-            (string) ($defaults['title_template'] ?? '{title}{separator}{site_name}'),
-            array_merge($variables, ['title' => $titleBase]),
-        ) ?? $titleBase;
+        $titleFinal = ($runtimeOverrides['title_final'] ?? false) === true
+            || ($merged['title_final'] ?? false) === true;
 
-        // Avoid trailing separator when site_name empty
-        $separator = (string) ($defaults['title_separator'] ?? ' | ');
-        $siteName  = (string) ($defaults['site_name'] ?? '');
-        if ($siteName === '' && str_ends_with($title, $separator)) {
-            $title = substr($title, 0, -strlen($separator));
+        if ($titleFinal) {
+            $title = $titleBase;
+        } else {
+            $title = $this->templates->render(
+                (string) ($defaults['title_template'] ?? '{title}{separator}{site_name}'),
+                array_merge($variables, ['title' => $titleBase]),
+            ) ?? $titleBase;
+
+            // Avoid trailing separator when site_name empty
+            $separator = (string) ($defaults['title_separator'] ?? ' | ');
+            $siteName  = (string) ($defaults['site_name'] ?? '');
+            if ($siteName === '' && str_ends_with($title, $separator)) {
+                $title = substr($title, 0, -strlen($separator));
+            }
         }
 
         if (isset($merged['description']) && is_string($merged['description']) && $merged['description'] !== '') {
@@ -161,7 +180,9 @@ final readonly class SeoMetadataResolver
             : null;
 
         $alternates = [];
-        if (($defaults['hreflang_enabled'] ?? true) === true) {
+        if (isset($runtimeOverrides['alternates']) && is_array($runtimeOverrides['alternates'])) {
+            $alternates = $this->normalizeAlternates($runtimeOverrides['alternates']);
+        } elseif (($defaults['hreflang_enabled'] ?? true) === true) {
             $alternates = $this->buildAlternates($request, $route, $slug, $locale);
         }
 
@@ -169,22 +190,35 @@ final readonly class SeoMetadataResolver
         $tw      = is_array($merged['twitter'] ?? null) ? $merged['twitter'] : [];
         $ogImage = is_string($merged['og_image'] ?? null) ? $merged['og_image'] : ($og['image'] ?? null);
 
+        $localeAlternates = [];
+        if (isset($og['locale_alternates']) && is_array($og['locale_alternates'])) {
+            foreach ($og['locale_alternates'] as $altLocale) {
+                if (is_string($altLocale) && $altLocale !== '') {
+                    $localeAlternates[] = str_replace('-', '_', $altLocale);
+                }
+            }
+        }
+
         $openGraph = [
-            'enabled'     => (bool) ($og['enabled'] ?? true),
-            'type'        => (string) ($og['type'] ?? 'website'),
-            'title'       => $title,
-            'description' => $description,
-            'image'       => is_string($ogImage) ? $this->paths->absoluteUrl($request, $ogImage) : null,
-            'url'         => $canonical,
-            'site_name'   => is_string($og['site_name'] ?? null) ? $og['site_name'] : ($defaults['site_name'] ?? null),
-            'locale'      => $locale,
+            'enabled'           => (bool) ($og['enabled'] ?? true),
+            'type'              => (string) ($og['type'] ?? 'website'),
+            'title'             => is_string($og['title'] ?? null) ? $og['title'] : $title,
+            'description'       => is_string($og['description'] ?? null) ? $og['description'] : $description,
+            'image'             => is_string($ogImage) ? $this->paths->absoluteUrl($request, $ogImage) : null,
+            'image_width'       => is_int($og['image_width'] ?? null) ? $og['image_width'] : null,
+            'image_height'      => is_int($og['image_height'] ?? null) ? $og['image_height'] : null,
+            'image_alt'         => is_string($og['image_alt'] ?? null) ? $og['image_alt'] : null,
+            'url'               => $canonical,
+            'site_name'         => is_string($og['site_name'] ?? null) ? $og['site_name'] : ($defaults['site_name'] ?? null),
+            'locale'            => is_string($og['locale'] ?? null) ? $og['locale'] : str_replace('-', '_', $locale),
+            'locale_alternates' => $localeAlternates,
         ];
 
         $twitter = [
             'enabled'     => (bool) ($tw['enabled'] ?? true),
             'card'        => (string) ($tw['card'] ?? 'summary_large_image'),
-            'title'       => $title,
-            'description' => $description,
+            'title'       => is_string($tw['title'] ?? null) ? $tw['title'] : $title,
+            'description' => is_string($tw['description'] ?? null) ? $tw['description'] : $description,
             'image'       => is_string($tw['image'] ?? null)
                 ? $this->paths->absoluteUrl($request, $tw['image'])
                 : $openGraph['image'],
@@ -192,7 +226,20 @@ final readonly class SeoMetadataResolver
             'creator' => is_string($tw['creator'] ?? null) ? $tw['creator'] : null,
         ];
 
-        $jsonLd = $this->buildJsonLd($defaults, $request, $canonical, $title, $description);
+        $jsonLd = $this->buildJsonLd($defaults, $merged, $request, $canonical, $title, $description);
+
+        $verificationCfg = is_array($defaults['verification'] ?? null) ? $defaults['verification'] : [];
+        if (isset($merged['verification']) && is_array($merged['verification'])) {
+            $verificationCfg = array_replace($verificationCfg, $merged['verification']);
+        }
+        $verification = [
+            'google' => is_string($verificationCfg['google'] ?? null) && $verificationCfg['google'] !== ''
+                ? $verificationCfg['google']
+                : null,
+            'bing' => is_string($verificationCfg['bing'] ?? null) && $verificationCfg['bing'] !== ''
+                ? $verificationCfg['bing']
+                : null,
+        ];
 
         return new SeoMetadata(
             title: $title,
@@ -205,8 +252,71 @@ final readonly class SeoMetadataResolver
             jsonLd: $jsonLd,
             keywords: is_string($merged['keywords'] ?? null) ? $merged['keywords'] : null,
             author: is_string($merged['author'] ?? null) ? $merged['author'] : null,
+            verification: $verification,
             source: $source,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $defaults
+     *
+     * @return array<string, mixed>
+     */
+    private function mergeDefaultsProviders(array $defaults): array
+    {
+        foreach ($this->defaultsProviders as $provider) {
+            $layer    = $provider->getDefaults();
+            $defaults = $this->mergeLayer($defaults, $layer);
+            if (isset($layer['verification']) && is_array($layer['verification'])) {
+                $defaults['verification'] = array_replace(
+                    is_array($defaults['verification'] ?? null) ? $defaults['verification'] : [],
+                    $layer['verification'],
+                );
+            }
+            if (isset($layer['json_ld']) && is_array($layer['json_ld'])) {
+                $defaults['json_ld'] = array_replace(
+                    is_array($defaults['json_ld'] ?? null) ? $defaults['json_ld'] : [],
+                    $layer['json_ld'],
+                );
+            }
+            if (array_key_exists('indexable', $layer) && is_bool($layer['indexable'])) {
+                // Hosts may signal indexability via defaults; mirror into config-like robots.
+                if ($layer['indexable'] === false && (!isset($defaults['robots']) || $defaults['robots'] === '')) {
+                    $defaults['robots'] = 'noindex,nofollow';
+                }
+            }
+        }
+
+        return $defaults;
+    }
+
+    /**
+     * @param array<string, mixed>|list<mixed> $raw
+     *
+     * @return list<array{locale: string, url: string, hreflang: string}>
+     */
+    private function normalizeAlternates(array $raw): array
+    {
+        $out = [];
+        foreach ($raw as $key => $value) {
+            if (is_array($value) && isset($value['url'], $value['hreflang']) && is_string($value['url']) && is_string($value['hreflang'])) {
+                $out[] = [
+                    'locale'   => is_string($value['locale'] ?? null) ? $value['locale'] : $value['hreflang'],
+                    'url'      => $value['url'],
+                    'hreflang' => $value['hreflang'],
+                ];
+                continue;
+            }
+            if (is_string($key) && is_string($value)) {
+                $out[] = [
+                    'locale'   => $key,
+                    'url'      => $value,
+                    'hreflang' => $key,
+                ];
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -217,15 +327,18 @@ final readonly class SeoMetadataResolver
      */
     private function mergeLayer(array $base, array $layer): array
     {
-        foreach (['title', 'description', 'robots', 'canonical', 'keywords', 'author', 'title_template', 'description_template', 'og_image'] as $key) {
-            if (isset($layer[$key]) && $layer[$key] !== '') {
+        foreach (['title', 'description', 'robots', 'canonical', 'keywords', 'author', 'title_template', 'description_template', 'og_image', 'title_final', 'site_name', 'title_separator'] as $key) {
+            if (array_key_exists($key, $layer) && $layer[$key] !== '' && $layer[$key] !== null) {
                 $base[$key] = $layer[$key];
             }
         }
-        foreach (['open_graph', 'twitter'] as $nested) {
+        foreach (['open_graph', 'twitter', 'json_ld', 'verification'] as $nested) {
             if (isset($layer[$nested]) && is_array($layer[$nested])) {
                 $base[$nested] = array_replace(is_array($base[$nested] ?? null) ? $base[$nested] : [], $layer[$nested]);
             }
+        }
+        if (isset($layer['alternates']) && is_array($layer['alternates'])) {
+            $base['alternates'] = $layer['alternates'];
         }
 
         return $base;
@@ -287,9 +400,7 @@ final readonly class SeoMetadataResolver
             if ($slug !== null) {
                 $path = $this->paths->slugPath($route, $locale, $slug);
             }
-            if ($path === null) {
-                $path = $this->paths->pagePath($route, $locale);
-            }
+            $path ??= $this->paths->pagePath($route, $locale);
             if ($path === null && $locale === $currentLocale) {
                 $path = $request->getPathInfo();
             }
@@ -332,14 +443,35 @@ final readonly class SeoMetadataResolver
 
     /**
      * @param array<string, mixed> $defaults
+     * @param array<string, mixed> $merged
      *
-     * @return array{enabled: bool, graph: list<array<string, mixed>>}
+     * @return array{enabled: bool, graph: list<array<string, mixed>>, document: array<string, mixed>|null, json: ?string}
      */
-    private function buildJsonLd(array $defaults, Request $request, ?string $canonical, string $title, string $description): array
+    private function buildJsonLd(array $defaults, array $merged, Request $request, ?string $canonical, string $title, string $description): array
     {
-        $cfg     = is_array($defaults['json_ld'] ?? null) ? $defaults['json_ld'] : [];
+        $cfg = is_array($defaults['json_ld'] ?? null) ? $defaults['json_ld'] : [];
+        if (isset($merged['json_ld']) && is_array($merged['json_ld'])) {
+            $cfg = array_replace($cfg, $merged['json_ld']);
+        }
+
         $enabled = (bool) ($cfg['enabled'] ?? true);
-        $graph   = [];
+
+        if (isset($cfg['json']) && is_string($cfg['json']) && $cfg['json'] !== '') {
+            return ['enabled' => $enabled, 'graph' => [], 'document' => null, 'json' => $cfg['json']];
+        }
+
+        if (isset($cfg['document']) && is_array($cfg['document'])) {
+            return ['enabled' => $enabled, 'graph' => [], 'document' => $cfg['document'], 'json' => null];
+        }
+
+        if (isset($cfg['graph']) && is_array($cfg['graph']) && $cfg['graph'] !== []) {
+            /** @var list<array<string, mixed>> $graph */
+            $graph = array_values(array_filter($cfg['graph'], is_array(...)));
+
+            return ['enabled' => $enabled, 'graph' => $graph, 'document' => null, 'json' => null];
+        }
+
+        $graph = [];
 
         $org = is_array($cfg['organization'] ?? null) ? $cfg['organization'] : [];
         if ($org !== []) {
@@ -360,7 +492,7 @@ final readonly class SeoMetadataResolver
             }
         }
 
-        return ['enabled' => $enabled, 'graph' => $graph];
+        return ['enabled' => $enabled, 'graph' => $graph, 'document' => null, 'json' => null];
     }
 
     /**
@@ -421,9 +553,23 @@ final readonly class SeoMetadataResolver
             robots: 'noindex,nofollow',
             canonical: null,
             alternates: [],
-            openGraph: ['enabled' => false, 'type' => 'website', 'title' => null, 'description' => null, 'image' => null, 'url' => null, 'site_name' => null, 'locale' => null],
+            openGraph: [
+                'enabled'           => false,
+                'type'              => 'website',
+                'title'             => null,
+                'description'       => null,
+                'image'             => null,
+                'image_width'       => null,
+                'image_height'      => null,
+                'image_alt'         => null,
+                'url'               => null,
+                'site_name'         => null,
+                'locale'            => null,
+                'locale_alternates' => [],
+            ],
             twitter: ['enabled' => false, 'card' => 'summary', 'title' => null, 'description' => null, 'image' => null, 'site' => null, 'creator' => null],
-            jsonLd: ['enabled' => false, 'graph' => []],
+            jsonLd: ['enabled' => false, 'graph' => [], 'document' => null, 'json' => null],
+            verification: ['google' => null, 'bing' => null],
             source: 'disabled',
         );
     }

@@ -31,6 +31,10 @@ final class Configuration implements ConfigurationInterface
         $root
             ->children()
                 ->booleanNode('enabled')->defaultTrue()->end()
+                ->booleanNode('indexable')
+                    ->info('Master switch: when false, defaults robots to noindex, robots.txt disallows /, and sitemap is empty/404.')
+                    ->defaultTrue()
+                ->end()
                 ->scalarNode('default_locale')->defaultValue('en')->end()
                 ->arrayNode('locales')
                     ->scalarPrototype()->end()
@@ -66,7 +70,15 @@ final class Configuration implements ConfigurationInterface
             ->end()
             ->booleanNode('canonical_enabled')->defaultTrue()->end()
             ->booleanNode('hreflang_enabled')->defaultTrue()->end()
-            ->booleanNode('x_default_hreflang')->defaultTrue()->end();
+            ->booleanNode('x_default_hreflang')->defaultTrue()->end()
+            ->arrayNode('verification')
+                ->info('Webmaster verification tokens emitted as meta tags.')
+                ->addDefaultsIfNotSet()
+                ->children()
+                    ->scalarNode('google')->defaultNull()->end()
+                    ->scalarNode('bing')->defaultNull()->end()
+                ->end()
+            ->end();
         $this->addOpenGraphNode($children);
         $this->addTwitterNode($children);
         $this->addJsonLdNode($children);
@@ -236,6 +248,10 @@ final class Configuration implements ConfigurationInterface
             ->addDefaultsIfNotSet()
             ->children()
                 ->scalarNode('head')->defaultValue('@NowoSeoKitBundle/seo/head.html.twig')->end()
+                ->booleanNode('head_includes_title')
+                    ->info('When false, the head partial omits <title> so the host layout can own the title block.')
+                    ->defaultTrue()
+                ->end()
             ->end();
     }
 
@@ -259,7 +275,15 @@ final class Configuration implements ConfigurationInterface
                 ->booleanNode('enabled')->defaultTrue()->end()
                 ->scalarNode('type')->defaultValue('website')->end()
                 ->scalarNode('image')->defaultNull()->end()
+                ->integerNode('image_width')->min(1)->defaultNull()->end()
+                ->integerNode('image_height')->min(1)->defaultNull()->end()
+                ->scalarNode('image_alt')->defaultNull()->end()
                 ->scalarNode('site_name')->defaultNull()->end()
+                ->arrayNode('locale_alternates')
+                    ->info('Additional og:locale:alternate values (xx_XX).')
+                    ->scalarPrototype()->end()
+                    ->defaultValue([])
+                ->end()
             ->end();
     }
 

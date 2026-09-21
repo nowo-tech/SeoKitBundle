@@ -8,26 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.5.0] - 2026-09-21](#150---2026-09-21)
+- [[1.4.3] - 2026-08-24](#143---2026-08-24)
+- [[1.4.2] - 2026-08-19](#142---2026-08-19)
 - [[1.4.1] - 2026-08-18](#141---2026-08-18)
 - [[1.4.0] - 2026-08-04](#140---2026-08-04)
 - [[1.3.1] - 2026-07-30](#131---2026-07-30)
 - [[1.3.0] - 2026-07-29](#130-2026-07-29)
-  - [Added](#added)
-  - [Changed](#changed)
-  - [Documentation](#documentation)
 - [[1.2.0] - 2026-07-22](#120-2026-07-22)
-  - [Changed](#changed-1)
-  - [Added](#added-1)
-  - [Documentation](#documentation-1)
 - [[1.1.0] - 2026-07-18](#110-2026-07-18)
-  - [Added](#added-2)
-  - [Fixed](#fixed)
-  - [Documentation](#documentation-2)
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
-  - [Added](#added-3)
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-21
+
+### Added
+
+- **`indexable`** top-level flag: when false, meta defaults to `noindex`, `robots.txt` disallows `/`, and sitemap returns 404/empty
+- **`defaults.verification.google` / `bing`** webmaster meta tags
+- **Open Graph** `image_width`, `image_height`, `image_alt`, `locale_alternates`
+- **`SeoDefaultsProviderInterface`** (`nowo_seo_kit.defaults_provider`) for DB-driven site defaults
+- **`SiteIndexabilityProviderInterface`** (`nowo_seo_kit.indexability_provider`) for site-wide indexability
+- **`SitemapUrlProviderInterface`** (`nowo_seo_kit.sitemap_url_provider`) for CMS/blog URLs; sitemap XML supports `xhtml:link` alternates
+- **Runtime** `title_final`, `alternates`, and pre-encoded `json_ld.json` for host resolvers that already compose the full title / JSON-LD
+- **`templates.head_includes_title`** so hosts that own the `<title>` block can omit it from `nowo_seo_head()`
+- Sitemap response `Cache-Control: public, max-age=3600`
+- Optional CSP `nonce` attribute on JSON-LD `<script>` when `csp_nonce` is passed to the head template
+- Composer `branch-alias` `dev-main` → `1.5.x-dev`
+
+### Documentation
+
+- [CONFIGURATION.md](CONFIGURATION.md) — host extension points and new keys
+- [UPGRADING.md](UPGRADING.md) — upgrade path from 1.4.x
+
+### Notes
+
+- Additive / optional APIs. Existing YAML without the new keys keeps previous behaviour (`indexable: true`, title included in head).
 
 ## [1.4.3] - 2026-08-24
 
@@ -144,7 +161,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.5.0
+[1.4.3]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.3
+[1.4.2]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.2
+[1.4.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.1
+[1.4.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.0
 [1.3.1]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.1.0...v1.2.0

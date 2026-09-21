@@ -4,32 +4,55 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Service;
 
+use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\Request;
 
 use function is_array;
 use function is_string;
+use function sprintf;
 
 use const ENT_XML1;
 
 /**
- * Builds sitemap.xml entries from configured static pages and explicit slugs.
+ * Builds sitemap.xml entries from configured static pages, explicit slugs, and host providers.
  */
 final readonly class SitemapGenerator
 {
     /**
      * @param array<string, mixed> $config
+     * @param iterable<SitemapUrlProviderInterface> $urlProviders
+     * @param iterable<SiteIndexabilityProviderInterface> $indexabilityProviders
      */
     public function __construct(
         private array $config,
         private SeoPathBuilderInterface $paths,
+        #[TaggedIterator('nowo_seo_kit.sitemap_url_provider')]
+        private iterable $urlProviders = [],
+        #[TaggedIterator('nowo_seo_kit.indexability_provider')]
+        private iterable $indexabilityProviders = [],
     ) {
     }
 
+    public function isIndexable(): bool
+    {
+        foreach ($this->indexabilityProviders as $provider) {
+            if (!$provider->isIndexable()) {
+                return false;
+            }
+        }
+
+        return ($this->config['indexable'] ?? true) === true;
+    }
+
     /**
-     * @return list<array{loc: string, changefreq: string, priority: string}>
+     * @return list<array{loc: string, changefreq: string, priority: string, lastmod?: string, alternates?: list<array{hreflang: string, href: string}>}>
      */
     public function entries(Request $request): array
     {
+        if (!$this->isIndexable()) {
+            return [];
+        }
+
         $sitemap = is_array($this->config['sitemap'] ?? null) ? $this->config['sitemap'] : [];
         if (!($sitemap['enabled'] ?? true)) {
             return [];
@@ -88,19 +111,77 @@ final readonly class SitemapGenerator
             }
         }
 
+        foreach ($this->urlProviders as $provider) {
+            /** @var list<array<string, mixed>> $providerEntries */
+            $providerEntries = $provider->getEntries($request);
+            foreach ($providerEntries as $entry) {
+                if (!isset($entry['loc']) || !is_string($entry['loc']) || $entry['loc'] === '') {
+                    continue;
+                }
+                $normalized = [
+                    'loc'        => $entry['loc'],
+                    'changefreq' => is_string($entry['changefreq'] ?? null) ? $entry['changefreq'] : 'weekly',
+                    'priority'   => isset($entry['priority'])
+                        ? number_format((float) $entry['priority'], 1, '.', '')
+                        : '0.5',
+                ];
+                if (isset($entry['lastmod']) && is_string($entry['lastmod'])) {
+                    $normalized['lastmod'] = $entry['lastmod'];
+                }
+                if (isset($entry['alternates']) && is_array($entry['alternates'])) {
+                    $alts = [];
+                    foreach ($entry['alternates'] as $alt) {
+                        if (
+                            is_array($alt)
+                            && isset($alt['hreflang'], $alt['href'])
+                            && is_string($alt['hreflang'])
+                            && is_string($alt['href'])
+                        ) {
+                            $alts[] = ['hreflang' => $alt['hreflang'], 'href' => $alt['href']];
+                        }
+                    }
+                    if ($alts !== []) {
+                        $normalized['alternates'] = $alts;
+                    }
+                }
+                $entries[] = $normalized;
+            }
+        }
+
         return $entries;
     }
 
     /**
-     * @param list<array{loc: string, changefreq: string, priority: string}> $entries
+     * @param list<array{loc: string, changefreq: string, priority: string, lastmod?: string, alternates?: list<array{hreflang: string, href: string}>}> $entries
      */
     public function toXml(array $entries): string
     {
+        $hasAlternates = false;
+        foreach ($entries as $entry) {
+            if (($entry['alternates'] ?? []) !== []) {
+                $hasAlternates = true;
+                break;
+            }
+        }
+
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+        $xml .= $hasAlternates
+            ? '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n"
+            : '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
         foreach ($entries as $entry) {
             $xml .= "  <url>\n";
             $xml .= '    <loc>' . htmlspecialchars($entry['loc'], ENT_XML1) . "</loc>\n";
+            foreach ($entry['alternates'] ?? [] as $alt) {
+                $xml .= sprintf(
+                    '    <xhtml:link rel="alternate" hreflang="%s" href="%s"/>' . "\n",
+                    htmlspecialchars($alt['hreflang'], ENT_XML1),
+                    htmlspecialchars($alt['href'], ENT_XML1),
+                );
+            }
+            if (isset($entry['lastmod'])) {
+                $xml .= '    <lastmod>' . htmlspecialchars($entry['lastmod'], ENT_XML1) . "</lastmod>\n";
+            }
             $xml .= '    <changefreq>' . htmlspecialchars($entry['changefreq'], ENT_XML1) . "</changefreq>\n";
             $xml .= '    <priority>' . htmlspecialchars($entry['priority'], ENT_XML1) . "</priority>\n";
             $xml .= "  </url>\n";

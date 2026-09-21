@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
+use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
 use Nowo\SeoKitBundle\Service\SeoRuntime;
@@ -20,9 +21,14 @@ final class SeoMetadataResolverTest extends TestCase
 {
     /**
      * @param array<string, mixed> $config
+     * @param iterable<SeoDefaultsProviderInterface> $defaultsProviders
      */
-    private function createResolver(array $config, ?Request $request = null, ?SeoRuntime $runtime = null): SeoMetadataResolver
-    {
+    private function createResolver(
+        array $config,
+        ?Request $request = null,
+        ?SeoRuntime $runtime = null,
+        iterable $defaultsProviders = [],
+    ): SeoMetadataResolver {
         $requestStack = new RequestStack();
         if ($request instanceof Request) {
             $requestStack->push($request);
@@ -42,6 +48,7 @@ final class SeoMetadataResolverTest extends TestCase
             new SeoTemplateRenderer(),
             $paths,
             $urlGenerator,
+            $defaultsProviders,
         );
     }
 
@@ -608,6 +615,120 @@ final class SeoMetadataResolverTest extends TestCase
         $request->attributes->set('_controller', 'Nowo\\Missing\\Class::index');
         $metadata = $this->createResolver($config, $request)->resolve();
         $this->assertSame('Home', $metadata->title);
+    }
+
+    public function testResolveAppliesNoindexWhenNotIndexable(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'indexable'      => false,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => ['site_name' => 'Site', 'title_template' => '{title}{separator}{site_name}', 'title_separator' => ' | '],
+            'pages'          => ['app_home' => ['title' => 'Home', 'path' => '/']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $metadata = $this->createResolver($config, $request)->resolve();
+        $this->assertSame('noindex,nofollow', $metadata->robots);
+    }
+
+    public function testResolveMergesVerificationAndOpenGraphExtras(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'base_url'       => 'https://example.com',
+            'defaults'       => [
+                'site_name'        => 'Site',
+                'title_template'   => '{title}',
+                'hreflang_enabled' => false,
+                'verification'     => ['google' => 'g-token', 'bing' => 'b-token'],
+                'open_graph'       => [
+                    'enabled'           => true,
+                    'type'              => 'website',
+                    'image'             => '/og.png',
+                    'image_width'       => 1200,
+                    'image_height'      => 630,
+                    'image_alt'         => 'Alt text',
+                    'locale_alternates' => ['es-ES'],
+                ],
+                'twitter' => ['enabled' => false, 'card' => 'summary'],
+                'json_ld' => ['enabled' => false],
+            ],
+            'pages' => ['app_home' => ['title' => 'Home', 'path' => '/']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $metadata = $this->createResolver($config, $request)->resolve();
+        $this->assertSame('g-token', $metadata->verification['google']);
+        $this->assertSame('b-token', $metadata->verification['bing']);
+        $this->assertSame(1200, $metadata->openGraph['image_width']);
+        $this->assertSame(630, $metadata->openGraph['image_height']);
+        $this->assertSame('Alt text', $metadata->openGraph['image_alt']);
+        $this->assertSame(['es_ES'], $metadata->openGraph['locale_alternates']);
+    }
+
+    public function testResolveUsesDefaultsProviderAndTitleFinal(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => [
+                'site_name'        => 'YAML',
+                'title_template'   => '{title}{separator}{site_name}',
+                'title_separator'  => ' | ',
+                'hreflang_enabled' => false,
+                'json_ld'          => ['enabled' => false],
+            ],
+            'pages' => ['app_home' => ['title' => 'Home', 'path' => '/']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $provider = new class implements SeoDefaultsProviderInterface {
+            public function getDefaults(): array
+            {
+                return [
+                    'site_name'    => 'From DB',
+                    'verification' => ['google' => 'from-provider'],
+                ];
+            }
+        };
+
+        $runtime = new SeoRuntime();
+        $runtime->set(['title' => 'Final Title', 'title_final' => true]);
+
+        $metadata = $this->createResolver($config, $request, $runtime, [$provider])->resolve();
+        $this->assertSame('Final Title', $metadata->title);
+        $this->assertSame('from-provider', $metadata->verification['google']);
+        $this->assertSame('From DB', $metadata->openGraph['site_name']);
+    }
+
+    public function testResolveUsesPreencodedJsonLd(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => [
+                'site_name'        => 'Site',
+                'title_template'   => '{title}',
+                'hreflang_enabled' => false,
+                'json_ld'          => ['enabled' => true, 'json' => '{"@context":"https://schema.org","@type":"WebSite"}'],
+            ],
+            'pages' => ['app_home' => ['title' => 'Home', 'path' => '/']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $metadata = $this->createResolver($config, $request)->resolve();
+        $this->assertSame('{"@context":"https://schema.org","@type":"WebSite"}', $metadata->jsonLd['json']);
+        $this->assertSame([], $metadata->jsonLd['graph']);
     }
 }
 

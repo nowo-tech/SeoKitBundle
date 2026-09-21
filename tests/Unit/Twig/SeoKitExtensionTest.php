@@ -63,6 +63,35 @@ final class SeoKitExtensionTest extends TestCase
         self::assertSame('', $ext->renderHead());
     }
 
+    public function testHeadIncludesTitleFlag(): void
+    {
+        $config  = $this->minimalConfig();
+        $stack   = new RequestStack();
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+        $request->setLocale('en');
+        $stack->push($request);
+
+        $resolver = new SeoMetadataResolver(
+            $config,
+            $stack,
+            new SeoRuntime(),
+            new SeoTemplateRenderer(),
+            new SeoPathBuilder($config),
+            $this->createMock(UrlGeneratorInterface::class),
+        );
+
+        $twig = new Environment(new ArrayLoader([
+            'head.twig' => '{% if seo_include_title %}<title>{{ seo.title }}</title>{% else %}NO_TITLE{% endif %}',
+        ]));
+        $ext = new SeoKitExtension(true, $resolver, $twig, [
+            'head'                => 'head.twig',
+            'head_includes_title' => false,
+        ]);
+
+        self::assertSame('NO_TITLE', $ext->renderHead());
+    }
+
     /**
      * @return array<string, mixed>
      */

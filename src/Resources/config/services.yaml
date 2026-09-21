@@ -19,14 +19,18 @@ services:
     Nowo\SeoKitBundle\Service\SeoMetadataResolver:
         arguments:
             $config: '%nowo_seo_kit.config%'
+            $defaultsProviders: !tagged_iterator nowo_seo_kit.defaults_provider
 
     Nowo\SeoKitBundle\Service\SitemapGenerator:
         arguments:
             $config: '%nowo_seo_kit.config%'
+            $urlProviders: !tagged_iterator nowo_seo_kit.sitemap_url_provider
+            $indexabilityProviders: !tagged_iterator nowo_seo_kit.indexability_provider
 
     Nowo\SeoKitBundle\Service\RobotsTxtGenerator:
         arguments:
             $config: '%nowo_seo_kit.config%'
+            $indexabilityProviders: !tagged_iterator nowo_seo_kit.indexability_provider
 
     Nowo\SeoKitBundle\Controller\SeoKitController:
         arguments:

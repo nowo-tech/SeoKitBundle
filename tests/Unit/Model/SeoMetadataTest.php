@@ -20,14 +20,18 @@ final class SeoMetadataTest extends TestCase
                 ['locale' => 'es', 'url' => 'https://example.com/es', 'hreflang' => 'es'],
             ],
             openGraph: [
-                'enabled'     => true,
-                'type'        => 'website',
-                'title'       => 'Home | Demo',
-                'description' => 'Welcome',
-                'image'       => null,
-                'url'         => 'https://example.com/',
-                'site_name'   => 'Demo',
-                'locale'      => 'en',
+                'enabled'           => true,
+                'type'              => 'website',
+                'title'             => 'Home | Demo',
+                'description'       => 'Welcome',
+                'image'             => null,
+                'image_width'       => null,
+                'image_height'      => null,
+                'image_alt'         => null,
+                'url'               => 'https://example.com/',
+                'site_name'         => 'Demo',
+                'locale'            => 'en',
+                'locale_alternates' => [],
             ],
             twitter: [
                 'enabled'     => true,
@@ -38,9 +42,10 @@ final class SeoMetadataTest extends TestCase
                 'site'        => null,
                 'creator'     => null,
             ],
-            jsonLd: ['enabled' => true, 'graph' => [['@type' => 'WebPage']]],
+            jsonLd: ['enabled' => true, 'graph' => [['@type' => 'WebPage']], 'document' => null, 'json' => null],
             keywords: 'demo, seo',
             author: 'Nowo',
+            verification: ['google' => 'g-token', 'bing' => 'b-token'],
             extra: ['foo' => 'bar'],
             source: 'pages',
         );
@@ -56,6 +61,7 @@ final class SeoMetadataTest extends TestCase
         $this->assertSame('summary_large_image', $array['twitter']['card']);
         $this->assertSame('demo, seo', $array['keywords']);
         $this->assertSame('Nowo', $array['author']);
+        $this->assertSame(['google' => 'g-token', 'bing' => 'b-token'], $array['verification']);
         $this->assertSame('pages', $array['source']);
         $this->assertSame(['foo' => 'bar'], $array['extra']);
     }

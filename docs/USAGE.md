@@ -51,6 +51,7 @@ public function show(SeoRuntime $seo, string $slug): Response
     $seo->set([
         'title' => 'Dynamic '.$slug,
         'description' => 'Loaded from database',
+        'title_final' => true, // skip defaults.title_template wrapping
     ]);
     $seo->setVariables(['title' => 'Article title']);
 
@@ -59,6 +60,8 @@ public function show(SeoRuntime $seo, string $slug): Response
 ```
 
 Runtime is cleared automatically at the end of each request.
+
+Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapUrlProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
 
 ## Sitemap and robots
 
