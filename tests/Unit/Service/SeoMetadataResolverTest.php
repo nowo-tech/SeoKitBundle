@@ -730,6 +730,83 @@ final class SeoMetadataResolverTest extends TestCase
         $this->assertSame('{"@context":"https://schema.org","@type":"WebSite"}', $metadata->jsonLd['json']);
         $this->assertSame([], $metadata->jsonLd['graph']);
     }
+
+    public function testResolveUsesJsonLdDocumentAndRuntimeAlternates(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => [
+                'site_name'        => 'Site',
+                'title_template'   => '{title}',
+                'hreflang_enabled' => true,
+                'json_ld'          => ['enabled' => true],
+            ],
+            'pages' => ['app_home' => ['title' => 'Home', 'path' => '/']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $runtime = new SeoRuntime();
+        $runtime->set([
+            'alternates' => [
+                'es' => 'https://example.com/es',
+                ['url' => 'https://example.com/fr', 'hreflang' => 'fr', 'locale' => 'fr'],
+                ['url' => 'https://example.com/de', 'hreflang' => 'de'],
+                42,
+            ],
+            'json_ld' => [
+                'enabled'  => true,
+                'document' => ['@context' => 'https://schema.org', '@type' => 'Organization', 'name' => 'Demo'],
+            ],
+        ]);
+
+        $metadata = $this->createResolver($config, $request, $runtime)->resolve();
+        $this->assertCount(3, $metadata->alternates);
+        $this->assertSame(['es', 'fr', 'de'], array_column($metadata->alternates, 'hreflang'));
+        $this->assertSame('Organization', $metadata->jsonLd['document']['@type'] ?? null);
+        $this->assertSame([], $metadata->jsonLd['graph']);
+    }
+
+    public function testResolveUsesJsonLdGraphFromDefaultsProvider(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => [
+                'site_name'        => 'Site',
+                'title_template'   => '{title}',
+                'hreflang_enabled' => false,
+                'json_ld'          => ['enabled' => true],
+            ],
+            'pages' => ['app_home' => ['title' => 'Home', 'path' => '/']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $provider = new class implements SeoDefaultsProviderInterface {
+            public function getDefaults(): array
+            {
+                return [
+                    'indexable' => false,
+                    'json_ld'   => [
+                        'enabled' => true,
+                        'graph'   => [
+                            ['@type' => 'WebSite', 'name' => 'From provider'],
+                            'skip',
+                        ],
+                    ],
+                ];
+            }
+        };
+
+        $metadata = $this->createResolver($config, $request, null, [$provider])->resolve();
+        $this->assertSame('noindex,nofollow', $metadata->robots);
+        $this->assertCount(1, $metadata->jsonLd['graph']);
+        $this->assertSame('WebSite', $metadata->jsonLd['graph'][0]['@type']);
+    }
 }
 
 final class SeoPlainFixtureController

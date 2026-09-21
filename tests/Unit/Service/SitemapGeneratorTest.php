@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
+use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
 use Nowo\SeoKitBundle\Service\SitemapGenerator;
 use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use PHPUnit\Framework\TestCase;
@@ -143,6 +144,26 @@ final class SitemapGeneratorTest extends TestCase
             'pages'     => ['app_home' => ['path' => '/', 'in_sitemap' => true]],
         ];
         $generator = new SitemapGenerator($config, new SeoPathBuilder($config));
+
+        $this->assertFalse($generator->isIndexable());
+        $this->assertSame([], $generator->entries(Request::create('/')));
+    }
+
+    public function testIndexabilityProviderForcesEmptySitemap(): void
+    {
+        $config = [
+            'indexable' => true,
+            'locales'   => ['en'],
+            'sitemap'   => ['enabled' => true, 'include_static_pages' => true],
+            'pages'     => ['app_home' => ['path' => '/', 'in_sitemap' => true]],
+        ];
+        $provider = new class implements SiteIndexabilityProviderInterface {
+            public function isIndexable(): bool
+            {
+                return false;
+            }
+        };
+        $generator = new SitemapGenerator($config, new SeoPathBuilder($config), [], [$provider]);
 
         $this->assertFalse($generator->isIndexable());
         $this->assertSame([], $generator->entries(Request::create('/')));
