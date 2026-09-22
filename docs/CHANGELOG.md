@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.8.0] - 2026-09-22](#180---2026-09-22)
 - [[1.7.0] - 2026-09-22](#170---2026-09-22)
 - [[1.6.0] - 2026-09-21](#160---2026-09-21)
 - [[1.5.0] - 2026-09-21](#150---2026-09-21)
@@ -22,6 +23,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.8.0] - 2026-09-22
+
+### Added
+
+- **`SeoSurfaceKeys`** — conventional keys (`page:{key}`, `blog:{id}`) for CMS / blog pencils
+- **`SeoSurfaceManager`** — `find` / `getOrCreate` / `saveOrClear` (empty overrides delete the row); registered when `persistence.enabled`
+
+### Notes
+
+- Hosts should store CMS page SEO as `page:{pageKey}` surfaces instead of a FK entity.
+- Branch alias `dev-main` → `1.8.x-dev`.
+- Additive: no behaviour change unless hosts adopt the helpers.
 
 ## [1.7.0] - 2026-09-22
 
@@ -193,7 +207,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.8.0
 [1.7.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.7.0
 [1.6.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.6.0
 [1.5.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.5.0

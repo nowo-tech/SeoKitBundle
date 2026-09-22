@@ -26,6 +26,7 @@ use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
+use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -84,6 +85,10 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
         if (($config['persistence']['enabled'] ?? false) === true) {
             $this->registerPersistence($container, $config['persistence']);
+            $manager = new Definition(SeoSurfaceManager::class);
+            $manager->setAutowired(true);
+            $manager->setAutoconfigured(true);
+            $container->setDefinition(SeoSurfaceManager::class, $manager);
         }
 
         if (($config['persistence']['register_audit_command'] ?? true) === true) {

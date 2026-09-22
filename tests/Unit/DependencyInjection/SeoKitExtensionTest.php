@@ -22,6 +22,7 @@ use Nowo\SeoKitBundle\Service\OriginUrlGuard;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
+use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -64,6 +65,7 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(SeoSurfaceRepository::class));
         self::assertTrue($container->hasDefinition(SeoSiteConfigProvider::class));
         self::assertTrue($container->hasDefinition(DoctrineSeoDefaultsProvider::class));
+        self::assertTrue($container->hasDefinition(SeoSurfaceManager::class));
         self::assertFalse($container->hasDefinition(SeoAuditCommand::class));
         self::assertSame(
             [

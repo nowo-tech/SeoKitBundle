@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [To 1.8.0](#to-180)
 - [To 1.7.0](#to-170)
 - [To 1.6.0](#to-160)
 - [To 1.5.0](#to-150)
@@ -14,6 +15,25 @@
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+## To 1.8.0
+
+From **1.7.x** — additive helpers for CMS / blog surface keys.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.8
+```
+
+### What changed
+
+- **`SeoSurfaceKeys`** — `page:{pageKey}` / `blog:{id}` builders + `isPage` / `pageKey`
+- **`SeoSurfaceManager`** — `find` / `getOrCreate` / `saveOrClear` / `isEmpty` (registered when `persistence.enabled`)
+
+Hosts that still store page SEO as a Doctrine FK entity should migrate rows into `nowo_seo_surface` with `surface_key = CONCAT('page:', page_key)` and drop the legacy table.
+
+### Breaking changes
+
+None.
 
 ## To 1.7.0
 

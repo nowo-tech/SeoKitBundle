@@ -54,6 +54,8 @@ services:
 
     Nowo\SeoKitBundle\Service\StructuredData\SiteStructuredDataFactory: ~
 
+    Nowo\SeoKitBundle\Service\OriginUrlGuard: ~
+
     Nowo\SeoKitBundle\Service\Audit\SeoAuditRules: ~
 
     Nowo\SeoKitBundle\Service\Audit\SeoAuditor:

@@ -33,6 +33,7 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Optional Doctrine site settings** — `persistence.enabled` + `SeoSiteConfig` snapshot
 - ✅ **Typed JSON-LD + audit CLI** — structured data nodes and `nowo:seo:audit`
 - ✅ **Optional SEO admin + pencil API** — site settings, surface overrides, `OriginUrlGuard`
+- ✅ **Surface helpers** — `SeoSurfaceKeys` + `SeoSurfaceManager` for CMS/blog pencils
 - ✅ **PHP 8 attribute** — `#[Seo]` on controllers
 - ✅ **FrankenPHP-ready demo** — single-container Symfony 8 demo
 
@@ -87,6 +88,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.8.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.7.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.6.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.5.x | >= 8.2 | 7.0 – 8.1+ | Stable |

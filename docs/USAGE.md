@@ -141,3 +141,19 @@ See [DEMO-FRANKENPHP.md](DEMO-FRANKENPHP.md).
 ```bash
 make update-deps   # bundle + demos (REQ-MAKE-008)
 ```
+
+## Surface keys (1.8+)
+
+Use conventional keys so admin, API pencil and host stores agree:
+
+```php
+use Nowo\SeoKitBundle\Service\SeoSurfaceKeys;
+use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
+
+$key = SeoSurfaceKeys::page('product.insurance_core'); // page:product.insurance_core
+$surface = $surfaceManager->getOrCreate($key, 'es');
+$surface->setMetaTitle('…');
+$surfaceManager->saveOrClear($surface); // deletes the row when every field is empty
+```
+
+Requires `persistence.enabled: true` (registers `SeoSurfaceManager`).
