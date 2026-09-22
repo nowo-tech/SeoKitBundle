@@ -32,7 +32,7 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Host providers** — defaults, indexability, and sitemap URL extension points
 - ✅ **Optional Doctrine site settings** — `persistence.enabled` + `SeoSiteConfig` snapshot
 - ✅ **Typed JSON-LD + audit CLI** — structured data nodes and `nowo:seo:audit`
-- ✅ **Optional SEO admin + pencil API** — site settings, surface overrides, `OriginUrlGuard`
+- ✅ **Optional SEO admin + pencil API** — site settings, surface overrides, FormKit forms, `OriginUrlGuard`
 - ✅ **Surface helpers** — `SeoSurfaceKeys` + `SeoSurfaceManager` for CMS/blog pencils
 - ✅ **AbsoluteUrlBuilder** — origin + path normalisation from `base_url`
 - ✅ **PHP 8 attribute** — `#[Seo]` on controllers
@@ -61,7 +61,8 @@ Add to your base layout:
 ## Requirements
 
 - PHP >= 8.2, < 8.6
-- Symfony >= 7.0 || >= 8.0
+- Symfony **7.4+** or **8.x** (FormKit / form stack; other components still declare `^7.0 || ^8.0`)
+- `nowo-tech/form-kit-bundle` ^2.4 (hard dependency)
 
 ## Documentation
 
@@ -89,6 +90,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.9.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.8.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.7.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.6.x | >= 8.2 | 7.0 – 8.1+ | Stable |

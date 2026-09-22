@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Nowo\FormKitBundle\NowoFormKitBundle;
 use Nowo\HotReloadBundle\NowoHotReloadBundle;
 use Nowo\SeoKitBundle\SeoKitBundle;
 use Nowo\TwigInspectorBundle\NowoTwigInspectorBundle;
@@ -14,6 +15,7 @@ use Twig\Extra\TwigExtraBundle\TwigExtraBundle;
 return [
     FrameworkBundle::class         => ['all' => true],
     TwigBundle::class              => ['all' => true],
+    NowoFormKitBundle::class       => ['all' => true],
     SeoKitBundle::class            => ['all' => true],
     WebProfilerBundle::class       => ['dev' => true, 'test' => true],
     DebugBundle::class             => ['dev' => true],

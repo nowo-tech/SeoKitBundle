@@ -8,7 +8,7 @@ use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceType;
-use Nowo\SeoKitBundle\Service\OriginUrlGuard;
+use Nowo\SeoKitBundle\Tests\Support\FormKitTestSupport;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -102,7 +102,7 @@ final class SeoAdminFormsTest extends TestCase
 
     public function testSiteSettingsListenersIgnoreNonEntityData(): void
     {
-        $type = new SeoSiteSettingsType();
+        $type = FormKitTestSupport::siteSettingsType();
         $form = $this->factory()->createBuilder()
             ->add('dummy', TextType::class)
             ->getForm();
@@ -154,8 +154,8 @@ final class SeoAdminFormsTest extends TestCase
 
         return Forms::createFormFactoryBuilder()
             ->addExtension(new ValidatorExtension($validator))
-            ->addType(new SeoSiteSettingsType())
-            ->addType(new SeoSurfaceType(new OriginUrlGuard('https://nowo.tech')))
+            ->addType(FormKitTestSupport::siteSettingsType())
+            ->addType(FormKitTestSupport::surfaceType())
             ->getFormFactory();
     }
 }

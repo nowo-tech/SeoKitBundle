@@ -9,15 +9,13 @@ use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
-use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
-use Nowo\SeoKitBundle\Form\SeoSurfaceType;
 use Nowo\SeoKitBundle\Model\SeoSiteConfig;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditRules;
-use Nowo\SeoKitBundle\Service\OriginUrlGuard;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
+use Nowo\SeoKitBundle\Tests\Support\FormKitTestSupport;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -310,8 +308,8 @@ final class SeoAdminControllersTest extends TestCase
         return Forms::createFormFactoryBuilder()
             ->addExtension(new HttpFoundationExtension())
             ->addExtension(new ValidatorExtension($validator))
-            ->addType(new SeoSiteSettingsType())
-            ->addType(new SeoSurfaceType(new OriginUrlGuard('https://nowo.tech')))
+            ->addType(FormKitTestSupport::siteSettingsType())
+            ->addType(FormKitTestSupport::surfaceType())
             ->getFormFactory();
     }
 

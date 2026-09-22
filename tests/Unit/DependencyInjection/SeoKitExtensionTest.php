@@ -201,4 +201,55 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(AbsoluteUrlBuilder::class));
         self::assertSame('https://example.test', $container->getDefinition(AbsoluteUrlBuilder::class)->getArgument('$baseUrl'));
     }
+
+    public function testPrependRegistersSeoKitFormKitProfileWhenMissing(): void
+    {
+        $container = new ContainerBuilder();
+        $container->registerExtension(new class extends Extension {
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getAlias(): string
+            {
+                return 'nowo_form_kit';
+            }
+        });
+
+        (new SeoKitExtension())->prepend($container);
+
+        $configs = $container->getExtensionConfig('nowo_form_kit');
+        self::assertNotSame([], $configs);
+        self::assertArrayHasKey('seo_kit', $configs[0]['profiles']);
+        self::assertSame('NowoSeoKitBundle', $configs[0]['profiles']['seo_kit']['translation_domain']);
+    }
+
+    public function testPrependSkipsSeoKitProfileWhenHostAlreadyDefinesIt(): void
+    {
+        $container = new ContainerBuilder();
+        $container->registerExtension(new class extends Extension {
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getAlias(): string
+            {
+                return 'nowo_form_kit';
+            }
+        });
+        $container->prependExtensionConfig('nowo_form_kit', [
+            'profiles' => [
+                'seo_kit' => [
+                    'alias'              => 'custom',
+                    'translation_domain' => 'messages',
+                ],
+            ],
+        ]);
+
+        (new SeoKitExtension())->prepend($container);
+
+        $configs = $container->getExtensionConfig('nowo_form_kit');
+        self::assertCount(1, $configs);
+        self::assertSame('custom', $configs[0]['profiles']['seo_kit']['alias']);
+    }
 }

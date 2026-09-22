@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.9.0] - 2026-09-22](#190---2026-09-22)
 - [[1.8.1] - 2026-09-22](#181---2026-09-22)
 - [[1.8.0] - 2026-09-22](#180---2026-09-22)
 - [[1.7.0] - 2026-09-22](#170---2026-09-22)
@@ -24,6 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.9.0] - 2026-09-22
+
+### Changed
+
+- **FormKit:** admin forms (`SeoSiteSettingsType`, `SeoSurfaceType`) extend `FormKitAbstractType` via `AbstractSeoFormType` with profile `seo_kit`; depends on `nowo-tech/form-kit-bundle` (^2.4)
+- Composer now requires `symfony/form`, `symfony/validator`, and `symfony/translation` (Symfony form stack effectively ≥ 7.4)
+
+### Notes
+
+- Register `Nowo\FormKitBundle\NowoFormKitBundle` (Flex) so admin labels resolve from `NowoSeoKitBundle` translations (`nowo_seo_site.*` / `nowo_seo_surface.*`).
+- Hosts may override the `seo_kit` profile in `nowo_form_kit` config; SeoKit only prepends it when missing.
+- Branch alias `dev-main` → `1.9.x-dev`.
+- Breaking for hosts on Symfony **7.0–7.3** or without FormKit — see [UPGRADING.md](UPGRADING.md#to-190).
 
 ## [1.8.1] - 2026-09-22
 
@@ -223,7 +238,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.9.0
 [1.8.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.8.1
 [1.8.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.8.0
 [1.7.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.7.0

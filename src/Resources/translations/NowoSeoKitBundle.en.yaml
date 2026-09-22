@@ -49,3 +49,83 @@ nowo_seo_kit:
             outside_site: 'Canonical must stay on this site origin.'
         open_graph_image:
             invalid: 'Open Graph image must be a site path or an https URL.'
+
+nowo_seo_site:
+    site_name:
+        label: 'Site name'
+        placeholder: 'e.g. Nowo'
+        help: 'Shown in titles and organisation JSON-LD when no legal name is set.'
+    title_template:
+        label: 'Title template'
+        placeholder: '%page% · %site%'
+        help: 'Must include the %page% placeholder.'
+    indexable:
+        label: 'Indexable'
+        help: 'When off, robots default to noindex, nofollow.'
+    default_robots:
+        label: 'Default robots'
+    default_open_graph_image:
+        label: 'Default Open Graph image'
+        placeholder: '/og.png'
+    twitter_site:
+        label: 'Twitter / X site'
+        placeholder: '@nowo'
+    organisation_legal_name:
+        label: 'Organisation legal name'
+    organisation_logo:
+        label: 'Organisation logo'
+        placeholder: '/logo.png'
+    contact_email:
+        label: 'Contact email'
+    contact_phone:
+        label: 'Contact phone'
+    street_address:
+        label: 'Street address'
+    postal_code:
+        label: 'Postal code'
+    address_locality:
+        label: 'City'
+    address_region:
+        label: 'Region'
+    address_country:
+        label: 'Country (ISO)'
+        placeholder: 'ES'
+    social_profiles_text:
+        label: 'Social profiles'
+        help: 'One https URL per line.'
+        placeholder: 'https://x.com/nowo'
+    google_site_verification:
+        label: 'Google site verification'
+    bing_site_verification:
+        label: 'Bing site verification'
+    default_title_en:
+        label: 'Default title (en)'
+    home_title_en:
+        label: 'Home title (en)'
+    default_description_en:
+        label: 'Default description (en)'
+    organisation_description_en:
+        label: 'Organisation description (en)'
+    default_title_es:
+        label: 'Default title (es)'
+    home_title_es:
+        label: 'Home title (es)'
+    default_description_es:
+        label: 'Default description (es)'
+    organisation_description_es:
+        label: 'Organisation description (es)'
+
+nowo_seo_surface:
+    meta_title:
+        label: 'Meta title'
+        placeholder: 'Leave empty to inherit'
+    meta_description:
+        label: 'Meta description'
+    meta_robots:
+        label: 'Meta robots'
+    canonical_override:
+        label: 'Canonical override'
+        placeholder: '/path or https://this-site/…'
+    open_graph_image:
+        label: 'Open Graph image'
+        placeholder: '/og.png or https://…'

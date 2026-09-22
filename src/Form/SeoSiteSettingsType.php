@@ -5,12 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Form;
 
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\EmailType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Override;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -31,10 +26,8 @@ use function strlen;
  * Editable site-wide SEO settings (identity, robots, organisation, per-locale wording).
  *
  * Localised fields are unmapped (`defaultTitle_es`); SUBMIT writes them into translations.
- *
- * @extends AbstractType<SeoSiteSettings>
  */
-final class SeoSiteSettingsType extends AbstractType
+final class SeoSiteSettingsType extends AbstractSeoFormType
 {
     /** @var list<string> */
     private const LOCALISED_FIELDS = ['defaultTitle', 'homeTitle', 'defaultDescription', 'organisationDescription'];
@@ -44,74 +37,83 @@ final class SeoSiteSettingsType extends AbstractType
         /** @var list<string> $locales */
         $locales = $options['enabled_locales'];
 
-        $builder
-            ->add('siteName', TextType::class, [
+        $this->withBuilder($builder, function () use ($locales): void {
+            $this->addTextField('siteName', [
                 'constraints' => [new NotBlank(), new Length(max: 120)],
-            ])
-            ->add('titleTemplate', TextType::class, [
+            ]);
+            $this->addTextField('titleTemplate', [
                 'constraints' => [
                     new NotBlank(),
                     new Length(max: 120),
                     new Callback($this->validateTitleTemplate(...)),
                 ],
-            ])
-            ->add('indexable', CheckboxType::class, ['required' => false])
-            ->add('defaultRobots', ChoiceType::class, [
+            ]);
+            $this->addCheckboxField('indexable', ['required' => false]);
+            $this->addChoiceField('defaultRobots', [
                 'choices' => [
                     'nowo_seo_kit.robots.index_follow'     => 'index, follow',
                     'nowo_seo_kit.robots.index_nofollow'   => 'index, nofollow',
                     'nowo_seo_kit.robots.noindex_follow'   => 'noindex, follow',
                     'nowo_seo_kit.robots.noindex_nofollow' => 'noindex, nofollow',
                 ],
-            ])
-            ->add('defaultOpenGraphImage', TextType::class, [
+            ]);
+            $this->addTextField('defaultOpenGraphImage', [
                 'required'    => false,
                 'constraints' => [new Length(max: 500)],
-            ])
-            ->add('twitterSite', TextType::class, [
+            ]);
+            $this->addTextField('twitterSite', [
                 'required'    => false,
                 'constraints' => [new Length(max: 64)],
-            ])
-            ->add('organisationLegalName', TextType::class, ['required' => false, 'constraints' => [new Length(max: 180)]])
-            ->add('organisationLogo', TextType::class, ['required' => false, 'constraints' => [new Length(max: 500)]])
-            ->add('contactEmail', EmailType::class, ['required' => false, 'constraints' => [new Email(), new Length(max: 180)]])
-            ->add('contactPhone', TextType::class, ['required' => false, 'constraints' => [new Length(max: 40)]])
-            ->add('streetAddress', TextType::class, ['required' => false, 'constraints' => [new Length(max: 180)]])
-            ->add('postalCode', TextType::class, ['required' => false, 'constraints' => [new Length(max: 20)]])
-            ->add('addressLocality', TextType::class, ['required' => false, 'constraints' => [new Length(max: 120)]])
-            ->add('addressRegion', TextType::class, ['required' => false, 'constraints' => [new Length(max: 120)]])
-            ->add('addressCountry', TextType::class, ['required' => false, 'constraints' => [new Length(min: 2, max: 2)]])
-            ->add('socialProfilesText', TextareaType::class, [
+            ]);
+            $this->addTextField('organisationLegalName', ['required' => false, 'constraints' => [new Length(max: 180)]]);
+            $this->addTextField('organisationLogo', ['required' => false, 'constraints' => [new Length(max: 500)]]);
+            $this->addEmailField('contactEmail', ['required' => false, 'constraints' => [new Email(), new Length(max: 180)]]);
+            $this->addTextField('contactPhone', ['required' => false, 'constraints' => [new Length(max: 40)]]);
+            $this->addTextField('streetAddress', ['required' => false, 'constraints' => [new Length(max: 180)]]);
+            $this->addTextField('postalCode', ['required' => false, 'constraints' => [new Length(max: 20)]]);
+            $this->addTextField('addressLocality', ['required' => false, 'constraints' => [new Length(max: 120)]]);
+            $this->addTextField('addressRegion', ['required' => false, 'constraints' => [new Length(max: 120)]]);
+            $this->addTextField('addressCountry', ['required' => false, 'constraints' => [new Length(min: 2, max: 2)]]);
+            $this->addTextareaField('socialProfilesText', [
                 'mapped'      => false,
                 'required'    => false,
                 'constraints' => [new Callback($this->validateSocialProfiles(...))],
-            ])
-            ->add('googleSiteVerification', TextType::class, ['required' => false, 'constraints' => [new Length(max: 120)]])
-            ->add('bingSiteVerification', TextType::class, ['required' => false, 'constraints' => [new Length(max: 120)]]);
+            ]);
+            $this->addTextField('googleSiteVerification', ['required' => false, 'constraints' => [new Length(max: 120)]]);
+            $this->addTextField('bingSiteVerification', ['required' => false, 'constraints' => [new Length(max: 120)]]);
 
-        foreach ($locales as $locale) {
-            foreach (self::LOCALISED_FIELDS as $field) {
-                $isLong = in_array($field, ['defaultDescription', 'organisationDescription'], true);
-                $type   = $isLong ? TextareaType::class : TextType::class;
-                $builder->add($field . '_' . $locale, $type, [
-                    'mapped'      => false,
-                    'required'    => false,
-                    'constraints' => [new Length(max: $isLong ? 320 : 255)],
-                ]);
+            foreach ($locales as $locale) {
+                foreach (self::LOCALISED_FIELDS as $field) {
+                    $isLong = in_array($field, ['defaultDescription', 'organisationDescription'], true);
+                    if ($isLong) {
+                        $this->addTextareaField($field . '_' . $locale, [
+                            'mapped'      => false,
+                            'required'    => false,
+                            'constraints' => [new Length(max: 320)],
+                        ]);
+                    } else {
+                        $this->addTextField($field . '_' . $locale, [
+                            'mapped'      => false,
+                            'required'    => false,
+                            'constraints' => [new Length(max: 255)],
+                        ]);
+                    }
+                }
             }
-        }
+        });
 
         $builder->addEventListener(FormEvents::POST_SET_DATA, $this->fillFromEntity(...));
         $builder->addEventListener(FormEvents::SUBMIT, $this->writeBackToEntity(...));
     }
 
+    #[Override]
     public function configureOptions(OptionsResolver $resolver): void
     {
+        parent::configureOptions($resolver);
         $resolver->setDefaults([
-            'data_class'         => SeoSiteSettings::class,
-            'translation_domain' => 'NowoSeoKitBundle',
-            'enabled_locales'    => ['en'],
-            'default_locale'     => 'en',
+            'data_class'      => SeoSiteSettings::class,
+            'enabled_locales' => ['en'],
+            'default_locale'  => 'en',
         ]);
         $resolver->setAllowedTypes('enabled_locales', 'string[]');
         $resolver->setAllowedTypes('default_locale', 'string');

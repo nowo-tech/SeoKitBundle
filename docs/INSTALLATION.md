@@ -12,8 +12,9 @@
 ## Requirements
 
 - PHP >= 8.2, < 8.6
-- Symfony >= 7.0 || >= 8.0
+- Symfony **7.4+** or **8.x** (form / validator / translation stack via FormKit)
 - Twig Bundle
+- `nowo-tech/form-kit-bundle` ^2.4 (pulled automatically)
 
 ## Composer
 
@@ -23,10 +24,11 @@ composer require nowo-tech/seo-kit-bundle
 
 ## Register the bundle
 
-Symfony Flex registers the bundle automatically. Manual registration:
+Symfony Flex registers the bundles automatically. Manual registration:
 
 ```php
 // config/bundles.php
+Nowo\FormKitBundle\NowoFormKitBundle::class => ['all' => true],
 Nowo\SeoKitBundle\SeoKitBundle::class => ['all' => true],
 ```
 

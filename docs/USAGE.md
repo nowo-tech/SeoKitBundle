@@ -71,6 +71,8 @@ Enable with `nowo_seo_kit.persistence.enabled: true` (requires Doctrine ORM). Se
 
 Requires persistence. Enable `nowo_seo_kit.admin.enabled: true`, import routes with `type: nowo_seo_kit_admin`, then use `/settings/seo`, `/admin/seo/surfaces`, and optionally `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. See [CONFIGURATION.md — admin](CONFIGURATION.md#admin) and [UPGRADING.md — To 1.7.0](UPGRADING.md#to-170).
 
+Admin forms are built with **[FormKit](https://github.com/nowo-tech/FormKitBundle)** (`AbstractSeoFormType`, profile `seo_kit`). Register `Nowo\FormKitBundle\NowoFormKitBundle` (Flex recipe) so labels resolve from `NowoSeoKitBundle` translations.
+
 ## Audit CLI
 
 ```bash
@@ -170,4 +172,3 @@ $urls->belongsToSite($canonical); // true
 ```
 
 Prefer this over a host-only canonical helper so origin + path shape stay consistent with sitemap / robots / head.
-

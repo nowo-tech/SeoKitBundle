@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [To 1.9.0](#to-190)
 - [To 1.8.1](#to-181)
 - [To 1.8.0](#to-180)
 - [To 1.7.0](#to-170)
@@ -16,6 +17,27 @@
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+## To 1.9.0
+
+From **1.8.x** — FormKit integration for admin forms.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.9
+# FormKit is a hard dependency; Flex registers NowoFormKitBundle when present.
+```
+
+### What changed
+
+- Admin forms use FormKit profile **`seo_kit`** (labels/help via `nowo_seo_site.*` / `nowo_seo_surface.*` in `NowoSeoKitBundle`)
+- Requires `nowo-tech/form-kit-bundle` ^2.4 (Symfony form stack ≥ 7.4)
+
+Hosts may override the `seo_kit` profile in `nowo_form_kit.yaml`; SeoKit only prepends it when missing.
+
+### Breaking changes
+
+- Installing SeoKit without FormKit is no longer supported (composer will pull FormKit).
+- Symfony **7.0–7.3** no longer satisfy FormKit’s constraints; use **7.4+** or **8.x**.
 
 ## To 1.8.1
 

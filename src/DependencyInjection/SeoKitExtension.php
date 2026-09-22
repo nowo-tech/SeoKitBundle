@@ -36,6 +36,8 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 
+use function array_key_exists;
+use function is_array;
 use function is_string;
 
 /**
@@ -112,6 +114,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
     public function prepend(ContainerBuilder $container): void
     {
+        $this->prependFormKitDefaults($container);
+
         if (!$container->hasExtension('doctrine')) {
             return;
         }
@@ -137,6 +141,48 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
                         'prefix'    => 'Nowo\\SeoKitBundle\\Entity',
                         'alias'     => 'NowoSeoKit',
                         'is_bundle' => false,
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    private function prependFormKitDefaults(ContainerBuilder $container): void
+    {
+        if (!$container->hasExtension('nowo_form_kit')) {
+            return;
+        }
+
+        $hostHasProfile = false;
+        foreach ($container->getExtensionConfig('nowo_form_kit') as $cfg) {
+            $profiles = $cfg['profiles'] ?? null;
+            if (is_array($profiles) && array_key_exists('seo_kit', $profiles)) {
+                $hostHasProfile = true;
+                break;
+            }
+        }
+
+        if ($hostHasProfile) {
+            return;
+        }
+
+        $container->prependExtensionConfig('nowo_form_kit', [
+            'profiles' => [
+                'seo_kit' => [
+                    'alias'              => 'seo_kit',
+                    'translation_domain' => 'NowoSeoKitBundle',
+                    'defaults'           => [
+                        'attr'     => ['class' => 'form-control'],
+                        'row_attr' => ['class' => 'mb-3'],
+                    ],
+                    'field_types' => [
+                        'checkbox' => [
+                            'attr'     => ['class' => 'form-check-input'],
+                            'row_attr' => ['class' => 'form-check mb-3'],
+                        ],
+                        'choice' => [
+                            'attr' => ['class' => 'form-select'],
+                        ],
                     ],
                 ],
             ],

@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Form;
 
+use Nowo\FormKitBundle\Form\FormOptionsMerger;
+use Nowo\FormKitBundle\Form\FormTypeMap;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Override;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Callback;
@@ -20,28 +19,29 @@ use function is_string;
 
 /**
  * Per-surface SEO overrides (nullable = inherit).
- *
- * @extends AbstractType<SeoSurface>
  */
-final class SeoSurfaceType extends AbstractType
+final class SeoSurfaceType extends AbstractSeoFormType
 {
     public function __construct(
+        FormOptionsMerger $formOptionsMerger,
+        FormTypeMap $formTypeMap,
         private readonly OriginUrlGuard $originUrlGuard,
     ) {
+        parent::__construct($formOptionsMerger, $formTypeMap);
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('metaTitle', TextType::class, [
+        $this->withBuilder($builder, function (): void {
+            $this->addTextField('metaTitle', [
                 'required'    => false,
                 'constraints' => [new Length(max: 255)],
-            ])
-            ->add('metaDescription', TextareaType::class, [
+            ]);
+            $this->addTextareaField('metaDescription', [
                 'required'    => false,
                 'constraints' => [new Length(max: 320)],
-            ])
-            ->add('metaRobots', ChoiceType::class, [
+            ]);
+            $this->addChoiceField('metaRobots', [
                 'required'    => false,
                 'placeholder' => 'nowo_seo_kit.surface.robots.inherit',
                 'choices'     => [
@@ -50,28 +50,30 @@ final class SeoSurfaceType extends AbstractType
                     'nowo_seo_kit.robots.noindex_follow'   => 'noindex, follow',
                     'nowo_seo_kit.robots.noindex_nofollow' => 'noindex, nofollow',
                 ],
-            ])
-            ->add('canonicalOverride', TextType::class, [
+            ]);
+            $this->addTextField('canonicalOverride', [
                 'required'    => false,
                 'constraints' => [
                     new Length(max: 500),
                     new Callback($this->validateCanonical(...)),
                 ],
-            ])
-            ->add('openGraphImage', TextType::class, [
+            ]);
+            $this->addTextField('openGraphImage', [
                 'required'    => false,
                 'constraints' => [
                     new Length(max: 500),
                     new Callback($this->validateOpenGraphImage(...)),
                 ],
             ]);
+        });
     }
 
+    #[Override]
     public function configureOptions(OptionsResolver $resolver): void
     {
+        parent::configureOptions($resolver);
         $resolver->setDefaults([
-            'data_class'         => SeoSurface::class,
-            'translation_domain' => 'NowoSeoKitBundle',
+            'data_class' => SeoSurface::class,
         ]);
     }
 

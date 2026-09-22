@@ -49,3 +49,83 @@ nowo_seo_kit:
             outside_site: 'El canonical debe pertenecer al origen del sitio.'
         open_graph_image:
             invalid: 'La imagen Open Graph debe ser una ruta del sitio o una URL https.'
+
+nowo_seo_site:
+    site_name:
+        label: 'Nombre del sitio'
+        placeholder: 'p. ej. Nowo'
+        help: 'Aparece en títulos y en el JSON-LD de organización si no hay razón social.'
+    title_template:
+        label: 'Plantilla de título'
+        placeholder: '%page% · %site%'
+        help: 'Debe incluir el marcador %page%.'
+    indexable:
+        label: 'Indexable'
+        help: 'Si está desactivado, robots pasa a noindex, nofollow.'
+    default_robots:
+        label: 'Robots por defecto'
+    default_open_graph_image:
+        label: 'Imagen Open Graph por defecto'
+        placeholder: '/og.png'
+    twitter_site:
+        label: 'Twitter / X del sitio'
+        placeholder: '@nowo'
+    organisation_legal_name:
+        label: 'Razón social'
+    organisation_logo:
+        label: 'Logo de la organización'
+        placeholder: '/logo.png'
+    contact_email:
+        label: 'Email de contacto'
+    contact_phone:
+        label: 'Teléfono de contacto'
+    street_address:
+        label: 'Dirección'
+    postal_code:
+        label: 'Código postal'
+    address_locality:
+        label: 'Localidad'
+    address_region:
+        label: 'Provincia / región'
+    address_country:
+        label: 'País (ISO)'
+        placeholder: 'ES'
+    social_profiles_text:
+        label: 'Perfiles sociales'
+        help: 'Una URL https por línea.'
+        placeholder: 'https://x.com/nowo'
+    google_site_verification:
+        label: 'Verificación Google'
+    bing_site_verification:
+        label: 'Verificación Bing'
+    default_title_en:
+        label: 'Título por defecto (en)'
+    home_title_en:
+        label: 'Título home (en)'
+    default_description_en:
+        label: 'Descripción por defecto (en)'
+    organisation_description_en:
+        label: 'Descripción organización (en)'
+    default_title_es:
+        label: 'Título por defecto (es)'
+    home_title_es:
+        label: 'Título home (es)'
+    default_description_es:
+        label: 'Descripción por defecto (es)'
+    organisation_description_es:
+        label: 'Descripción organización (es)'
+
+nowo_seo_surface:
+    meta_title:
+        label: 'Meta title'
+        placeholder: 'Vacío = heredar'
+    meta_description:
+        label: 'Meta description'
+    meta_robots:
+        label: 'Meta robots'
+    canonical_override:
+        label: 'Canonical'
+        placeholder: '/ruta o https://este-sitio/…'
+    open_graph_image:
+        label: 'Imagen Open Graph'
+        placeholder: '/og.png o https://…'
