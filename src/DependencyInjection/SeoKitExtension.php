@@ -20,7 +20,15 @@ use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
 use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditSubjectProviderInterface;
+use Nowo\SeoKitBundle\Service\HreflangSetBuilder;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
+use Nowo\SeoKitBundle\Service\PageHeadContext;
+use Nowo\SeoKitBundle\Service\PageHeadDefaultsProviderInterface;
+use Nowo\SeoKitBundle\Service\PageHeadResolver;
+use Nowo\SeoKitBundle\Service\PageHeadRuntimeBridge;
+use Nowo\SeoKitBundle\Service\PageHeadSiteGraphProviderInterface;
+use Nowo\SeoKitBundle\Service\PageHeadTitleComposerInterface;
+use Nowo\SeoKitBundle\Service\SeoPencilCatalogFactory;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
@@ -65,6 +73,12 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             ->addTag('nowo_seo_kit.indexability_provider');
         $container->registerForAutoconfiguration(SeoAuditSubjectProviderInterface::class)
             ->addTag('nowo_seo_kit.audit_subject_provider');
+        $container->registerForAutoconfiguration(PageHeadDefaultsProviderInterface::class)
+            ->addTag('nowo_seo_kit.page_head_defaults_provider');
+        $container->registerForAutoconfiguration(PageHeadSiteGraphProviderInterface::class)
+            ->addTag('nowo_seo_kit.page_head_site_graph_provider');
+        $container->registerForAutoconfiguration(PageHeadTitleComposerInterface::class)
+            ->addTag('nowo_seo_kit.page_head_title_composer');
 
         $baseUrl = $config['base_url'] ?? null;
         $origin  = is_string($baseUrl) && $baseUrl !== '' ? rtrim($baseUrl, '/') : null;
@@ -80,6 +94,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             $absolute->setAutoconfigured(true);
             $absolute->setArgument('$baseUrl', $baseUrl);
             $container->setDefinition(AbsoluteUrlBuilder::class, $absolute);
+            $this->registerPageHead($container, $config);
         }
 
         $adminLoader = new Definition(SeoAdminRouteLoader::class);
@@ -238,6 +253,52 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     /**
      * @param array<string, mixed> $config
      */
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function registerPageHead(ContainerBuilder $container, array $config): void
+    {
+        $pageHead = $config['page_head'] ?? [];
+        $regions = $pageHead['open_graph_regions'] ?? [];
+        $container->setParameter(Configuration::ALIAS . '.page_head.open_graph_regions', $regions);
+
+        $hreflang = new Definition(HreflangSetBuilder::class);
+        $hreflang->setAutowired(true);
+        $hreflang->setAutoconfigured(true);
+        $hreflang->setArgument('$urls', new Reference(AbsoluteUrlBuilder::class));
+        $hreflang->setArgument('$siteLocales', $config['locales'] ?? ['en']);
+        $hreflang->setArgument('$defaultLocale', $config['default_locale'] ?? 'en');
+        $container->setDefinition(HreflangSetBuilder::class, $hreflang);
+
+        $resolver = new Definition(PageHeadResolver::class);
+        $resolver->setAutowired(true);
+        $resolver->setAutoconfigured(true);
+        $resolver->setArgument('$urls', new Reference(AbsoluteUrlBuilder::class));
+        $resolver->setArgument('$hreflangSetBuilder', new Reference(HreflangSetBuilder::class));
+        $resolver->setArgument('$defaultsProvider', new Reference(PageHeadDefaultsProviderInterface::class));
+        $resolver->setArgument('$siteGraphProvider', new Reference(PageHeadSiteGraphProviderInterface::class, ContainerInterface::NULL_ON_INVALID_REFERENCE));
+        $resolver->setArgument('$titleComposer', new Reference(PageHeadTitleComposerInterface::class, ContainerInterface::NULL_ON_INVALID_REFERENCE));
+        $resolver->setArgument('$openGraphRegions', $regions);
+        $container->setDefinition(PageHeadResolver::class, $resolver);
+
+        $context = new Definition(PageHeadContext::class);
+        $context->setAutowired(true);
+        $context->setAutoconfigured(true);
+        $context->addTag('kernel.reset', ['method' => 'reset']);
+        $container->setDefinition(PageHeadContext::class, $context);
+
+        $bridge = new Definition(PageHeadRuntimeBridge::class);
+        $bridge->setAutowired(true);
+        $bridge->setAutoconfigured(true);
+        $container->setDefinition(PageHeadRuntimeBridge::class, $bridge);
+
+        $pencil = new Definition(SeoPencilCatalogFactory::class);
+        $pencil->setAutowired(true);
+        $pencil->setAutoconfigured(true);
+        $container->setDefinition(SeoPencilCatalogFactory::class, $pencil);
+    }
+
     private function registerAudit(ContainerBuilder $container, array $config): void
     {
         // SeoAuditRules + SeoAuditor are defined in Resources/config/services.yaml with

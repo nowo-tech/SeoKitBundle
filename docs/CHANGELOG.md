@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.10.0] - 2026-09-22](#1100---2026-09-22)
 - [[1.9.0] - 2026-09-22](#190---2026-09-22)
 - [[1.8.1] - 2026-09-22](#181---2026-09-22)
 - [[1.8.0] - 2026-09-22](#180---2026-09-22)
@@ -25,6 +26,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.10.0] - 2026-09-22
+
+### Added
+
+- **`PageHead` pipeline** — `PageHeadInput` / `PageHead` / `PageHeadDefaults`, `PageHeadResolver`, SPI (defaults / site graph / title composer), `PageHeadContext`, `PageHeadRuntimeBridge`
+- **`HreflangSet` / `HreflangSetBuilder`**
+- **`SeoPencilCatalogFactory`** for public SEO pencil JSON catalogs
+- Config `page_head.open_graph_regions` (requires `base_url`)
+
+### Notes
+
+- Branch alias `dev-main` → `1.10.x-dev`.
 
 ## [1.9.0] - 2026-09-22
 

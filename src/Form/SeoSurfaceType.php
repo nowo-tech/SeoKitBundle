@@ -19,8 +19,11 @@ use function is_string;
 
 /**
  * Per-surface SEO overrides (nullable = inherit).
+ *
+ * Not final so hosts can subclass for a custom {@see getBlockPrefix()} / translation catalogue
+ * (e.g. CMS `page_seo` forms). Prefer this type directly when the kit prefix is fine.
  */
-final class SeoSurfaceType extends AbstractSeoFormType
+class SeoSurfaceType extends AbstractSeoFormType
 {
     public function __construct(
         FormOptionsMerger $formOptionsMerger,

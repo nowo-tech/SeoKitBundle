@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [To 1.10.0](#to-1100)
 - [To 1.9.0](#to-190)
 - [To 1.8.1](#to-181)
 - [To 1.8.0](#to-180)
@@ -17,6 +18,35 @@
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+## To 1.10.0
+
+From **1.9.x** — PageHead pipeline for CMS hosts.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.10
+```
+
+### What changed
+
+- **`PageHead` resolution** (`PageHeadInput` → `PageHeadResolver` → `PageHead`) with SPI:
+  - `PageHeadDefaultsProviderInterface` (required for PageHead)
+  - optional `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface`
+- `PageHeadContext` + `PageHeadRuntimeBridge` for request-scoped head + Twig runtime
+- `HreflangSet` / `HreflangSetBuilder`, `SeoPencilCatalogFactory`
+- Config `nowo_seo_kit.page_head.open_graph_regions` (requires `base_url`)
+- `SeoSurfaceType` is extendable so hosts can keep a custom form block prefix
+
+### Integrator actions
+
+1. Set `nowo_seo_kit.base_url` and wire `PageHeadDefaultsProviderInterface`.
+2. Optionally alias title composer / site JSON-LD providers.
+3. Remove host duplicates of PageHead / hreflang / AbsoluteUrlBuilder / pencil catalog builders.
+4. Prefer `nowo:seo:audit` over a host `app:seo:audit` alias.
+
+### Breaking changes
+
+None for hosts that do not use PageHead. Hosts that already consumed a path/dev copy of these classes should drop their forks and use the kit namespaces.
 
 ## To 1.9.0
 

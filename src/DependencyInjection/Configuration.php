@@ -53,10 +53,31 @@ final class Configuration implements ConfigurationInterface
         $this->addSitemapNode($root);
         $this->addRobotsNode($root);
         $this->addTemplatesNode($root);
+        $this->addPageHeadNode($root);
         $this->addPersistenceNode($root);
         $this->addAdminNode($root);
 
         return $treeBuilder;
+    }
+
+    private function addPageHeadNode(ArrayNodeDefinition $root): void
+    {
+        $root->children()
+            ->arrayNode('page_head')
+            ->info('Layered PageHead resolution for CMS hosts.')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->arrayNode('open_graph_regions')
+                    ->useAttributeAsKey('locale')
+                    ->scalarPrototype()->end()
+                    ->defaultValue([
+                        'es' => 'ES', 'ca' => 'ES', 'en' => 'GB',
+                        'pt' => 'PT', 'fr' => 'FR', 'it' => 'IT',
+                    ])
+                ->end()
+            ->end()
+            ->end()
+        ->end();
     }
 
     private function addPersistenceNode(ArrayNodeDefinition $root): void
