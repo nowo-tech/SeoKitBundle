@@ -157,3 +157,17 @@ $surfaceManager->saveOrClear($surface); // deletes the row when every field is e
 ```
 
 Requires `persistence.enabled: true` (registers `SeoSurfaceManager`).
+
+## Absolute URLs (1.8.1+)
+
+When `base_url` is configured, `AbsoluteUrlBuilder` is registered:
+
+```php
+use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
+
+$canonical = $urls->fromPath('/producto/core'); // https://example.test/producto/core
+$urls->belongsToSite($canonical); // true
+```
+
+Prefer this over a host-only canonical helper so origin + path shape stay consistent with sitemap / robots / head.
+

@@ -18,8 +18,7 @@ use Nowo\SeoKitBundle\Form\SeoSurfaceType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
-use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
-use Nowo\SeoKitBundle\Service\Audit\SeoAuditRules;
+use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditSubjectProviderInterface;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
@@ -72,6 +71,14 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $guard->setAutoconfigured(true);
         $guard->setArgument('$origin', $origin);
         $container->setDefinition(OriginUrlGuard::class, $guard);
+
+        if (is_string($baseUrl) && $baseUrl !== '') {
+            $absolute = new Definition(AbsoluteUrlBuilder::class);
+            $absolute->setAutowired(true);
+            $absolute->setAutoconfigured(true);
+            $absolute->setArgument('$baseUrl', $baseUrl);
+            $container->setDefinition(AbsoluteUrlBuilder::class, $absolute);
+        }
 
         $adminLoader = new Definition(SeoAdminRouteLoader::class);
         $adminLoader->setAutowired(true);
@@ -187,15 +194,9 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
      */
     private function registerAudit(ContainerBuilder $container, array $config): void
     {
-        $rules = new Definition(SeoAuditRules::class);
-        $rules->setAutowired(true);
-        $rules->setAutoconfigured(true);
-        $container->setDefinition(SeoAuditRules::class, $rules);
-
-        $auditor = new Definition(SeoAuditor::class);
-        $auditor->setAutowired(true);
-        $auditor->setAutoconfigured(true);
-        $container->setDefinition(SeoAuditor::class, $auditor);
+        // SeoAuditRules + SeoAuditor are defined in Resources/config/services.yaml with
+        // !tagged_iterator for subject providers. Do not setDefinition() them here — that
+        // wiped the tagged iterator and left nowo:seo:audit with zero hosts (1.8.0 bug).
 
         $command = new Definition(SeoAuditCommand::class);
         $command->setAutowired(true);

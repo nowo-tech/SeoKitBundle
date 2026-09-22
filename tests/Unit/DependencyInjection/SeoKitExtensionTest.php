@@ -18,12 +18,15 @@ use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
+use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
+use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 
@@ -174,5 +177,28 @@ final class SeoKitExtensionTest extends TestCase
         });
         (new SeoKitExtension())->prepend($container);
         self::assertSame([], $container->getExtensionConfig('doctrine'));
+    }
+
+    public function testLoadKeepsTaggedIteratorOnSeoAuditorWhenAuditCommandRegisters(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new SeoKitExtension();
+
+        $extension->load([[
+            'enabled'     => true,
+            'base_url'    => 'https://example.test',
+            'persistence' => [
+                'enabled'                => true,
+                'register_audit_command' => true,
+            ],
+        ]], $container);
+
+        self::assertTrue($container->hasDefinition(SeoAuditor::class));
+        $argument = $container->getDefinition(SeoAuditor::class)->getArgument('$subjectProviders');
+        self::assertInstanceOf(TaggedIteratorArgument::class, $argument);
+        self::assertSame('nowo_seo_kit.audit_subject_provider', $argument->getTag());
+
+        self::assertTrue($container->hasDefinition(AbsoluteUrlBuilder::class));
+        self::assertSame('https://example.test', $container->getDefinition(AbsoluteUrlBuilder::class)->getArgument('$baseUrl'));
     }
 }

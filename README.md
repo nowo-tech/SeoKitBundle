@@ -34,6 +34,7 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Typed JSON-LD + audit CLI** — structured data nodes and `nowo:seo:audit`
 - ✅ **Optional SEO admin + pencil API** — site settings, surface overrides, `OriginUrlGuard`
 - ✅ **Surface helpers** — `SeoSurfaceKeys` + `SeoSurfaceManager` for CMS/blog pencils
+- ✅ **AbsoluteUrlBuilder** — origin + path normalisation from `base_url`
 - ✅ **PHP 8 attribute** — `#[Seo]` on controllers
 - ✅ **FrankenPHP-ready demo** — single-container Symfony 8 demo
 

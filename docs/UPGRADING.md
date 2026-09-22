@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [To 1.8.1](#to-181)
 - [To 1.8.0](#to-180)
 - [To 1.7.0](#to-170)
 - [To 1.6.0](#to-160)
@@ -15,6 +16,26 @@
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+## To 1.8.1
+
+From **1.8.0** — bugfix + small helper.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.8.1
+```
+
+### Fixed
+
+`nowo:seo:audit` now receives tagged `nowo_seo_kit.audit_subject_provider` services again. Remove any host `services.yaml` bind of `SeoAuditor::$subjectProviders` if you added one as a workaround.
+
+### Added
+
+`AbsoluteUrlBuilder` when `base_url` is set — prefer it (or wrap it) instead of a host-only canonical URL helper.
+
+### Breaking changes
+
+None.
 
 ## To 1.8.0
 
