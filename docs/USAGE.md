@@ -67,6 +67,10 @@ Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `Site
 
 Enable with `nowo_seo_kit.persistence.enabled: true` (requires Doctrine ORM). See [CONFIGURATION.md — persistence](CONFIGURATION.md#persistence) and [UPGRADING.md — To 1.6.0](UPGRADING.md#to-160).
 
+## Optional SEO admin
+
+Requires persistence. Enable `nowo_seo_kit.admin.enabled: true`, import routes with `type: nowo_seo_kit_admin`, then use `/settings/seo`, `/admin/seo/surfaces`, and optionally `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. See [CONFIGURATION.md — admin](CONFIGURATION.md#admin) and [UPGRADING.md — To 1.7.0](UPGRADING.md#to-170).
+
 ## Audit CLI
 
 ```bash

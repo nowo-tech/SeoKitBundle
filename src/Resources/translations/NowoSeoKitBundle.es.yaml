@@ -6,3 +6,46 @@ seo:
         label: 'Mapa del sitio'
     robots:
         label: 'Robots'
+
+nowo_seo_kit:
+    admin:
+        save: 'Guardar'
+        edit: 'Editar'
+        back: 'Volver'
+        settings:
+            title: 'Ajustes SEO'
+            intro: 'Valores por defecto del sitio y la organización del grafo de conocimiento.'
+            noindex_warning: 'Este despliegue está en noindex. Los buscadores no indexarán las páginas públicas.'
+            section:
+                wording: 'Textos por idioma'
+                organisation: 'Organización'
+        surfaces:
+            title: 'SEO de páginas'
+            intro: 'Metadatos resueltos por superficie. Vacío significa heredar.'
+            site_noindex: 'Todo el sitio está en noindex; se omiten avisos published_but_noindex.'
+            empty: 'No hay sujetos de auditoría para este idioma.'
+            edit_title: 'Editar SEO — %surface%'
+            column:
+                surface: 'Superficie'
+                path: 'Ruta'
+                title: 'Título'
+                problems: 'Problemas'
+    flash:
+        settings_saved: 'Ajustes SEO guardados.'
+        surface_saved: 'SEO de superficie guardado.'
+    robots:
+        index_follow: 'Index, follow'
+        index_nofollow: 'Index, nofollow'
+        noindex_follow: 'Noindex, follow'
+        noindex_nofollow: 'Noindex, nofollow'
+    title_template:
+        missing_placeholder: 'La plantilla del título debe incluir %placeholder%.'
+    social_profiles:
+        invalid: '"%url%" debe ser una URL http(s) absoluta.'
+    surface:
+        robots:
+            inherit: 'Heredar'
+        canonical:
+            outside_site: 'El canonical debe pertenecer al origen del sitio.'
+        open_graph_image:
+            invalid: 'La imagen Open Graph debe ser una ruta del sitio o una URL https.'

@@ -1,0 +1,7 @@
+nowo_seo_kit_admin_controllers:
+    resource: ../../Controller/Admin/
+    type: attribute
+
+nowo_seo_kit_api_controllers:
+    resource: ../../Controller/Api/
+    type: attribute

@@ -897,6 +897,16 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         fallback_site_name?: scalar|Param|null, // Default: ""
  *         register_audit_command?: bool|Param, // Register nowo:seo:audit (always available when persistence is enabled; uses tagged audit subjects). // Default: true
  *     },
+ *     admin?: array{ // Optional admin UI + JSON API for site settings and surface overrides (requires persistence.enabled).
+ *         enabled?: bool|Param, // Default: false
+ *         settings?: bool|Param, // Register /settings/seo site settings controller. // Default: true
+ *         surfaces?: bool|Param, // Register /admin/seo/surfaces list + edit. // Default: true
+ *         role?: scalar|Param|null, // Default: "ROLE_ADMIN"
+ *         settings_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/settings.html.twig"
+ *         surfaces_index_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_index.html.twig"
+ *         surfaces_form_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_form.html.twig"
+ *         api_enabled?: bool|Param, // Register JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}. // Default: true
+ *     },
  * }
  * @psalm-type WebProfilerConfig = array{
  *     toolbar?: bool|array{ // Profiler toolbar configuration

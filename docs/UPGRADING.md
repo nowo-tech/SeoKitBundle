@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [To 1.7.0](#to-170)
 - [To 1.6.0](#to-160)
 - [To 1.5.0](#to-150)
 - [From 1.4.2 to 1.4.3](#from-142-to-143)
@@ -13,6 +14,40 @@
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+## To 1.7.0
+
+From **1.6.x** — additive / opt-in admin.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.7
+```
+
+```yaml
+nowo_seo_kit:
+    persistence:
+        enabled: true
+    admin:
+        enabled: true
+        settings: true   # /settings/seo
+        surfaces: true   # /admin/seo/surfaces
+        api_enabled: true
+        # Override Twig for branded chrome:
+        # settings_template: 'admin/seo/settings.html.twig'
+```
+
+Import admin routes (once):
+
+```yaml
+# config/routes/nowo_seo_kit.yaml
+nowo_seo_kit_admin:
+    resource: .
+    type: nowo_seo_kit_admin
+```
+
+### Breaking changes
+
+None when `admin.enabled` stays `false` (default).
 
 ## To 1.6.0
 

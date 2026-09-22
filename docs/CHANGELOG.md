@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.7.0] - 2026-09-22](#170---2026-09-22)
 - [[1.6.0] - 2026-09-21](#160---2026-09-21)
 - [[1.5.0] - 2026-09-21](#150---2026-09-21)
 - [[1.4.3] - 2026-08-24](#143---2026-08-24)
@@ -21,6 +22,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.7.0] - 2026-09-22
+
+### Added
+
+- **Admin UI (opt-in):** `nowo_seo_kit.admin.enabled` registers site settings (`/settings/seo`) + surface overrides (`/admin/seo/surfaces`) with overrideable Twig templates
+- **SEO pencil API:** `GET/POST /_nowo/seo/surfaces/{key}/{locale}` (`admin.api_enabled`)
+- **Forms:** `SeoSiteSettingsType`, `SeoSurfaceType` + `OriginUrlGuard` for on-origin canonical / https OG validation
+- **Routing:** `SeoAdminRouteLoader` (`type: nowo_seo_kit_admin`)
+
+### Notes
+
+- Admin requires `persistence.enabled: true`. Hosts should override kit Twig with branded layouts.
+- Branch alias `dev-main` → `1.7.x-dev`.
+- Additive / opt-in: default `admin.enabled: false` keeps 1.6.x behaviour.
 
 ## [1.6.0] - 2026-09-21
 
@@ -177,7 +193,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.7.0
 [1.6.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.6.0
 [1.5.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.5.0
 [1.4.3]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.4.3

@@ -6,3 +6,46 @@ seo:
         label: 'Sitemap'
     robots:
         label: 'Robots'
+
+nowo_seo_kit:
+    admin:
+        save: 'Save'
+        edit: 'Edit'
+        back: 'Back'
+        settings:
+            title: 'SEO settings'
+            intro: 'Site-wide defaults every page inherits, plus the organisation behind the knowledge graph.'
+            noindex_warning: 'This deployment is set to noindex. Search engines will not index public pages.'
+            section:
+                wording: 'Wording by locale'
+                organisation: 'Organisation'
+        surfaces:
+            title: 'Page SEO'
+            intro: 'Resolved head metadata per surface. Empty overrides inherit site defaults.'
+            site_noindex: 'The whole site is noindex; published_but_noindex warnings are suppressed.'
+            empty: 'No audit subjects registered for this locale.'
+            edit_title: 'Edit SEO — %surface%'
+            column:
+                surface: 'Surface'
+                path: 'Path'
+                title: 'Title'
+                problems: 'Problems'
+    flash:
+        settings_saved: 'SEO settings saved.'
+        surface_saved: 'Surface SEO saved.'
+    robots:
+        index_follow: 'Index, follow'
+        index_nofollow: 'Index, nofollow'
+        noindex_follow: 'Noindex, follow'
+        noindex_nofollow: 'Noindex, nofollow'
+    title_template:
+        missing_placeholder: 'The title template must include %placeholder%.'
+    social_profiles:
+        invalid: '"%url%" must be an absolute http(s) URL.'
+    surface:
+        robots:
+            inherit: 'Inherit'
+        canonical:
+            outside_site: 'Canonical must stay on this site origin.'
+        open_graph_image:
+            invalid: 'Open Graph image must be a site path or an https URL.'

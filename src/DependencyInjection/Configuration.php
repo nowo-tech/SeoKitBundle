@@ -54,6 +54,7 @@ final class Configuration implements ConfigurationInterface
         $this->addRobotsNode($root);
         $this->addTemplatesNode($root);
         $this->addPersistenceNode($root);
+        $this->addAdminNode($root);
 
         return $treeBuilder;
     }
@@ -74,6 +75,39 @@ final class Configuration implements ConfigurationInterface
                 ->scalarNode('fallback_site_name')->defaultValue('')->end()
                 ->booleanNode('register_audit_command')
                     ->info('Register nowo:seo:audit (always available when persistence is enabled; uses tagged audit subjects).')
+                    ->defaultTrue()
+                ->end()
+            ->end();
+    }
+
+    private function addAdminNode(ArrayNodeDefinition $root): void
+    {
+        $root->children()
+            ->arrayNode('admin')
+            ->info('Optional admin UI + JSON API for site settings and surface overrides (requires persistence.enabled).')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->booleanNode('enabled')->defaultFalse()->end()
+                ->booleanNode('settings')
+                    ->info('Register /settings/seo site settings controller.')
+                    ->defaultTrue()
+                ->end()
+                ->booleanNode('surfaces')
+                    ->info('Register /admin/seo/surfaces list + edit.')
+                    ->defaultTrue()
+                ->end()
+                ->scalarNode('role')->defaultValue('ROLE_ADMIN')->end()
+                ->scalarNode('settings_template')
+                    ->defaultValue('@NowoSeoKitBundle/admin/settings.html.twig')
+                ->end()
+                ->scalarNode('surfaces_index_template')
+                    ->defaultValue('@NowoSeoKitBundle/admin/surfaces_index.html.twig')
+                ->end()
+                ->scalarNode('surfaces_form_template')
+                    ->defaultValue('@NowoSeoKitBundle/admin/surfaces_form.html.twig')
+                ->end()
+                ->booleanNode('api_enabled')
+                    ->info('Register JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}.')
                     ->defaultTrue()
                 ->end()
             ->end();

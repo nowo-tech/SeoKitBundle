@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Tests\Unit\DependencyInjection;
 
+use InvalidArgumentException;
 use Nowo\SeoKitBundle\Command\SeoAuditCommand;
+use Nowo\SeoKitBundle\Controller\Admin\SeoSiteSettingsController;
+use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
+use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
 use Nowo\SeoKitBundle\DependencyInjection\Configuration;
 use Nowo\SeoKitBundle\DependencyInjection\SeoKitExtension;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
+use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
+use Nowo\SeoKitBundle\Service\OriginUrlGuard;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
@@ -66,6 +73,61 @@ final class SeoKitExtensionTest extends TestCase
             ],
             $container->getParameter(Configuration::ALIAS . '.persistence.entities'),
         );
+    }
+
+    public function testLoadRegistersAdminWhenEnabledWithPersistence(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new SeoKitExtension();
+
+        $extension->load([[
+            'enabled'     => true,
+            'base_url'    => 'https://nowo.tech',
+            'persistence' => ['enabled' => true],
+            'admin'       => [
+                'enabled'     => true,
+                'settings'    => true,
+                'surfaces'    => true,
+                'api_enabled' => true,
+            ],
+        ]], $container);
+
+        self::assertTrue($container->hasDefinition(SeoSiteSettingsController::class));
+        self::assertTrue($container->hasDefinition(SeoSurfaceController::class));
+        self::assertTrue($container->hasDefinition(SeoSurfaceApiController::class));
+        self::assertTrue($container->hasDefinition(SeoSiteSettingsType::class));
+        self::assertTrue($container->hasDefinition(SeoAdminRouteLoader::class));
+        self::assertTrue($container->hasDefinition(OriginUrlGuard::class));
+    }
+
+    public function testLoadAdminCanDisableSubControllers(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'enabled'     => true,
+            'persistence' => ['enabled' => true],
+            'admin'       => [
+                'enabled'     => true,
+                'settings'    => false,
+                'surfaces'    => false,
+                'api_enabled' => false,
+            ],
+        ]], $container);
+
+        self::assertFalse($container->hasDefinition(SeoSiteSettingsController::class));
+        self::assertFalse($container->hasDefinition(SeoSurfaceController::class));
+        self::assertFalse($container->hasDefinition(SeoSurfaceApiController::class));
+        self::assertTrue($container->hasDefinition(SeoSiteSettingsType::class));
+    }
+
+    public function testLoadAdminWithoutPersistenceThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        (new SeoKitExtension())->load([[
+            'enabled'     => true,
+            'admin'       => ['enabled' => true],
+            'persistence' => ['enabled' => false],
+        ]], new ContainerBuilder());
     }
 
     public function testPrependRegistersDoctrineMappingWhenPersistenceEnabled(): void

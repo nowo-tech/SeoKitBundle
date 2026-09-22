@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="{{ locale|default('en') }}">
+<head>
+    <meta charset="utf-8">
+    <title>{{ 'nowo_seo_kit.admin.surfaces.title'|trans({}, 'NowoSeoKitBundle') }}</title>
+</head>
+<body>
+<main>
+    <h1>{{ 'nowo_seo_kit.admin.surfaces.title'|trans({}, 'NowoSeoKitBundle') }}</h1>
+    <p>{{ 'nowo_seo_kit.admin.surfaces.intro'|trans({}, 'NowoSeoKitBundle') }}</p>
+
+    <nav>
+        {% for candidate in locales %}
+            <a href="{{ path('nowo_seo_kit_admin_surfaces', {locale: candidate}) }}"{% if candidate == locale %} aria-current="page"{% endif %}>{{ candidate|upper }}</a>
+        {% endfor %}
+    </nav>
+
+    {% if not site_indexable %}
+        <p role="status"><strong>{{ 'nowo_seo_kit.admin.surfaces.site_noindex'|trans({}, 'NowoSeoKitBundle') }}</strong></p>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>{{ 'nowo_seo_kit.admin.surfaces.column.surface'|trans({}, 'NowoSeoKitBundle') }}</th>
+                <th>{{ 'nowo_seo_kit.admin.surfaces.column.path'|trans({}, 'NowoSeoKitBundle') }}</th>
+                <th>{{ 'nowo_seo_kit.admin.surfaces.column.title'|trans({}, 'NowoSeoKitBundle') }}</th>
+                <th>{{ 'nowo_seo_kit.admin.surfaces.column.problems'|trans({}, 'NowoSeoKitBundle') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.surfaceKey }}</td>
+                    <td>{{ row.path }}</td>
+                    <td>{{ row.title }}</td>
+                    <td>{{ row.problems()|join(', ') }}</td>
+                    <td><a href="{{ path('nowo_seo_kit_admin_surfaces_edit', {locale: locale, surfaceKey: row.surfaceKey|url_encode}) }}">{{ 'nowo_seo_kit.admin.edit'|trans({}, 'NowoSeoKitBundle') }}</a></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">{{ 'nowo_seo_kit.admin.surfaces.empty'|trans({}, 'NowoSeoKitBundle') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

@@ -15,6 +15,7 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 - [robots](#robots)
 - [templates](#templates)
 - [persistence](#persistence)
+- [admin](#admin)
 - [Web servers](#web-servers)
 
 ## Resolution order
@@ -167,6 +168,19 @@ Opt-in Doctrine site settings (requires `doctrine/orm` + `doctrine/doctrine-bund
 Tables: `nowo_seo_site_settings`, `nowo_seo_site_settings_translation`, `nowo_seo_surface`.
 
 Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
+
+## admin
+
+Requires `persistence.enabled: true`. Import routes with `type: nowo_seo_kit_admin`.
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `enabled` | `false` | Master switch for admin + API loaders |
+| `settings` | `true` | Register `/settings/seo` |
+| `surfaces` | `true` | Register `/admin/seo/surfaces` |
+| `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}` |
+| `role` | `ROLE_ADMIN` | Access control |
+| `settings_template` / `surfaces_*_template` | kit defaults | Override with host Twig paths |
 
 ## Web servers
 

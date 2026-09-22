@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="{{ locale|default('en') }}">
+<head>
+    <meta charset="utf-8">
+    <title>{{ 'nowo_seo_kit.admin.surfaces.edit_title'|trans({'%surface%': surface_key}, 'NowoSeoKitBundle') }}</title>
+</head>
+<body>
+<main>
+    <h1>{{ 'nowo_seo_kit.admin.surfaces.edit_title'|trans({'%surface%': surface_key}, 'NowoSeoKitBundle') }}</h1>
+    <p>{{ locale|upper }}</p>
+
+    {{ form_start(form) }}
+        {{ form_row(form.metaTitle) }}
+        {{ form_row(form.metaDescription) }}
+        {{ form_row(form.metaRobots) }}
+        {{ form_row(form.canonicalOverride) }}
+        {{ form_row(form.openGraphImage) }}
+        <button type="submit">{{ 'nowo_seo_kit.admin.save'|trans({}, 'NowoSeoKitBundle') }}</button>
+        <a href="{{ path('nowo_seo_kit_admin_surfaces', {locale: locale}) }}">{{ 'nowo_seo_kit.admin.back'|trans({}, 'NowoSeoKitBundle') }}</a>
+    {{ form_end(form) }}
+</main>
+</body>
+</html>

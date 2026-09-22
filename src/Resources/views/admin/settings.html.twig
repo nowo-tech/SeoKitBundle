@@ -1,0 +1,56 @@
+{#
+  Override in the host for branded chrome. Default is a minimal functional layout.
+#}
+<!DOCTYPE html>
+<html lang="{{ default_locale|default('en') }}">
+<head>
+    <meta charset="utf-8">
+    <title>{{ 'nowo_seo_kit.admin.settings.title'|trans({}, 'NowoSeoKitBundle') }}</title>
+</head>
+<body>
+<main>
+    <h1>{{ 'nowo_seo_kit.admin.settings.title'|trans({}, 'NowoSeoKitBundle') }}</h1>
+    <p>{{ 'nowo_seo_kit.admin.settings.intro'|trans({}, 'NowoSeoKitBundle') }}</p>
+
+    {% if not settings.indexable %}
+        <p role="status"><strong>{{ 'nowo_seo_kit.admin.settings.noindex_warning'|trans({}, 'NowoSeoKitBundle') }}</strong></p>
+    {% endif %}
+
+    {{ form_start(form) }}
+        {{ form_row(form.siteName) }}
+        {{ form_row(form.titleTemplate) }}
+        {{ form_row(form.indexable) }}
+        {{ form_row(form.defaultRobots) }}
+        {{ form_row(form.defaultOpenGraphImage) }}
+        {{ form_row(form.twitterSite) }}
+
+        <h2>{{ 'nowo_seo_kit.admin.settings.section.wording'|trans({}, 'NowoSeoKitBundle') }}</h2>
+        {% for locale in enabled_locales %}
+            <fieldset>
+                <legend>{{ locale|upper }}</legend>
+                {{ form_row(attribute(form, 'defaultTitle_' ~ locale)) }}
+                {{ form_row(attribute(form, 'homeTitle_' ~ locale)) }}
+                {{ form_row(attribute(form, 'defaultDescription_' ~ locale)) }}
+                {{ form_row(attribute(form, 'organisationDescription_' ~ locale)) }}
+            </fieldset>
+        {% endfor %}
+
+        <h2>{{ 'nowo_seo_kit.admin.settings.section.organisation'|trans({}, 'NowoSeoKitBundle') }}</h2>
+        {{ form_row(form.organisationLegalName) }}
+        {{ form_row(form.organisationLogo) }}
+        {{ form_row(form.contactEmail) }}
+        {{ form_row(form.contactPhone) }}
+        {{ form_row(form.streetAddress) }}
+        {{ form_row(form.postalCode) }}
+        {{ form_row(form.addressLocality) }}
+        {{ form_row(form.addressRegion) }}
+        {{ form_row(form.addressCountry) }}
+        {{ form_row(form.socialProfilesText) }}
+        {{ form_row(form.googleSiteVerification) }}
+        {{ form_row(form.bingSiteVerification) }}
+
+        <button type="submit">{{ 'nowo_seo_kit.admin.save'|trans({}, 'NowoSeoKitBundle') }}</button>
+    {{ form_end(form) }}
+</main>
+</body>
+</html>

@@ -48,4 +48,10 @@ class SeoSurfaceRepository extends ServiceEntityRepository
         $this->getEntityManager()->persist($surface);
         $this->getEntityManager()->flush();
     }
+
+    public function remove(SeoSurface $surface): void
+    {
+        $this->getEntityManager()->remove($surface);
+        $this->getEntityManager()->flush();
+    }
 }

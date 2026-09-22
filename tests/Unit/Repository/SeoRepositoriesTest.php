@@ -83,6 +83,15 @@ final class SeoRepositoriesTest extends TestCase
         $this->surfaceRepository($emSave, null)->save($toSave);
     }
 
+    public function testSurfaceRemoveFlushes(): void
+    {
+        $toRemove = new SeoSurface();
+        $em       = $this->entityManager(SeoSurface::class);
+        $em->expects(self::once())->method('remove')->with($toRemove);
+        $em->expects(self::once())->method('flush');
+        $this->surfaceRepository($em, null)->remove($toRemove);
+    }
+
     /**
      * @template T of object
      *
