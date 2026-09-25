@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.10.1] - 2026-09-25](#1101---2026-09-25)
 - [[1.10.0] - 2026-09-22](#1100---2026-09-22)
 - [[1.9.0] - 2026-09-22](#190---2026-09-22)
 - [[1.8.1] - 2026-09-22](#181---2026-09-22)
@@ -26,6 +27,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.10.1] - 2026-09-25
+
+### Fixed
+
+- **FrankenPHP worker (no kernel reset):** `SeoRuntimeClearSubscriber` now also listens to `kernel.request`
+  (priority 4096, main requests only) and clears `SeoRuntime`, `PageHeadContext` and the `SeoSiteConfigProvider` memo
+  before controllers run, so a page that does not call `describe()` no longer renders the previous page head and site
+  settings saved in another worker are picked up on the next request (through `cache.app`).
+- `SeoRuntime` implements `ResetInterface` (tagged `kernel.reset` via autoconfiguration).
+- Repository flushes reset a closed EntityManager before rethrowing, and `getOrCreate()` of `SeoSiteSettingsRepository` /
+  `SeoSurfaceRepository` returns the row created by a concurrent request after a unique-constraint violation.
+- `SeoSiteSettingsRepository::getOrCreate()` refreshes an already managed singleton row (translations cascade
+  `refresh`), so a stale identity map copy is never snapshotted into the shared cache.
+- Fixed PHPStan findings (0 errors at level 8).
+
+### Documentation
+
+- Added [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md) (scenario B viable after remediation).
+
+### Notes
+
+- Branch alias `dev-main` → `1.10.x-dev`.
+- Under scenario B, clearing the application's EntityManager identity map between requests remains the host's responsibility.
 
 ## [1.10.0] - 2026-09-22
 
@@ -252,7 +277,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.10.1...HEAD
+[1.10.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.1
+[1.10.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.0
 [1.9.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.9.0
 [1.8.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.8.1
 [1.8.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.8.0

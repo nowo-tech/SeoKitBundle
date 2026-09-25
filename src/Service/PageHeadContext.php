@@ -10,10 +10,12 @@ use Nowo\SeoKitBundle\Model\PageHeadInput;
 use Override;
 use Symfony\Contracts\Service\ResetInterface;
 
+use function sprintf;
+
 final class PageHeadContext implements ResetInterface
 {
     private ?PageHeadInput $input = null;
-    private ?PageHead $resolved = null;
+    private ?PageHead $resolved   = null;
 
     public function __construct(private readonly PageHeadResolver $resolver)
     {
@@ -21,7 +23,7 @@ final class PageHeadContext implements ResetInterface
 
     public function describe(PageHeadInput $input): void
     {
-        $this->input = $input;
+        $this->input    = $input;
         $this->resolved = null;
     }
 
@@ -42,7 +44,7 @@ final class PageHeadContext implements ResetInterface
     #[Override]
     public function reset(): void
     {
-        $this->input = null;
+        $this->input    = null;
         $this->resolved = null;
     }
 }

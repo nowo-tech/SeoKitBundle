@@ -28,23 +28,23 @@ final readonly class SeoPencilCatalogFactory
     public function build(?SeoSurface $surface, array $inherited, array $labels, bool $includeAdvanced = true): array
     {
         $inherits = $labels['inherits_prefix'];
-        $fields = [
-            $this->field('metaTitle', 'text', $labels['fields']['meta_title']['label'], $surface?->getMetaTitle(), $inherits.' '.$inherited['title']),
-            $this->field('metaDescription', 'textarea', $labels['fields']['meta_description']['label'], $surface?->getMetaDescription(), $inherits.' '.$inherited['description']),
+        $fields   = [
+            $this->field('metaTitle', 'text', $labels['fields']['meta_title']['label'], $surface?->getMetaTitle(), $inherits . ' ' . $inherited['title']),
+            $this->field('metaDescription', 'textarea', $labels['fields']['meta_description']['label'], $surface?->getMetaDescription(), $inherits . ' ' . $inherited['description']),
         ];
 
         if ($includeAdvanced && isset($labels['fields']['meta_robots'])) {
             $fields[] = [
-                'key' => 'metaRobots',
-                'kind' => 'choice',
-                'label' => $labels['fields']['meta_robots']['label'],
-                'help' => $inherits.' '.($inherited['robots'] ?? ''),
-                'value' => $surface?->getMetaRobots() ?? '',
+                'key'     => 'metaRobots',
+                'kind'    => 'choice',
+                'label'   => $labels['fields']['meta_robots']['label'],
+                'help'    => $inherits . ' ' . ($inherited['robots'] ?? ''),
+                'value'   => $surface?->getMetaRobots() ?? '',
                 'options' => $labels['fields']['meta_robots']['options'],
             ];
         }
         if ($includeAdvanced && isset($labels['fields']['canonical'])) {
-            $fields[] = $this->field('canonicalOverride', 'text', $labels['fields']['canonical']['label'], $surface?->getCanonicalOverride(), $inherits.' '.($inherited['canonical'] ?? ''));
+            $fields[] = $this->field('canonicalOverride', 'text', $labels['fields']['canonical']['label'], $surface?->getCanonicalOverride(), $inherits . ' ' . ($inherited['canonical'] ?? ''));
         }
         if ($includeAdvanced && isset($labels['fields']['open_graph_image'])) {
             $fields[] = $this->field('openGraphImage', 'text', $labels['fields']['open_graph_image']['label'], $surface?->getOpenGraphImage(), $labels['fields']['open_graph_image']['help']);

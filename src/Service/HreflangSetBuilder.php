@@ -22,7 +22,7 @@ final readonly class HreflangSetBuilder
         $alternates = [];
         foreach ($this->siteLocales as $locale) {
             $path = $pathsByLocale[$locale] ?? null;
-            if (null === $path || '' === trim($path)) {
+            if ($path === null || trim($path) === '') {
                 continue;
             }
             $alternates[$locale] = $this->urls->fromPath($path);

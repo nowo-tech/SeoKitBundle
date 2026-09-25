@@ -232,9 +232,30 @@ final class PageHeadResolverTest extends TestCase
         self::assertContains('WebPage', array_column($page->structuredData->toArray()['@graph'], '@type'));
     }
 
+    public function testWithoutTitleComposerUsesBuiltInDefaultTitle(): void
+    {
+        $meta = $this->resolver(useDefaultComposer: false)->resolve(new PageHeadInput(
+            path: '/productos',
+            locale: 'es',
+            titleOverride: 'Editor only',
+            templateTitle: 'Template',
+        ));
+
+        self::assertSame('Editor only', $meta->title);
+
+        $fallback = $this->resolver(useDefaultComposer: false)->resolve(new PageHeadInput(
+            path: '/productos',
+            locale: 'es',
+            templateTitle: 'Template title',
+        ));
+
+        self::assertSame('Template title', $fallback->title);
+    }
+
     private function resolver(
         ?PageHeadDefaults $defaults = null,
         ?PageHeadTitleComposerInterface $composer = null,
+        bool $useDefaultComposer = true,
     ): PageHeadResolver {
         $urls = new AbsoluteUrlBuilder('https://nowo.tech');
         $defaults ??= new PageHeadDefaults(
@@ -258,7 +279,7 @@ final class PageHeadResolverTest extends TestCase
             new HreflangSetBuilder($urls, ['es', 'ca', 'en', 'pt', 'fr', 'it'], 'es'),
             $defaultsProvider,
             $siteGraph,
-            $composer ?? new PatternTitleComposer(),
+            $useDefaultComposer ? ($composer ?? new PatternTitleComposer()) : $composer,
             ['es' => 'ES', 'ca' => 'ES', 'en' => 'GB', 'pt' => 'PT', 'fr' => 'FR', 'it' => 'IT'],
         );
     }
@@ -278,27 +299,27 @@ final readonly class PatternTitleComposer implements PageHeadTitleComposerInterf
     #[Override]
     public function compose(PageHeadInput $input, PageHeadDefaults $defaults): string
     {
-        $typed = self::clean($input->titleOverride);
-        if (null !== $typed) {
+        $typed = $this->clean($input->titleOverride);
+        if ($typed !== null) {
             return $typed;
         }
 
-        if ($input->isHome && null !== $this->homeTitle && '' !== $this->homeTitle) {
+        if ($input->isHome && $this->homeTitle !== null && $this->homeTitle !== '') {
             return $this->homeTitle;
         }
 
-        $page = self::clean($input->templateTitle) ?? self::clean($defaults->title) ?? '';
+        $page = $this->clean($input->templateTitle) ?? $this->clean($defaults->title) ?? '';
 
         return str_replace(['%page%', '%site%'], [$page, $defaults->siteName], $this->pattern);
     }
 
-    private static function clean(?string $value): ?string
+    private function clean(?string $value): ?string
     {
-        if (null === $value) {
+        if ($value === null) {
             return null;
         }
         $trimmed = trim($value);
 
-        return '' === $trimmed ? null : $trimmed;
+        return $trimmed === '' ? null : $trimmed;
     }
 }

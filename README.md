@@ -83,6 +83,7 @@ Add to your base layout:
 ### Additional documentation
 
 - [Demo with FrankenPHP](docs/DEMO-FRANKENPHP.md) (includes worker mode)
+- [FrankenPHP worker audit](docs/FRANKENPHP-WORKER-AUDIT.md) (kernel not reset between requests)
 - [Server cookbook (Nginx, php-fpm, FrankenPHP)](docs/SERVERS.md)
 - [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 
@@ -90,6 +91,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.10.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.9.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.8.x | >= 8.2 | 7.0 – 8.1+ | Stable |
 | 1.7.x | >= 8.2 | 7.0 – 8.1+ | Stable |

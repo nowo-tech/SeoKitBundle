@@ -8,7 +8,7 @@
 - [Packagist](#packagist)
 - [Sync missing releases](#sync-missing-releases)
 
-Current stable target: **v1.10.0**.
+Current stable target: **v1.10.1**.
 
 ## Pre-release checklist
 
@@ -35,9 +35,9 @@ make release-check
 ## Tag and GitHub release
 
 ```bash
-git tag -a v1.10.0 -m "Release v1.10.0"
+git tag -a v1.10.1 -m "Release v1.10.1"
 git push origin main
-git push origin v1.10.0
+git push origin v1.10.1
 ```
 
 GitHub Actions `release.yml` creates a release from the tag message and changelog section.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\Persistence\ManagerRegistry;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
 
@@ -13,9 +14,14 @@ use Nowo\SeoKitBundle\Entity\SeoSurface;
  */
 class SeoSurfaceRepository extends ServiceEntityRepository
 {
+    use ResetsClosedEntityManagerTrait;
+
+    private readonly ManagerRegistry $managerRegistry;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, SeoSurface::class);
+        $this->managerRegistry = $registry;
     }
 
     public function findOneByKeyAndLocale(string $surfaceKey, string $locale): ?SeoSurface
@@ -38,7 +44,17 @@ class SeoSurfaceRepository extends ServiceEntityRepository
         $surface->setLocale($locale);
 
         $this->getEntityManager()->persist($surface);
-        $this->getEntityManager()->flush();
+
+        try {
+            $this->flushOrResetClosedManager($this->managerRegistry);
+        } catch (UniqueConstraintViolationException $exception) {
+            $existing = $this->findOneByKeyAndLocale($surfaceKey, $locale);
+            if ($existing instanceof SeoSurface) {
+                return $existing;
+            }
+
+            throw $exception;
+        }
 
         return $surface;
     }
@@ -46,12 +62,12 @@ class SeoSurfaceRepository extends ServiceEntityRepository
     public function save(SeoSurface $surface): void
     {
         $this->getEntityManager()->persist($surface);
-        $this->getEntityManager()->flush();
+        $this->flushOrResetClosedManager($this->managerRegistry);
     }
 
     public function remove(SeoSurface $surface): void
     {
         $this->getEntityManager()->remove($surface);
-        $this->getEntityManager()->flush();
+        $this->flushOrResetClosedManager($this->managerRegistry);
     }
 }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Model;
 
-/** Level 3 site-wide fall-backs for {@see \Nowo\SeoKitBundle\Service\PageHeadResolver}. */
+use Nowo\SeoKitBundle\Service\PageHeadResolver;
+
+/** Level 3 site-wide fall-backs for {@see PageHeadResolver}. */
 final readonly class PageHeadDefaults
 {
     public function __construct(

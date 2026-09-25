@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Service;
 
+use Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber;
+use Override;
+use Symfony\Contracts\Service\ResetInterface;
+
 /**
  * Request-scoped override bag set from controllers (wins over YAML / attributes).
+ *
+ * Cleared at the start of every main request and on kernel.terminate by {@see SeoRuntimeClearSubscriber},
+ * and by the services resetter when it runs.
  */
-final class SeoRuntime
+final class SeoRuntime implements ResetInterface
 {
     /** @var array<string, mixed> */
     private array $overrides = [];
@@ -53,5 +60,11 @@ final class SeoRuntime
     {
         $this->overrides = [];
         $this->variables = [];
+    }
+
+    #[Override]
+    public function reset(): void
+    {
+        $this->clear();
     }
 }

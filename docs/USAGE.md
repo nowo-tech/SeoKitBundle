@@ -59,7 +59,10 @@ public function show(SeoRuntime $seo, string $slug): Response
 }
 ```
 
-Runtime is cleared automatically at the end of each request.
+Runtime overrides are cleared at the **start** of every main request and again on `kernel.terminate`
+(`SeoRuntimeClearSubscriber`, priority 4096). Call `set()` / `setVariables()` from controllers or from
+`kernel.request` listeners with priority **lower than 4096**. Safe under FrankenPHP worker mode without kernel reset —
+see [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md).
 
 Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapUrlProviderInterface`, `SeoAuditSubjectProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
 

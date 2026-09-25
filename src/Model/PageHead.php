@@ -10,8 +10,8 @@ use Nowo\SeoKitBundle\Model\StructuredData\StructuredDataGraph;
 final readonly class PageHead
 {
     /**
-     * @param list<string>                           $ogLocaleAlternates
-     * @param array<string, string>                  $pathsByLocale
+     * @param list<string> $ogLocaleAlternates
+     * @param array<string, string> $pathsByLocale
      * @param list<array{name: string, path: string}> $breadcrumbs
      */
     public function __construct(

@@ -2,6 +2,7 @@
 
 ## Table of contents
 
+- [To 1.10.1](#to-1101)
 - [To 1.10.0](#to-1100)
 - [To 1.9.0](#to-190)
 - [To 1.8.1](#to-181)
@@ -18,6 +19,34 @@
 - [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.0](#to-100)
+
+## To 1.10.1
+
+From **1.10.0** — FrankenPHP worker mode without kernel/`services_resetter` reset (scenario B).
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.10.1
+```
+
+### What changed
+
+**No required application changes.** Behaviour to be aware of:
+
+1. `SeoRuntime`, `PageHeadContext` and the `SeoSiteConfigProvider` memo are cleared on `kernel.request`
+   (priority 4096, main requests only). Call `SeoRuntime::set()` / `PageHeadContext::describe()` from controllers or
+   from `kernel.request` listeners with a priority **lower than 4096**, not earlier.
+2. `SeoRuntimeClearSubscriber` gained two optional constructor arguments (`?PageHeadContext`, `?SeoSiteConfigProvider`);
+   container users are not affected.
+3. `SeoSiteSettingsRepository::getOrCreate()` refreshes the singleton row from the database (one extra query on a
+   `cache.app` miss). The `translations` association now cascades `refresh` (ORM-level only, no schema change).
+4. Under FrankenPHP worker mode without `services_resetter`, clearing the application's EntityManager between requests
+   remains the application's responsibility.
+
+See [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md).
+
+### Breaking changes
+
+None.
 
 ## To 1.10.0
 

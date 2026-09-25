@@ -12,10 +12,10 @@ use Nowo\SeoKitBundle\Model\StructuredData\StructuredDataNode;
 final readonly class PageHeadInput
 {
     /**
-     * @param array<string, string>                  $pathsByLocale
-     * @param list<StructuredDataNode>               $structuredData
+     * @param array<string, string> $pathsByLocale
+     * @param list<StructuredDataNode> $structuredData
      * @param list<array{name: string, path: string}> $breadcrumbs
-     * @param 'SoftwareApplication'|'WebPage'|null   $schemaType
+     * @param 'SoftwareApplication'|'WebPage'|null $schemaType
      */
     public function __construct(
         public string $path,

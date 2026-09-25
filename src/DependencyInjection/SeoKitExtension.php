@@ -28,11 +28,11 @@ use Nowo\SeoKitBundle\Service\PageHeadResolver;
 use Nowo\SeoKitBundle\Service\PageHeadRuntimeBridge;
 use Nowo\SeoKitBundle\Service\PageHeadSiteGraphProviderInterface;
 use Nowo\SeoKitBundle\Service\PageHeadTitleComposerInterface;
-use Nowo\SeoKitBundle\Service\SeoPencilCatalogFactory;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
+use Nowo\SeoKitBundle\Service\SeoPencilCatalogFactory;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
 use Symfony\Component\Config\FileLocator;
@@ -260,7 +260,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     private function registerPageHead(ContainerBuilder $container, array $config): void
     {
         $pageHead = $config['page_head'] ?? [];
-        $regions = $pageHead['open_graph_regions'] ?? [];
+        $regions  = $pageHead['open_graph_regions'] ?? [];
         $container->setParameter(Configuration::ALIAS . '.page_head.open_graph_regions', $regions);
 
         $hreflang = new Definition(HreflangSetBuilder::class);
@@ -299,6 +299,9 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $container->setDefinition(SeoPencilCatalogFactory::class, $pencil);
     }
 
+    /**
+     * @param array<string, mixed> $config
+     */
     private function registerAudit(ContainerBuilder $container, array $config): void
     {
         // SeoAuditRules + SeoAuditor are defined in Resources/config/services.yaml with

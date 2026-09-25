@@ -49,6 +49,9 @@ Browse [http://localhost:8050/admin/seo](http://localhost:8050/admin/seo) to lis
 
 ## Worker mode note
 
-FrankenPHP workers keep PHP state across requests. `SeoRuntime` is cleared per request via `SeoRuntimeClearSubscriber`; still prefer `APP_ENV=dev` without workers during local development.
+FrankenPHP workers keep PHP state across requests. From **1.10.1**, `SeoRuntimeClearSubscriber` clears `SeoRuntime`,
+`PageHeadContext` and the `SeoSiteConfigProvider` memo at the **start** of every main request (and `SeoRuntime` again on
+`kernel.terminate`), so the bundle is safe when the kernel is not reset between requests. Prefer `APP_ENV=dev` without
+workers during local development.
 
-See also [SERVERS.md](SERVERS.md).
+Full audit: [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md). See also [SERVERS.md](SERVERS.md).

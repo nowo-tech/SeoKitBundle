@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Model;
 
+use function count;
+
 /**
  * The `hreflang` alternates of one page: absolute URL per published locale + optional `x-default`.
  */
@@ -31,11 +33,11 @@ final readonly class HreflangSet
 
     public function isEmpty(): bool
     {
-        return [] === $this->alternates;
+        return $this->alternates === [];
     }
 
     public function shouldRender(): bool
     {
-        return \count($this->alternates) > 1;
+        return count($this->alternates) > 1;
     }
 }

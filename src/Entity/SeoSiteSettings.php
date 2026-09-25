@@ -127,7 +127,7 @@ class SeoSiteSettings
     private ?string $bingSiteVerification = null;
 
     /** @var Collection<int, SeoSiteSettingsTranslation> */
-    #[ORM\OneToMany(targetEntity: SeoSiteSettingsTranslation::class, mappedBy: 'settings', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: SeoSiteSettingsTranslation::class, mappedBy: 'settings', cascade: ['persist', 'remove', 'refresh'], orphanRemoval: true)]
     private Collection $translations;
 
     public function __construct()

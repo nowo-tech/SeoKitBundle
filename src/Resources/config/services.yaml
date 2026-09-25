@@ -45,6 +45,9 @@ services:
         tags: ['twig.extension']
 
     Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber:
+        arguments:
+            $pageHeadContext: '@?Nowo\SeoKitBundle\Service\PageHeadContext'
+            $siteConfigProvider: '@?Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider'
         tags: ['kernel.event_subscriber']
 
     Nowo\SeoKitBundle\Routing\SeoStaticRouteLoader:
