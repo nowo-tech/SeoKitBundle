@@ -36,6 +36,7 @@ final readonly class SeoSurfaceManager
     {
         if ($this->isEmpty($surface)) {
             if ($surface->getId() !== null) {
+                // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
                 $this->surfaces->remove($surface);
             }
 

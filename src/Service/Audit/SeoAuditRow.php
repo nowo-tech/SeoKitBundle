@@ -32,6 +32,7 @@ final class SeoAuditRow
     public function addProblem(string $problem): void
     {
         if (!in_array($problem, $this->problems, true)) {
+            // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
             $this->problems[] = $problem;
         }
     }

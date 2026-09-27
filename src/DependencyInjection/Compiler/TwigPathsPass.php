@@ -36,11 +36,13 @@ final class TwigPathsPass implements CompilerPassInterface
                 $projectDir   = rtrim($projectDirParam, '/\\');
                 $overridePath = $projectDir . '/templates/bundles/NowoSeoKitBundle';
                 if (is_dir($overridePath)) {
+                    // @igor-ignore - Container compile-time DI mutation; not runtime worker state.
                     $definition->addMethodCall('prependPath', [$overridePath, self::TWIG_NAMESPACE]);
                 }
             }
         }
 
+        // @igor-ignore - Container compile-time DI mutation; not runtime worker state.
         $definition->addMethodCall('addPath', [$viewsPath, self::TWIG_NAMESPACE]);
     }
 

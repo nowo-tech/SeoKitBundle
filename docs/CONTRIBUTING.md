@@ -44,6 +44,7 @@ See [GITHUB_CI.md](GITHUB_CI.md) and `.cursor/rules/01-git-commits.mdc`.
 ```bash
 make qa
 make phpstan
+make igor
 make test-coverage
 make release-check
 ```

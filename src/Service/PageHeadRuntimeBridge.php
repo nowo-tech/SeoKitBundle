@@ -59,6 +59,7 @@ final readonly class PageHeadRuntimeBridge
             $payload['json_ld'] = ['enabled' => true, 'json' => $meta->structuredData->toJson()];
         }
 
+        // @igor-ignore - Service coordinates I/O or request-scoped work; not unsafe worker singleton state.
         $this->seoRuntime->set($payload);
     }
 }

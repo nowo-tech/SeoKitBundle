@@ -39,6 +39,7 @@ final class SeoStaticRouteLoader extends Loader
         if ($this->loaded) {
             throw new RuntimeException('SeoStaticRouteLoader already loaded.');
         }
+        // @igor-ignore - Route loader builds routes at compile/cache warm; not per-request mutation.
         $this->loaded = true;
 
         $collection = new RouteCollection();

@@ -147,6 +147,7 @@ class SeoSiteSettings
 
     public function setSiteName(string $siteName): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->siteName = trim($siteName);
 
         return $this;
@@ -159,6 +160,7 @@ class SeoSiteSettings
 
     public function setTitleTemplate(string $titleTemplate): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->titleTemplate = trim($titleTemplate);
 
         return $this;
@@ -171,6 +173,7 @@ class SeoSiteSettings
 
     public function setIndexable(bool $indexable): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->indexable = $indexable;
 
         return $this;
@@ -183,6 +186,7 @@ class SeoSiteSettings
 
     public function setDefaultRobots(string $defaultRobots): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->defaultRobots = trim($defaultRobots);
 
         return $this;
@@ -207,6 +211,7 @@ class SeoSiteSettings
 
     public function setDefaultOpenGraphImage(?string $defaultOpenGraphImage): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->defaultOpenGraphImage = $this->nullIfBlank($defaultOpenGraphImage);
 
         return $this;
@@ -224,6 +229,7 @@ class SeoSiteSettings
             $handle = '@' . $handle;
         }
 
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->twitterSite = $handle;
 
         return $this;
@@ -236,6 +242,7 @@ class SeoSiteSettings
 
     public function setOrganisationLegalName(?string $organisationLegalName): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->organisationLegalName = $this->nullIfBlank($organisationLegalName);
 
         return $this;
@@ -248,6 +255,7 @@ class SeoSiteSettings
 
     public function setOrganisationLogo(?string $organisationLogo): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->organisationLogo = $this->nullIfBlank($organisationLogo);
 
         return $this;
@@ -260,6 +268,7 @@ class SeoSiteSettings
 
     public function setContactEmail(?string $contactEmail): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->contactEmail = $this->nullIfBlank($contactEmail);
 
         return $this;
@@ -272,6 +281,7 @@ class SeoSiteSettings
 
     public function setContactPhone(?string $contactPhone): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->contactPhone = $this->nullIfBlank($contactPhone);
 
         return $this;
@@ -284,6 +294,7 @@ class SeoSiteSettings
 
     public function setStreetAddress(?string $streetAddress): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->streetAddress = $this->nullIfBlank($streetAddress);
 
         return $this;
@@ -296,6 +307,7 @@ class SeoSiteSettings
 
     public function setPostalCode(?string $postalCode): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->postalCode = $this->nullIfBlank($postalCode);
 
         return $this;
@@ -308,6 +320,7 @@ class SeoSiteSettings
 
     public function setAddressLocality(?string $addressLocality): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->addressLocality = $this->nullIfBlank($addressLocality);
 
         return $this;
@@ -320,6 +333,7 @@ class SeoSiteSettings
 
     public function setAddressRegion(?string $addressRegion): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->addressRegion = $this->nullIfBlank($addressRegion);
 
         return $this;
@@ -332,7 +346,8 @@ class SeoSiteSettings
 
     public function setAddressCountry(?string $addressCountry): self
     {
-        $country              = $this->nullIfBlank($addressCountry);
+        $country = $this->nullIfBlank($addressCountry);
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->addressCountry = $country === null ? null : strtoupper($country);
 
         return $this;
@@ -364,6 +379,7 @@ class SeoSiteSettings
             }
         }
 
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->socialProfiles = $clean;
 
         return $this;
@@ -376,6 +392,7 @@ class SeoSiteSettings
 
     public function setGoogleSiteVerification(?string $googleSiteVerification): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->googleSiteVerification = $this->nullIfBlank($googleSiteVerification);
 
         return $this;
@@ -388,6 +405,7 @@ class SeoSiteSettings
 
     public function setBingSiteVerification(?string $bingSiteVerification): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->bingSiteVerification = $this->nullIfBlank($bingSiteVerification);
 
         return $this;
@@ -451,6 +469,7 @@ class SeoSiteSettings
 
     public function touchUpdatedAt(): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->updatedAt = new DateTimeImmutable();
 
         return $this;

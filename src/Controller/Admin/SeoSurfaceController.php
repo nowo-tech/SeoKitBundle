@@ -66,6 +66,7 @@ final class SeoSurfaceController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             if ($this->isEmpty($surface)) {
                 if ($surface->getId() !== null) {
+                    // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                     $this->surfaces->remove($surface);
                 }
             } else {

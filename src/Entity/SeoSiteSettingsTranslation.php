@@ -64,6 +64,7 @@ class SeoSiteSettingsTranslation
 
     public function setSettings(?SeoSiteSettings $settings): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->settings = $settings;
 
         return $this;
@@ -76,6 +77,7 @@ class SeoSiteSettingsTranslation
 
     public function setLocale(string $locale): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->locale = strtolower(trim($locale));
 
         return $this;
@@ -88,6 +90,7 @@ class SeoSiteSettingsTranslation
 
     public function setDefaultTitle(?string $defaultTitle): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->defaultTitle = $this->nullIfBlank($defaultTitle);
 
         return $this;
@@ -100,6 +103,7 @@ class SeoSiteSettingsTranslation
 
     public function setDefaultDescription(?string $defaultDescription): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->defaultDescription = $this->nullIfBlank($defaultDescription);
 
         return $this;
@@ -112,6 +116,7 @@ class SeoSiteSettingsTranslation
 
     public function setHomeTitle(?string $homeTitle): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->homeTitle = $this->nullIfBlank($homeTitle);
 
         return $this;
@@ -124,6 +129,7 @@ class SeoSiteSettingsTranslation
 
     public function setOrganisationDescription(?string $organisationDescription): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->organisationDescription = $this->nullIfBlank($organisationDescription);
 
         return $this;

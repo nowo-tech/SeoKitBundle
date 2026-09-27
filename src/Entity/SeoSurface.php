@@ -66,6 +66,7 @@ class SeoSurface
 
     public function setSurfaceKey(string $surfaceKey): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->surfaceKey = trim($surfaceKey);
 
         return $this;
@@ -78,6 +79,7 @@ class SeoSurface
 
     public function setLocale(string $locale): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->locale = strtolower(trim($locale));
 
         return $this;
@@ -90,6 +92,7 @@ class SeoSurface
 
     public function setMetaTitle(?string $metaTitle): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->metaTitle = $this->clean($metaTitle);
 
         return $this;
@@ -102,6 +105,7 @@ class SeoSurface
 
     public function setMetaDescription(?string $metaDescription): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->metaDescription = $this->clean($metaDescription);
 
         return $this;
@@ -114,6 +118,7 @@ class SeoSurface
 
     public function setMetaRobots(?string $metaRobots): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->metaRobots = $this->clean($metaRobots);
 
         return $this;
@@ -126,6 +131,7 @@ class SeoSurface
 
     public function setCanonicalOverride(?string $canonicalOverride): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->canonicalOverride = $this->clean($canonicalOverride);
 
         return $this;
@@ -138,6 +144,7 @@ class SeoSurface
 
     public function setOpenGraphImage(?string $openGraphImage): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->openGraphImage = $this->clean($openGraphImage);
 
         return $this;
@@ -156,6 +163,7 @@ class SeoSurface
      */
     public function setStructuredDataExtra(?array $structuredDataExtra): self
     {
+        // @igor-ignore - Doctrine entity field; instance-scoped, not a shared service.
         $this->structuredDataExtra = $structuredDataExtra === [] ? null : $structuredDataExtra;
 
         return $this;

@@ -8,7 +8,7 @@ COMPOSE_BIN := $(shell docker compose version >/dev/null 2>&1 && echo "docker co
 COMPOSE     := $(COMPOSE_BIN) -f $(COMPOSE_FILE)
 SERVICE_PHP := php
 
-.PHONY: help ensure-up up down down-dev build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps check-twig-extra
+.PHONY: help ensure-up up down down-dev build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan igor qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps check-twig-extra
 
 # Default target
 help:
@@ -32,8 +32,9 @@ help:
 	@echo "  rector        Apply Rector refactoring"
 	@echo "  rector-dry    Run Rector in dry-run mode"
 	@echo "  phpstan       Run PHPStan static analysis"
+	@echo "  igor          Run Igor worker-state audit (REQ-CS-008)"
 	@echo "  qa            Run all QA checks (cs-check + test)"
-	@echo "  release-check Pre-release: co-author audit, cs-fix, cs-check, rector-dry, phpstan, test-coverage, demo healthchecks"
+	@echo "  release-check Pre-release: co-author audit, cs-fix, cs-check, rector-dry, phpstan, igor, test-coverage, demo healthchecks"
 	@echo "  composer-sync Validate composer.json and align composer.lock (no install)"
 	@echo "  clean         Remove vendor and cache"
 	@echo "  update-deps   Update composer dependencies in bundle + demos (REQ-MAKE-008)"
@@ -110,7 +111,11 @@ qa: ensure-up
 check-twig-extra:
 	@chmod +x .scripts/check-twig-extra.sh
 	@./.scripts/check-twig-extra.sh
-release-check: ensure-up check-no-cursor-coauthor check-twig-extra composer-sync cs-fix cs-check rector-dry phpstan test-coverage release-check-demos
+
+# Run Igor worker-state audit (REQ-CS-008)
+igor: ensure-up
+	$(COMPOSE) exec -T php composer igor
+release-check: ensure-up check-no-cursor-coauthor check-twig-extra composer-sync cs-fix cs-check rector-dry phpstan igor test-coverage release-check-demos
 
 check-no-cursor-coauthor:
 	@chmod +x .scripts/check-no-cursor-coauthor.sh

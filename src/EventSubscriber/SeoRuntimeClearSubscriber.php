@@ -43,6 +43,7 @@ final readonly class SeoRuntimeClearSubscriber implements EventSubscriberInterfa
             return;
         }
 
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->runtime->clear();
         $this->pageHeadContext?->reset();
         $this->siteConfigProvider?->reset();
@@ -50,6 +51,7 @@ final readonly class SeoRuntimeClearSubscriber implements EventSubscriberInterfa
 
     public function onTerminate(TerminateEvent $event): void
     {
+        // @igor-ignore - Event subscriber clears request/runtime bridges; not cross-request leak.
         $this->runtime->clear();
     }
 }
