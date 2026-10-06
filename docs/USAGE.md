@@ -88,6 +88,20 @@ Register subjects via `SeoAuditSubjectProviderInterface` (`nowo_seo_kit.audit_su
 
 Use `Nowo\SeoKitBundle\Model\StructuredData\*` nodes and `SiteStructuredDataFactory` to build CSP-safe graphs (`StructuredDataGraph::toJson()`).
 
+Besides `OrganizationNode` / `WebPageNode` / `BreadcrumbListNode`, hosts can emit `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, and `BlogPostingNode`. Pass schema.org `@type` values that match the real organisation; do not invent medical types or FAQ answers.
+
+### Extra robots.txt groups
+
+```yaml
+nowo_seo_kit:
+    robots:
+        groups:
+            - user_agent: GPTBot
+              allow: ['/']
+```
+
+Tagged `GeoRobotsGroupsProviderInterface` implementations append after YAML groups. Both are skipped when `indexable` is false.
+
 ## Sitemap and robots
 
 After configuration, verify:
