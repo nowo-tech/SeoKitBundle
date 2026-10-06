@@ -315,7 +315,7 @@ final class Configuration implements ConfigurationInterface
                     ->defaultValue([])
                 ->end()
                 ->arrayNode('groups')
-                    ->info('Extra robots.txt groups (AI crawlers, etc.) after the default User-agent block. Also extend via GeoRobotsGroupsProviderInterface.')
+                    ->info('Extra robots.txt groups after the default User-agent block. Prefer nowo-tech/generative-seo-kit-bundle (GeoRobotsGroupsProviderInterface) for AI crawler policy; do not duplicate the same User-agent here.')
                     ->arrayPrototype()
                         ->children()
                             ->scalarNode('user_agent')->isRequired()->cannotBeEmpty()->end()

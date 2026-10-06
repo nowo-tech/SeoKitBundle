@@ -22,6 +22,8 @@
 composer require nowo-tech/seo-kit-bundle
 ```
 
+This package **does not** ship `/llms.txt` or a default AI crawler catalog. For Generative Engine Optimization (GEO, not geolocation) add [`nowo-tech/generative-seo-kit-bundle`](https://packagist.org/packages/nowo-tech/generative-seo-kit-bundle); it implements `GeoRobotsGroupsProviderInterface` and requires this bundle `^1.11`.
+
 ## Register the bundle
 
 Symfony Flex registers the bundles automatically. Manual registration:

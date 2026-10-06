@@ -47,7 +47,7 @@ Later layers override earlier ones:
 | `nowo_seo_kit.indexability_provider` (`SiteIndexabilityProviderInterface`) | Site-wide indexability master switch |
 | `nowo_seo_kit.sitemap_url_provider` (`SitemapUrlProviderInterface`) | CMS / blog absolute URLs (optional `xhtml:link` alternates) |
 | `nowo_seo_kit.audit_subject_provider` (`SeoAuditSubjectProviderInterface`) | Subjects for `nowo:seo:audit` |
-| `nowo_seo_kit.geo_robots_groups_provider` (`GeoRobotsGroupsProviderInterface`) | Extra robots.txt User-agent groups (omitted when not indexable) |
+| `nowo_seo_kit.geo_robots_groups_provider` (`GeoRobotsGroupsProviderInterface`) | Extra robots.txt User-agent groups (omitted when not indexable). [`GenerativeSeoKitBundle`](https://github.com/nowo-tech/GenerativeSeoKitBundle) implements this tag. |
 
 Runtime overrides may set `title_final`, `alternates`, and `json_ld.json` (pre-encoded safe JSON-LD).
 
@@ -144,7 +144,7 @@ slugs:
 | `allow` | `['/']` | Default group |
 | `disallow` | `[]` | Default group |
 | `sitemap_link` | `true` | |
-| `groups` | `[]` | Extra `{user_agent, allow, disallow}` blocks after the default group when indexable. Also extend via `GeoRobotsGroupsProviderInterface`. |
+| `groups` | `[]` | Extra `{user_agent, allow, disallow}` blocks after the default group when indexable. Prefer [`nowo-tech/generative-seo-kit-bundle`](https://packagist.org/packages/nowo-tech/generative-seo-kit-bundle) (`GeoRobotsGroupsProviderInterface`) for AI crawlers; do not duplicate the same User-agent in YAML. |
 
 ## templates
 

@@ -145,4 +145,25 @@ final class RobotsTxtGeneratorTest extends TestCase
         $this->assertStringNotContainsString('GPTBot', $output);
         $this->assertStringContainsString('Disallow: /', $output);
     }
+
+    public function testGenerateIgnoresNonArrayYamlGroups(): void
+    {
+        $config = [
+            'robots' => [
+                'allow'        => ['/'],
+                'groups'       => [
+                    'nope',
+                    ['user_agent' => ''],
+                    ['user_agent' => 1],
+                ],
+                'sitemap_link' => false,
+            ],
+            'sitemap' => ['enabled' => false],
+        ];
+        $output = (new RobotsTxtGenerator($config, new SeoPathBuilder($config)))
+            ->generate(Request::create('/'));
+
+        $this->assertStringContainsString('User-agent: *', $output);
+        $this->assertStringNotContainsString('nope', $output);
+    }
 }

@@ -20,7 +20,10 @@ use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
 use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
+use Nowo\SeoKitBundle\Service\ConfigPageHeadDefaultsProvider;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
+use Nowo\SeoKitBundle\Service\PageHeadDefaultsProviderInterface;
+use Nowo\SeoKitBundle\Service\PageHeadResolver;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
@@ -200,6 +203,9 @@ final class SeoKitExtensionTest extends TestCase
 
         self::assertTrue($container->hasDefinition(AbsoluteUrlBuilder::class));
         self::assertSame('https://example.test', $container->getDefinition(AbsoluteUrlBuilder::class)->getArgument('$baseUrl'));
+        self::assertTrue($container->hasDefinition(ConfigPageHeadDefaultsProvider::class));
+        self::assertTrue($container->hasAlias(PageHeadDefaultsProviderInterface::class));
+        self::assertTrue($container->hasDefinition(PageHeadResolver::class));
     }
 
     public function testPrependRegistersSeoKitFormKitProfileWhenMissing(): void

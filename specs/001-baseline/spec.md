@@ -55,6 +55,7 @@ As an integrator, I expose `/sitemap.xml` and `/robots.txt` via Symfony routes (
 2. **Given** robots config, **When** robots.txt is requested, **Then** output includes Allow/Disallow and optional Sitemap line.
 3. **Given** `robots.groups` or a `GeoRobotsGroupsProviderInterface` and `indexable: true`, **When** robots.txt is requested, **Then** extra User-agent blocks appear after the default group.
 4. **Given** the site is not indexable, **When** robots.txt is requested, **Then** extra groups are omitted and `/` is disallowed.
+5. **Given** [`nowo-tech/generative-seo-kit-bundle`](https://packagist.org/packages/nowo-tech/generative-seo-kit-bundle) is installed, **When** robots.txt is requested, **Then** that package’s crawler catalog is appended via `GeoRobotsGroupsProviderInterface` (this kit does not ship `/llms.txt`).
 
 ---
 
@@ -91,9 +92,9 @@ As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`Organizat
 | FR-SEO-005 | `SitemapGenerator` and `RobotsTxtGenerator` produce standards-compliant output |
 | FR-SEO-006 | Twig functions `nowo_seo_head()`, `nowo_seo_metadata()`, `nowo_seo_enabled()` |
 | FR-SEO-007 | Routes for sitemap and robots; optional static route loader type `nowo_seo_kit` |
-| FR-SEO-008 | Extra robots.txt User-agent groups via `nowo_seo_kit.robots.groups` and tagged `GeoRobotsGroupsProviderInterface`; omitted when the site is not indexable |
+| FR-SEO-008 | Extra robots.txt User-agent groups via `nowo_seo_kit.robots.groups` and tagged `GeoRobotsGroupsProviderInterface`; omitted when the site is not indexable. Companion `nowo-tech/generative-seo-kit-bundle` implements the tag (GEO; not geolocation). |
 | FR-SEO-009 | Typed JSON-LD nodes under `Model/StructuredData` (including `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode`) and `SiteStructuredDataFactory` |
-| FR-SEO-010 | Optional PageHead pipeline (`PageHeadResolver`, SPI, `PageHeadContext`) for CMS hosts |
+| FR-SEO-010 | Optional PageHead pipeline (`PageHeadResolver`, SPI, `PageHeadContext`) for CMS hosts; `ConfigPageHeadDefaultsProvider` maps YAML `defaults` when `base_url` is set |
 | FR-I18N-001 | Translation files with key parity across en, es, fr, de, it, pt, nl |
 
 ---
@@ -102,3 +103,4 @@ As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`Organizat
 
 - Search Console / analytics integration
 - Dynamic slug discovery from database (only configured slugs appear in sitemap)
+- `/llms.txt`, citation index, and default AI crawler catalog (companion `nowo-tech/generative-seo-kit-bundle`)

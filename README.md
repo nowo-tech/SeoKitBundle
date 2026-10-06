@@ -27,7 +27,7 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Hierarchical SEO config** — defaults → slug_routes → pages → slugs → attribute → runtime
 - ✅ **Twig head helper** — `{{ nowo_seo_head() }}` with Open Graph, Twitter, JSON-LD, canonical, hreflang
 - ✅ **Multilingual paths** — locale-specific paths and translated slugs
-- ✅ **Sitemap & robots** — `/sitemap.xml` and `/robots.txt` served by Symfony; extra User-agent groups via `robots.groups` or `GeoRobotsGroupsProviderInterface`
+- ✅ **Sitemap & robots** — `/sitemap.xml` and `/robots.txt` served by Symfony; extra User-agent groups via `robots.groups` or `GeoRobotsGroupsProviderInterface` (GEO crawler policy: [GenerativeSeoKitBundle](https://github.com/nowo-tech/GenerativeSeoKitBundle))
 - ✅ **Typed JSON-LD** — Organization, LocalBusiness, Person, FAQPage, BlogPosting and related nodes
 - ✅ **Runtime overrides** — `SeoRuntime` for dynamic titles from controllers
 - ✅ **Host providers** — defaults, indexability, sitemap URLs, and extra robots groups
@@ -64,6 +64,8 @@ Add to your base layout:
 - PHP >= 8.2, < 8.6
 - Symfony **7.4+** or **8.x** (FormKit / form stack; other components still declare `^7.0 || ^8.0`)
 - `nowo-tech/form-kit-bundle` ^2.4 (hard dependency)
+
+GEO (Generative Engine Optimization — **not** geolocation) is a companion package: [`nowo-tech/generative-seo-kit-bundle`](https://packagist.org/packages/nowo-tech/generative-seo-kit-bundle) (`llms.txt`, AI crawler robots groups via this bundle’s SPI, citation index, `nowo:generative-seo:audit`). This kit stays classical SEO (head, sitemap, canonical, hreflang).
 
 ## Documentation
 

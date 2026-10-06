@@ -20,6 +20,7 @@ use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
 use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditSubjectProviderInterface;
+use Nowo\SeoKitBundle\Service\ConfigPageHeadDefaultsProvider;
 use Nowo\SeoKitBundle\Service\GeoRobotsGroupsProviderInterface;
 use Nowo\SeoKitBundle\Service\HreflangSetBuilder;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
@@ -273,6 +274,13 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $hreflang->setArgument('$siteLocales', $config['locales'] ?? ['en']);
         $hreflang->setArgument('$defaultLocale', $config['default_locale'] ?? 'en');
         $container->setDefinition(HreflangSetBuilder::class, $hreflang);
+
+        $yamlDefaults = new Definition(ConfigPageHeadDefaultsProvider::class);
+        $yamlDefaults->setAutowired(true);
+        $yamlDefaults->setAutoconfigured(true);
+        $yamlDefaults->setArgument('$config', $config);
+        $container->setDefinition(ConfigPageHeadDefaultsProvider::class, $yamlDefaults);
+        $container->setAlias(PageHeadDefaultsProviderInterface::class, ConfigPageHeadDefaultsProvider::class);
 
         $resolver = new Definition(PageHeadResolver::class);
         $resolver->setAutowired(true);

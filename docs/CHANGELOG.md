@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.11.1] - 2026-10-06](#1111---2026-10-06)
 - [[1.11.0] - 2026-10-06](#1110---2026-10-06)
 - [[1.10.2] - 2026-09-27](#1102---2026-09-27)
 - [[1.10.1] - 2026-09-25](#1101---2026-09-25)
@@ -29,6 +30,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.11.1] - 2026-10-06
+
+### Added
+
+- **`ConfigPageHeadDefaultsProvider`** — YAML `defaults` as PageHead fallback when `base_url` is set (hosts may still alias `PageHeadDefaultsProviderInterface`).
+- Composer **suggest** `nowo-tech/generative-seo-kit-bundle` for GEO (not geolocation).
+
+### Changed
+
+- Docs and spec (FR-SEO-008 / FR-SEO-010): AI crawler policy and `/llms.txt` belong in GenerativeSeoKit; do not duplicate `robots.groups` User-agents.
+
+[1.11.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.11.1
 
 ## [1.11.0] - 2026-10-06
 

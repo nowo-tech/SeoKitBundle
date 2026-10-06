@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/seo-kit-bundle`  
-**Last audited**: 2026-10-06 (v1.11.0)
+**Last audited**: 2026-10-06 (v1.11.1)
 
 Every production artifact under `src/` is listed below.
 
@@ -58,7 +58,8 @@ Every production artifact under `src/` is listed below.
 | `Service/SeoTemplateRenderer.php` | Template placeholders | FR-SEO-003 |
 | `Service/SitemapGenerator.php` | Sitemap XML | FR-SEO-005 |
 | `Service/RobotsTxtGenerator.php` | robots.txt (default + extra groups) | FR-SEO-005, FR-SEO-008 |
-| `Service/GeoRobotsGroupsProviderInterface.php` | Host extra robots groups | FR-SEO-008 |
+| `Service/GeoRobotsGroupsProviderInterface.php` | Host extra robots groups (GenerativeSeoKit companion) | FR-SEO-008 |
+| `Service/ConfigPageHeadDefaultsProvider.php` | YAML PageHead defaults when `base_url` is set | FR-SEO-010 |
 | `Service/SeoDefaultsProviderInterface.php` | Host defaults SPI | FR-SEO-001 |
 | `Service/SiteIndexabilityProviderInterface.php` | Indexability SPI | FR-SEO-001 |
 | `Service/SitemapUrlProviderInterface.php` | Extra sitemap URLs SPI | FR-SEO-005 |

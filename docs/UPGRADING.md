@@ -3,6 +3,27 @@
 
 ## Unreleased
 
+## To 1.11.1
+
+From **1.11.0** — YAML PageHead defaults when `base_url` is set; optional GenerativeSeoKit companion.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.11.1
+php bin/console cache:clear
+```
+
+### What changed
+
+**No required application changes.**
+
+Optional companion: [`nowo-tech/generative-seo-kit-bundle`](https://packagist.org/packages/nowo-tech/generative-seo-kit-bundle) for GEO (`llms.txt`, AI crawler robots via `GeoRobotsGroupsProviderInterface`). Do not duplicate the same User-agents in `nowo_seo_kit.robots.groups`.
+
+When `base_url` is set, PageHead now has a YAML `ConfigPageHeadDefaultsProvider`. Hosts that already alias `PageHeadDefaultsProviderInterface` keep that alias.
+
+### Breaking changes
+
+None.
+
 ## To 1.11.0
 
 From **1.10.2** — extra robots.txt groups and LocalBusiness / content JSON-LD nodes.
@@ -49,6 +70,7 @@ php bin/console cache:clear
 
 ## Table of contents
 
+- [To 1.11.1](#to-1111)
 - [To 1.11.0](#to-1110)
 - [To 1.10.2](#to-1102)
 - [To 1.10.1](#to-1101)

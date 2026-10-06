@@ -102,6 +102,8 @@ nowo_seo_kit:
 
 Tagged `GeoRobotsGroupsProviderInterface` implementations append after YAML groups. Both are skipped when `indexable` is false.
 
+Do not copy GPTBot / Google-Extended groups here if you install [`nowo-tech/generative-seo-kit-bundle`](https://packagist.org/packages/nowo-tech/generative-seo-kit-bundle): that package already feeds this SPI (and adds `/llms.txt`). YAML `groups` remain for one-off User-agents the companion catalog does not cover.
+
 ## Sitemap and robots
 
 After configuration, verify:
@@ -179,7 +181,7 @@ Requires `persistence.enabled: true` (registers `SeoSurfaceManager`).
 
 ## Absolute URLs (1.8.1+)
 
-When `base_url` is configured, `AbsoluteUrlBuilder` is registered:
+When `base_url` is configured, `AbsoluteUrlBuilder` **and** the PageHead pipeline are registered. YAML `nowo_seo_kit.defaults` is mapped by `ConfigPageHeadDefaultsProvider` so companion bundles (for example GenerativeSeoKit) can set `base_url` without a custom `PageHeadDefaultsProviderInterface`. Override the interface alias in the host if you need locale-specific or Doctrine-backed PageHead defaults.
 
 ```php
 use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;

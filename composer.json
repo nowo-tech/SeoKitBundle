@@ -130,6 +130,7 @@
         "igor": "Run Igor FrankenPHP worker-state audit (REQ-CS-008)"
     },
     "suggest": {
+        "nowo-tech/generative-seo-kit-bundle": "Generative Engine Optimization (GEO, not geolocation): AI crawler robots groups, /llms.txt, citations, nowo:generative-seo:audit",
         "symfony/flex": "For automatic recipe installation (config and bundles.php)",
         "doctrine/orm": "Required when nowo_seo_kit.persistence.enabled is true (SeoSiteSettings / SeoSurface)",
         "doctrine/doctrine-bundle": "Registers ORM mappings when persistence is enabled",
