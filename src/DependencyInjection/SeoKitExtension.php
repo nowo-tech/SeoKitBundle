@@ -20,6 +20,7 @@ use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
 use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditSubjectProviderInterface;
+use Nowo\SeoKitBundle\Service\GeoRobotsGroupsProviderInterface;
 use Nowo\SeoKitBundle\Service\HreflangSetBuilder;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
 use Nowo\SeoKitBundle\Service\PageHeadContext;
@@ -71,6 +72,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             ->addTag('nowo_seo_kit.defaults_provider');
         $container->registerForAutoconfiguration(SiteIndexabilityProviderInterface::class)
             ->addTag('nowo_seo_kit.indexability_provider');
+        $container->registerForAutoconfiguration(GeoRobotsGroupsProviderInterface::class)
+            ->addTag('nowo_seo_kit.geo_robots_groups_provider');
         $container->registerForAutoconfiguration(SeoAuditSubjectProviderInterface::class)
             ->addTag('nowo_seo_kit.audit_subject_provider');
         $container->registerForAutoconfiguration(PageHeadDefaultsProviderInterface::class)

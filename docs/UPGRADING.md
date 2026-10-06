@@ -3,6 +3,22 @@
 
 ## Unreleased
 
+Optional GEO robots groups:
+
+```yaml
+nowo_seo_kit:
+    robots:
+        groups:
+            - user_agent: GPTBot
+              allow: ['/']
+            - user_agent: Google-Extended
+              disallow: ['/']
+```
+
+Or implement `GeoRobotsGroupsProviderInterface` (tag `nowo_seo_kit.geo_robots_groups_provider`). Extra groups are omitted when the site is not indexable.
+
+New JSON-LD helpers: `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode` (pass real schema.org types; do not invent medical types).
+
 ## To 1.10.2
 
 From **1.10.1** — REQ-CS-008 Igor FrankenPHP worker audit (igor-php require-dev, igor.json, make igor).

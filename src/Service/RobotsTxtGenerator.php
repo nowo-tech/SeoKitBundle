@@ -18,12 +18,15 @@ final readonly class RobotsTxtGenerator
     /**
      * @param array<string, mixed> $config
      * @param iterable<SiteIndexabilityProviderInterface> $indexabilityProviders
+     * @param iterable<GeoRobotsGroupsProviderInterface> $geoRobotsGroupsProviders
      */
     public function __construct(
         private array $config,
         private SeoPathBuilderInterface $paths,
         #[TaggedIterator('nowo_seo_kit.indexability_provider')]
         private iterable $indexabilityProviders = [],
+        #[TaggedIterator('nowo_seo_kit.geo_robots_groups_provider')]
+        private iterable $geoRobotsGroupsProviders = [],
     ) {
     }
 
@@ -59,6 +62,31 @@ final readonly class RobotsTxtGenerator
                     $lines[] = 'Disallow: ' . $disallow;
                 }
             }
+
+            foreach ($this->extraGroups($robots) as $group) {
+                $agent = $group['user_agent'] ?? '';
+                if (!is_string($agent) || $agent === '') {
+                    continue;
+                }
+                $lines[] = '';
+                $lines[] = 'User-agent: ' . $agent;
+                $allow   = $group['allow'] ?? [];
+                $deny    = $group['disallow'] ?? [];
+                if (is_array($allow)) {
+                    foreach ($allow as $path) {
+                        if (is_string($path) && $path !== '') {
+                            $lines[] = 'Allow: ' . $path;
+                        }
+                    }
+                }
+                if (is_array($deny)) {
+                    foreach ($deny as $path) {
+                        if (is_string($path) && $path !== '') {
+                            $lines[] = 'Disallow: ' . $path;
+                        }
+                    }
+                }
+            }
         }
 
         $sitemap = is_array($this->config['sitemap'] ?? null) ? $this->config['sitemap'] : [];
@@ -68,5 +96,33 @@ final readonly class RobotsTxtGenerator
         }
 
         return implode("\n", $lines) . "\n";
+    }
+
+    /**
+     * YAML {@code robots.groups} first, then tagged {@see GeoRobotsGroupsProviderInterface} rows.
+     *
+     * @param array<string, mixed> $robots
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function extraGroups(array $robots): array
+    {
+        $groups = [];
+        $yaml   = $robots['groups'] ?? [];
+        if (is_array($yaml)) {
+            foreach ($yaml as $group) {
+                if (is_array($group)) {
+                    $groups[] = $group;
+                }
+            }
+        }
+
+        foreach ($this->geoRobotsGroupsProviders as $provider) {
+            foreach ($provider->groups() as $group) {
+                $groups[] = $group;
+            }
+        }
+
+        return $groups;
     }
 }

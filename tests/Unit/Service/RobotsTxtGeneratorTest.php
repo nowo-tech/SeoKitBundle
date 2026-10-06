@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
+use Nowo\SeoKitBundle\Service\GeoRobotsGroupsProviderInterface;
 use Nowo\SeoKitBundle\Service\RobotsTxtGenerator;
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
@@ -93,5 +94,55 @@ final class RobotsTxtGeneratorTest extends TestCase
 
         $this->assertFalse($generator->isIndexable());
         $this->assertStringContainsString('Disallow: /', $generator->generate(Request::create('/')));
+    }
+
+    public function testGenerateAppendsYamlAndProviderGroupsWhenIndexable(): void
+    {
+        $config = [
+            'base_url' => 'https://example.com',
+            'robots'   => [
+                'user_agent'   => '*',
+                'allow'        => ['/'],
+                'disallow'     => ['/admin'],
+                'sitemap_link' => false,
+                'groups'       => [
+                    ['user_agent' => 'GPTBot', 'allow' => ['/'], 'disallow' => []],
+                ],
+            ],
+            'sitemap' => ['enabled' => false],
+        ];
+        $provider = new class implements GeoRobotsGroupsProviderInterface {
+            public function groups(): array
+            {
+                return [
+                    ['user_agent' => 'Google-Extended', 'allow' => [], 'disallow' => ['/']],
+                ];
+            }
+        };
+        $generator = new RobotsTxtGenerator($config, new SeoPathBuilder($config), [], [$provider]);
+        $output    = $generator->generate(Request::create('https://example.com/'));
+
+        $this->assertStringContainsString("User-agent: *\nAllow: /\nDisallow: /admin", $output);
+        $this->assertStringContainsString("User-agent: GPTBot\nAllow: /", $output);
+        $this->assertStringContainsString("User-agent: Google-Extended\nDisallow: /", $output);
+    }
+
+    public function testGenerateOmitsExtraGroupsWhenNotIndexable(): void
+    {
+        $config = [
+            'indexable' => false,
+            'robots'    => [
+                'groups' => [
+                    ['user_agent' => 'GPTBot', 'allow' => ['/']],
+                ],
+                'sitemap_link' => false,
+            ],
+            'sitemap' => ['enabled' => false],
+        ];
+        $output = (new RobotsTxtGenerator($config, new SeoPathBuilder($config)))
+            ->generate(Request::create('/'));
+
+        $this->assertStringNotContainsString('GPTBot', $output);
+        $this->assertStringContainsString('Disallow: /', $output);
     }
 }

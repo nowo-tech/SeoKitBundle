@@ -135,14 +135,15 @@ slugs:
 
 ## robots
 
-| Key | Default |
-| --- | --- |
-| `enabled` | `true` |
-| `path` | `/robots.txt` |
-| `user_agent` | `*` |
-| `allow` | `['/']` |
-| `disallow` | `[]` |
-| `sitemap_link` | `true` |
+| Key | Default | Description |
+| --- | --- | --- |
+| `enabled` | `true` | |
+| `path` | `/robots.txt` | |
+| `user_agent` | `*` | Default group |
+| `allow` | `['/']` | Default group |
+| `disallow` | `[]` | Default group |
+| `sitemap_link` | `true` | |
+| `groups` | `[]` | Extra `{user_agent, allow, disallow}` blocks after the default group when indexable. Also extend via `GeoRobotsGroupsProviderInterface`. |
 
 ## templates
 

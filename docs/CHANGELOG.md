@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `nowo_seo_kit.robots.groups` extra User-agent blocks (AI crawlers, etc.) when the site is indexable.
+- `GeoRobotsGroupsProviderInterface` (`nowo_seo_kit.geo_robots_groups_provider`) for host-driven groups.
+- JSON-LD nodes: `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode`.
+
 ## [1.10.2] - 2026-09-27
 
 ### Added
