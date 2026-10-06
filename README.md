@@ -27,11 +27,12 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Hierarchical SEO config** — defaults → slug_routes → pages → slugs → attribute → runtime
 - ✅ **Twig head helper** — `{{ nowo_seo_head() }}` with Open Graph, Twitter, JSON-LD, canonical, hreflang
 - ✅ **Multilingual paths** — locale-specific paths and translated slugs
-- ✅ **Sitemap & robots** — `/sitemap.xml` and `/robots.txt` served by Symfony
+- ✅ **Sitemap & robots** — `/sitemap.xml` and `/robots.txt` served by Symfony; extra User-agent groups via `robots.groups` or `GeoRobotsGroupsProviderInterface`
+- ✅ **Typed JSON-LD** — Organization, LocalBusiness, Person, FAQPage, BlogPosting and related nodes
 - ✅ **Runtime overrides** — `SeoRuntime` for dynamic titles from controllers
-- ✅ **Host providers** — defaults, indexability, and sitemap URL extension points
+- ✅ **Host providers** — defaults, indexability, sitemap URLs, and extra robots groups
 - ✅ **Optional Doctrine site settings** — `persistence.enabled` + `SeoSiteConfig` snapshot
-- ✅ **Typed JSON-LD + audit CLI** — structured data nodes and `nowo:seo:audit`
+- ✅ **Audit CLI** — `nowo:seo:audit` with tagged subject providers
 - ✅ **Optional SEO admin + pencil API** — site settings, surface overrides, FormKit forms, `OriginUrlGuard`
 - ✅ **Surface helpers** — `SeoSurfaceKeys` + `SeoSurfaceManager` for CMS/blog pencils
 - ✅ **AbsoluteUrlBuilder** — origin + path normalisation from `base_url`
@@ -91,6 +92,7 @@ Add to your base layout:
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.11.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.10.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.9.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.8.x | >= 8.2 | 7.0 – 8.1+ | Stable |

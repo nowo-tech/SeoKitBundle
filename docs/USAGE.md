@@ -64,7 +64,7 @@ Runtime overrides are cleared at the **start** of every main request and again o
 `kernel.request` listeners with priority **lower than 4096**. Safe under FrankenPHP worker mode without kernel reset —
 see [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md).
 
-Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapUrlProviderInterface`, `SeoAuditSubjectProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
+Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapUrlProviderInterface`, `SeoAuditSubjectProviderInterface`, `GeoRobotsGroupsProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
 
 ## Optional Doctrine persistence
 

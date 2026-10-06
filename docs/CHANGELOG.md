@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.11.0] - 2026-10-06](#1110---2026-10-06)
 - [[1.10.2] - 2026-09-27](#1102---2026-09-27)
 - [[1.10.1] - 2026-09-25](#1101---2026-09-25)
 - [[1.10.0] - 2026-09-22](#1100---2026-09-22)
@@ -29,11 +30,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-10-06
+
 ### Added
 
-- `nowo_seo_kit.robots.groups` extra User-agent blocks (AI crawlers, etc.) when the site is indexable.
-- `GeoRobotsGroupsProviderInterface` (`nowo_seo_kit.geo_robots_groups_provider`) for host-driven groups.
+- **`nowo_seo_kit.robots.groups`** extra User-agent blocks (AI crawlers, etc.) when the site is indexable.
+- **`GeoRobotsGroupsProviderInterface`** (`nowo_seo_kit.geo_robots_groups_provider`) for host-driven groups.
 - JSON-LD nodes: `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode`.
+
+### Changed
+
+- **require-dev:** `igor-php/igor-php` `^0.10.1` (single-file / editor audit and wider process-state detection). Consumers do not pull Igor transitively.
+
+### Notes
+
+- Branch alias `dev-main` → `1.11.x-dev`.
+- Specs: FR-SEO-008 / FR-SEO-009 / FR-SEO-010; `code-inventory.md` refreshed for current `src/`.
+
+[1.11.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.11.0
 
 ## [1.10.2] - 2026-09-27
 

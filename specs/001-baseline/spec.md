@@ -3,7 +3,7 @@
 **Feature Branch**: `001-baseline`  
 **Created**: 2026-07-16  
 **Status**: Active  
-**Input**: Baseline specification for multilingual SEO kit (meta, hreflang, sitemap, robots).
+**Input**: Baseline specification for multilingual SEO kit (meta, hreflang, sitemap, robots, JSON-LD).
 
 **Related docs**: [`docs/SPEC-DRIVEN-DEVELOPMENT.md`](../../docs/SPEC-DRIVEN-DEVELOPMENT.md), [`docs/CONFIGURATION.md`](../../docs/CONFIGURATION.md), [`docs/USAGE.md`](../../docs/USAGE.md)  
 **Code inventory**: [`code-inventory.md`](code-inventory.md)
@@ -53,6 +53,8 @@ As an integrator, I expose `/sitemap.xml` and `/robots.txt` via Symfony routes (
 
 1. **Given** configured static pages and slugs, **When** sitemap is requested, **Then** XML lists absolute URLs per locale.
 2. **Given** robots config, **When** robots.txt is requested, **Then** output includes Allow/Disallow and optional Sitemap line.
+3. **Given** `robots.groups` or a `GeoRobotsGroupsProviderInterface` and `indexable: true`, **When** robots.txt is requested, **Then** extra User-agent blocks appear after the default group.
+4. **Given** the site is not indexable, **When** robots.txt is requested, **Then** extra groups are omitted and `/` is disallowed.
 
 ---
 
@@ -67,6 +69,17 @@ As a developer, I override SEO per request via `SeoRuntime` or `#[Seo]` on contr
 
 ---
 
+### User Story 5 — Typed JSON-LD nodes (Priority: P2)
+
+As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`OrganizationNode`, `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode`, …) instead of raw arrays.
+
+**Acceptance Scenarios**:
+
+1. **Given** a `LocalBusinessNode` with a real schema.org `@type`, **When** encoded via `StructuredDataGraph`, **Then** output is valid JSON-LD for that type.
+2. **Given** hosts must not invent medical types, **When** documenting nodes, **Then** examples use real schema.org types only.
+
+---
+
 ## Functional Requirements
 
 | ID | Requirement |
@@ -78,6 +91,9 @@ As a developer, I override SEO per request via `SeoRuntime` or `#[Seo]` on contr
 | FR-SEO-005 | `SitemapGenerator` and `RobotsTxtGenerator` produce standards-compliant output |
 | FR-SEO-006 | Twig functions `nowo_seo_head()`, `nowo_seo_metadata()`, `nowo_seo_enabled()` |
 | FR-SEO-007 | Routes for sitemap and robots; optional static route loader type `nowo_seo_kit` |
+| FR-SEO-008 | Extra robots.txt User-agent groups via `nowo_seo_kit.robots.groups` and tagged `GeoRobotsGroupsProviderInterface`; omitted when the site is not indexable |
+| FR-SEO-009 | Typed JSON-LD nodes under `Model/StructuredData` (including `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode`) and `SiteStructuredDataFactory` |
+| FR-SEO-010 | Optional PageHead pipeline (`PageHeadResolver`, SPI, `PageHeadContext`) for CMS hosts |
 | FR-I18N-001 | Translation files with key parity across en, es, fr, de, it, pt, nl |
 
 ---

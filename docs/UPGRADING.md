@@ -3,7 +3,18 @@
 
 ## Unreleased
 
-Optional GEO robots groups:
+## To 1.11.0
+
+From **1.10.2** — extra robots.txt groups and LocalBusiness / content JSON-LD nodes.
+
+```bash
+composer require nowo-tech/seo-kit-bundle:^1.11
+php bin/console cache:clear
+```
+
+### What changed
+
+**No required application changes.** Optional GEO robots groups:
 
 ```yaml
 nowo_seo_kit:
@@ -19,6 +30,12 @@ Or implement `GeoRobotsGroupsProviderInterface` (tag `nowo_seo_kit.geo_robots_gr
 
 New JSON-LD helpers: `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode` (pass real schema.org types; do not invent medical types).
 
+Maintainers using `make igor` / `composer igor`: require-dev Igor is now `^0.10.1`. After upgrading the lockfile, clear Symfony cache if you run Igor against a host app (`php bin/console cache:clear`).
+
+### Breaking changes
+
+None.
+
 ## To 1.10.2
 
 From **1.10.1** — REQ-CS-008 Igor FrankenPHP worker audit (igor-php require-dev, igor.json, make igor).
@@ -32,6 +49,8 @@ php bin/console cache:clear
 
 ## Table of contents
 
+- [To 1.11.0](#to-1110)
+- [To 1.10.2](#to-1102)
 - [To 1.10.1](#to-1101)
 - [To 1.10.0](#to-1100)
 - [To 1.9.0](#to-190)
