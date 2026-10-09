@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Form;
 
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
+use Nowo\SeoKitBundle\Model\SeoSiteConfig;
 use Override;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
@@ -205,7 +206,7 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
 
         foreach (preg_split('/\R/', $value) ?: [] as $line) {
             $url = trim($line);
-            if ($url === '') {
+            if ($url === '' || strtolower($url) === SeoSiteConfig::NO_SOCIAL_PROFILES) {
                 continue;
             }
             if (!str_starts_with($url, 'https://') && !str_starts_with($url, 'http://')) {

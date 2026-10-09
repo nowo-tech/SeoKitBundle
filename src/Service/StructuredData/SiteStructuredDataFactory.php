@@ -37,7 +37,7 @@ final class SiteStructuredDataFactory
             url: $origin,
             logo: $this->absolute($config->organisationLogo, $origin) ?? $defaultLogoAbsolute,
             description: $description !== '' ? $description : null,
-            sameAs: $config->socialProfiles,
+            sameAs: $config->socialProfileUrls(),
             contactEmail: $config->contactEmail,
             legalName: $config->organisationLegalName,
             telephone: $config->contactPhone,

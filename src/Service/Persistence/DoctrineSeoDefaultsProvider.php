@@ -49,7 +49,7 @@ final readonly class DoctrineSeoDefaultsProvider implements SeoDefaultsProviderI
             'logo'      => $config->organisationLogo,
             'email'     => $config->contactEmail,
             'telephone' => $config->contactPhone,
-            'sameAs'    => $config->socialProfiles !== [] ? $config->socialProfiles : null,
+            'sameAs'    => $config->socialProfileUrls() !== [] ? $config->socialProfileUrls() : null,
         ], static fn (mixed $v): bool => !in_array($v, [null, '', []], true));
 
         if ($config->hasPostalAddress()) {

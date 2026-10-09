@@ -92,7 +92,7 @@ nowo_seo_site:
         placeholder: 'ES'
     social_profiles_text:
         label: 'Social profiles'
-        help: 'One https URL per line.'
+        help: 'One https URL per line. Write none to declare that the site has no social profiles.'
         placeholder: 'https://x.com/nowo'
     google_site_verification:
         label: 'Google site verification'

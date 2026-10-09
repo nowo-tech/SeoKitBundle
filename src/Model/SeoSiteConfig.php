@@ -13,6 +13,12 @@ namespace Nowo\SeoKitBundle\Model;
 final readonly class SeoSiteConfig
 {
     /**
+     * Social profiles line meaning "this site has no social profiles" (hosts that ship default
+     * profiles fall back to them only when the list is empty).
+     */
+    public const NO_SOCIAL_PROFILES = 'none';
+
+    /**
      * @param array<string, array{title: ?string, description: ?string, homeTitle: ?string, organisationDescription: ?string}> $byLocale
      * @param list<string> $socialProfiles
      */
@@ -37,6 +43,31 @@ final readonly class SeoSiteConfig
         public ?string $bingSiteVerification,
         public array $byLocale,
     ) {
+    }
+
+    /**
+     * Social profile URLs (http/https only): what `sameAs` and other outputs may print.
+     *
+     * @return list<string>
+     */
+    public function socialProfileUrls(): array
+    {
+        return array_values(array_filter(
+            $this->socialProfiles,
+            static fn (string $url): bool => preg_match('#^https?://#i', $url) === 1,
+        ));
+    }
+
+    /** True when the operator explicitly chose no social profiles ({@see NO_SOCIAL_PROFILES}). */
+    public function hasNoSocialProfiles(): bool
+    {
+        foreach ($this->socialProfiles as $profile) {
+            if (strtolower(trim($profile)) === self::NO_SOCIAL_PROFILES) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function titleFor(string $locale): ?string

@@ -69,7 +69,23 @@ final class SeoSiteConfigTest extends TestCase
         self::assertTrue($config->hasPostalAddress());
     }
 
-    private function config(string $titleTemplate, string $siteName): SeoSiteConfig
+    public function testSocialProfileUrlsAndExplicitNone(): void
+    {
+        $urls = $this->config('%page%', 'Nowo', ['https://x.com/nowo', 'http://fb.example/n']);
+        self::assertSame(['https://x.com/nowo', 'http://fb.example/n'], $urls->socialProfileUrls());
+        self::assertFalse($urls->hasNoSocialProfiles());
+
+        $none = $this->config('%page%', 'Nowo', ['None']);
+        self::assertSame([], $none->socialProfileUrls(), 'The sentinel never reaches sameAs.');
+        self::assertTrue($none->hasNoSocialProfiles());
+
+        self::assertFalse($this->config('%page%', 'Nowo')->hasNoSocialProfiles(), 'Empty is not the same as none.');
+    }
+
+    /**
+     * @param list<string> $socialProfiles
+     */
+    private function config(string $titleTemplate, string $siteName, array $socialProfiles = []): SeoSiteConfig
     {
         return new SeoSiteConfig(
             siteName: $siteName,
@@ -87,7 +103,7 @@ final class SeoSiteConfigTest extends TestCase
             addressLocality: null,
             addressRegion: null,
             addressCountry: null,
-            socialProfiles: [],
+            socialProfiles: $socialProfiles,
             googleSiteVerification: null,
             bingSiteVerification: null,
             byLocale: [],

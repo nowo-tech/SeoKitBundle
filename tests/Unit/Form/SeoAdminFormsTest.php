@@ -100,6 +100,30 @@ final class SeoAdminFormsTest extends TestCase
         self::assertTrue($form->get('socialProfilesText')->getErrors()->count() > 0);
     }
 
+    public function testSiteSettingsAcceptsExplicitNoSocialProfiles(): void
+    {
+        $settings = new SeoSiteSettings();
+        $form     = $this->factory()->create(SeoSiteSettingsType::class, $settings, [
+            'enabled_locales' => ['en'],
+            'default_locale'  => 'en',
+        ]);
+
+        $form->submit([
+            'siteName'                   => 'Nowo',
+            'titleTemplate'              => '%page% · %site_name%',
+            'indexable'                  => '1',
+            'defaultRobots'              => 'index, follow',
+            'socialProfilesText'         => 'None',
+            'defaultTitle_en'            => '',
+            'homeTitle_en'               => '',
+            'defaultDescription_en'      => '',
+            'organisationDescription_en' => '',
+        ]);
+
+        self::assertCount(0, $form->get('socialProfilesText')->getErrors());
+        self::assertSame(['None'], $settings->getSocialProfiles());
+    }
+
     public function testSiteSettingsListenersIgnoreNonEntityData(): void
     {
         $type = FormKitTestSupport::siteSettingsType();
