@@ -3,6 +3,26 @@
 
 ## Unreleased
 
+## To 1.12.0
+
+From **1.11.1** — explicit `none` social profiles; hardened JSON-LD fallbacks in the default head template.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+php bin/console cache:clear
+```
+
+### What changed
+
+**No required application changes.**
+
+- Site settings accept `none` in *Social profiles* to declare that the site has no social profiles. It is stored as-is, never printed in `sameAs`, and detectable with `SeoSiteConfig::hasNoSocialProfiles()`; `SeoSiteConfig::socialProfileUrls()` returns only http(s) URLs. Hosts that fall back to default profiles when the list is empty should check `hasNoSocialProfiles()` first.
+- The bundled `seo/head.html.twig` now hex-escapes `<`, `>`, `&`, `'` and `"` in the `jsonLd.document` / `jsonLd.graph` fallbacks. If you override this template, apply the same `json_encode` flags (see `StructuredDataGraph::toJson()`).
+
+### Breaking changes
+
+None.
+
 ## To 1.11.1
 
 From **1.11.0** — YAML PageHead defaults when `base_url` is set; optional GenerativeSeoKit companion.
@@ -70,6 +90,7 @@ php bin/console cache:clear
 
 ## Table of contents
 
+- [To 1.12.0](#to-1120)
 - [To 1.11.1](#to-1111)
 - [To 1.11.0](#to-1110)
 - [To 1.10.2](#to-1102)

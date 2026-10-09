@@ -95,6 +95,8 @@ As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`Organizat
 | FR-SEO-008 | Extra robots.txt User-agent groups via `nowo_seo_kit.robots.groups` and tagged `GeoRobotsGroupsProviderInterface`; omitted when the site is not indexable. Companion `nowo-tech/generative-seo-kit-bundle` implements the tag (GEO; not geolocation). |
 | FR-SEO-009 | Typed JSON-LD nodes under `Model/StructuredData` (including `LocalBusinessNode`, `PersonNode`, `FaqPageNode`, `BlogPostingNode`) and `SiteStructuredDataFactory` |
 | FR-SEO-010 | Optional PageHead pipeline (`PageHeadResolver`, SPI, `PageHeadContext`) for CMS hosts; `ConfigPageHeadDefaultsProvider` maps YAML `defaults` when `base_url` is set |
+| FR-SEO-011 | Site settings social profiles accept the `none` sentinel (`SeoSiteConfig::NO_SOCIAL_PROFILES`, `hasNoSocialProfiles()`); `sameAs` uses `SeoSiteConfig::socialProfileUrls()` (http/https only), so the sentinel never reaches JSON-LD |
+| FR-SEO-012 | The default `seo/head.html.twig` JSON-LD fallbacks (`jsonLd.document` / `jsonLd.graph`) encode with `JSON_HEX_TAG`, `JSON_HEX_AMP`, `JSON_HEX_APOS`, `JSON_HEX_QUOT` (same flags as `StructuredDataGraph::toJson()`); editor text cannot close the `<script>` block |
 | FR-I18N-001 | Translation files with key parity across en, es, fr, de, it, pt, nl |
 
 ---

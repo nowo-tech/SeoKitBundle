@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.12.0] - 2026-10-09](#1120---2026-10-09)
 - [[1.11.1] - 2026-10-06](#1111---2026-10-06)
 - [[1.11.0] - 2026-10-06](#1110---2026-10-06)
 - [[1.10.2] - 2026-09-27](#1102---2026-09-27)
@@ -30,6 +31,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100-2026-07-16)
 
 ## [Unreleased]
+
+## [1.12.0] - 2026-10-09
+
+### Added
+
+- Social profiles accept `none` (`SeoSiteConfig::NO_SOCIAL_PROFILES`): an explicit "no social profiles", distinct from an empty list (hosts that ship default profiles can tell them apart via `SeoSiteConfig::hasNoSocialProfiles()`). `SeoSiteConfig::socialProfileUrls()` returns only http(s) URLs; `sameAs` output uses it. Admin help text (en/es) documents the keyword.
+
+### Security
+
+- `seo/head.html.twig` JSON-LD fallbacks (`jsonLd.document` / `jsonLd.graph`) encode with `JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT` like `StructuredDataGraph::toJson()`, so editor text cannot break out of the `<script>` block. Covered by `HeadTemplateJsonLdTest`.
+
+### Fixed
+
+- **Demo:** `demo/symfony8` lock now installs `nowo-tech/form-kit-bundle` (already registered in `bundles.php`) and requires `symfony/asset` (FormKit prepends a `framework.assets` package).
+
+### Dependencies
+
+- Lock refreshed: `nowo-tech/form-kit-bundle` 2.6.1, PHPStan 2.3.1, `phpstan/phpstan-phpunit` 2.1.1, `nowo-tech/phpstan-frankenphp` 1.2.3.
+- Demo `symfony8`: Symfony 8.1.8, Twig 3.30.0.
+
+[1.12.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.12.0
 
 ## [1.11.1] - 2026-10-06
 

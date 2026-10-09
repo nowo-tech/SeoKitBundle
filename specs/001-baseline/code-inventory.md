@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/seo-kit-bundle`  
-**Last audited**: 2026-10-06 (v1.11.1)
+**Last audited**: 2026-10-09 (v1.12.0)
 
 Every production artifact under `src/` is listed below.
 
@@ -25,10 +25,10 @@ Every production artifact under `src/` is listed below.
 | `Entity/SeoSurface.php` | Surface override entity | FR-SEO-001 |
 | `EventSubscriber/SeoRuntimeClearSubscriber.php` | Request-scoped runtime reset | FR-SEO-002 |
 | `Form/AbstractSeoFormType.php` | FormKit admin forms | FR-SEO-001 |
-| `Form/SeoSiteSettingsType.php` | Site settings form | FR-SEO-001 |
+| `Form/SeoSiteSettingsType.php` | Site settings form (social profiles `none` sentinel) | FR-SEO-001, FR-SEO-011 |
 | `Form/SeoSurfaceType.php` | Surface form | FR-SEO-001 |
 | `Model/SeoMetadata.php` | Resolved metadata DTO | FR-SEO-002 |
-| `Model/SeoSiteConfig.php` | Persistence snapshot | FR-SEO-001 |
+| `Model/SeoSiteConfig.php` | Persistence snapshot (`NO_SOCIAL_PROFILES`, `socialProfileUrls()`, `hasNoSocialProfiles()`) | FR-SEO-001, FR-SEO-011 |
 | `Model/HreflangSet.php` | Hreflang DTO | FR-SEO-004 |
 | `Model/PageHead.php` | PageHead DTO | FR-SEO-010 |
 | `Model/PageHeadDefaults.php` | PageHead defaults | FR-SEO-010 |
@@ -74,10 +74,10 @@ Every production artifact under `src/` is listed below.
 | `Service/SeoSurfaceKeys.php` | Conventional surface keys | FR-SEO-001 |
 | `Service/SeoSurfaceManager.php` | Surface persistence helper | FR-SEO-001 |
 | `Service/OriginUrlGuard.php` | Admin/API origin guard | FR-SEO-001 |
-| `Service/Persistence/DoctrineSeoDefaultsProvider.php` | DB-backed defaults | FR-SEO-001 |
+| `Service/Persistence/DoctrineSeoDefaultsProvider.php` | DB-backed defaults | FR-SEO-001, FR-SEO-011 |
 | `Service/Persistence/SeoSiteConfigProvider.php` | Cached site config snapshot | FR-SEO-001 |
 | `Service/Persistence/SeoSiteConfigProviderInterface.php` | Site config contract | FR-SEO-001 |
-| `Service/StructuredData/SiteStructuredDataFactory.php` | Site JSON-LD factory | FR-SEO-009 |
+| `Service/StructuredData/SiteStructuredDataFactory.php` | Site JSON-LD factory | FR-SEO-009, FR-SEO-011 |
 | `Service/Audit/SeoAuditor.php` | Audit runner | FR-SEO-001 |
 | `Service/Audit/SeoAuditRules.php` | Audit rules | FR-SEO-001 |
 | `Service/Audit/SeoAuditRow.php` | Audit row DTO | FR-SEO-001 |
@@ -96,7 +96,7 @@ Every production artifact under `src/` is listed below.
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
-| `Resources/views/seo/head.html.twig` | Default head partial | FR-SEO-006 |
+| `Resources/views/seo/head.html.twig` | Default head partial (hex-escaped JSON-LD fallbacks) | FR-SEO-006, FR-SEO-012 |
 | `Resources/views/admin/settings.html.twig` | Admin site settings | FR-SEO-001 |
 | `Resources/views/admin/surfaces_index.html.twig` | Surface list | FR-SEO-001 |
 | `Resources/views/admin/surfaces_form.html.twig` | Surface form | FR-SEO-001 |
