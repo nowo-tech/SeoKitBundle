@@ -51,6 +51,9 @@ jobs:
 
       - run: composer validate --strict
 
+      - name: Override Composer platform PHP (composer.json pins the minimum PHP for the lock)
+        run: composer config platform.php "${{ matrix.php }}.99"
+
       - name: Install dependencies
         run: |
           composer require \
