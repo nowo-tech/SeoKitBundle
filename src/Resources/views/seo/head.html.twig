@@ -74,5 +74,5 @@
 {% endif %}
 {% endif %}
 {% if seo.jsonLd.enabled and (seo.jsonLd.json or seo.jsonLd.document is not null or seo.jsonLd.graph is not empty) %}
-<script type="application/ld+json"{% if csp_nonce is defined and csp_nonce %} nonce="{{ csp_nonce }}"{% endif %}>{% if seo.jsonLd.json %}{{ seo.jsonLd.json|raw }}{% elseif seo.jsonLd.document is not null %}{{ seo.jsonLd.document|json_encode|raw }}{% else %}{{ {'@context': 'https://schema.org', '@graph': seo.jsonLd.graph}|json_encode|raw }}{% endif %}</script>
+<script type="application/ld+json"{% if csp_nonce is defined and csp_nonce %} nonce="{{ csp_nonce }}"{% endif %}>{% if seo.jsonLd.json %}{{ seo.jsonLd.json|raw }}{% elseif seo.jsonLd.document is not null %}{{ seo.jsonLd.document|json_encode(constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }}{% else %}{{ {'@context': 'https://schema.org', '@graph': seo.jsonLd.graph}|json_encode(constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }}{% endif %}</script>
 {% endif %}
