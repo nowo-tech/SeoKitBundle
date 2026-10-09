@@ -150,8 +150,8 @@ final class RobotsTxtGeneratorTest extends TestCase
     {
         $config = [
             'robots' => [
-                'allow'        => ['/'],
-                'groups'       => [
+                'allow'  => ['/'],
+                'groups' => [
                     'nope',
                     ['user_agent' => ''],
                     ['user_agent' => 1],
