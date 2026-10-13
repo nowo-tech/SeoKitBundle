@@ -6,3 +6,126 @@ seo:
         label: 'Sitemap'
     robots:
         label: 'Robots'
+
+nowo_seo_kit:
+    admin:
+        save: 'Opslaan'
+        edit: 'Bewerken'
+        back: 'Terug'
+        settings:
+            title: 'SEO-instellingen'
+            intro: 'Standaardwaarden voor de hele site die elke pagina overneemt, plus de organisatie achter de knowledge graph.'
+            noindex_warning: 'Deze omgeving staat op noindex. Zoekmachines zullen openbare pagina’s niet indexeren.'
+            section:
+                wording: 'Teksten per taal'
+                organisation: 'Organisatie'
+        surfaces:
+            title: 'Pagina-SEO'
+            intro: 'Opgeloste head-metadata per pagina. Lege overschrijvingen nemen de standaardwaarden van de site over.'
+            site_noindex: 'De hele site staat op noindex; waarschuwingen published_but_noindex worden onderdrukt.'
+            empty: 'Geen auditonderwerpen geregistreerd voor deze taal.'
+            edit_title: 'SEO bewerken — %surface%'
+            column:
+                surface: 'Pagina'
+                path: 'Pad'
+                title: 'Titel'
+                problems: 'Problemen'
+    flash:
+        settings_saved: 'SEO-instellingen opgeslagen.'
+        surface_saved: 'Pagina-SEO opgeslagen.'
+    robots:
+        index_follow: 'Index, follow'
+        index_nofollow: 'Index, nofollow'
+        noindex_follow: 'Noindex, follow'
+        noindex_nofollow: 'Noindex, nofollow'
+    title_template:
+        missing_placeholder: 'Het titelsjabloon moet %placeholder% bevatten.'
+    social_profiles:
+        invalid: '"%url%" moet een absolute http(s)-URL zijn.'
+    surface:
+        robots:
+            inherit: 'Overnemen'
+        canonical:
+            outside_site: 'De canonieke URL moet op de oorsprong van deze site blijven.'
+        open_graph_image:
+            invalid: 'De Open Graph-afbeelding moet een pad op de site of een https-URL zijn.'
+
+nowo_seo_site:
+    site_name:
+        label: 'Sitenaam'
+        placeholder: 'bijv. Nowo'
+        help: 'Getoond in titels en in de JSON-LD van de organisatie wanneer geen officiële naam is ingesteld.'
+    title_template:
+        label: 'Titelsjabloon'
+        placeholder: '%page% · %site%'
+        help: 'Moet de placeholder %page% bevatten.'
+    indexable:
+        label: 'Indexeerbaar'
+        help: 'Indien uitgeschakeld is robots standaard noindex, nofollow.'
+    default_robots:
+        label: 'Standaard robots'
+    default_open_graph_image:
+        label: 'Standaard Open Graph-afbeelding'
+        placeholder: '/og.png'
+    twitter_site:
+        label: 'Twitter-/X-account van de site'
+        placeholder: '@nowo'
+    organisation_legal_name:
+        label: 'Officiële naam van de organisatie'
+    organisation_logo:
+        label: 'Logo van de organisatie'
+        placeholder: '/logo.png'
+    contact_email:
+        label: 'Contact-e-mail'
+    contact_phone:
+        label: 'Contacttelefoon'
+    street_address:
+        label: 'Adres'
+    postal_code:
+        label: 'Postcode'
+    address_locality:
+        label: 'Plaats'
+    address_region:
+        label: 'Regio'
+    address_country:
+        label: 'Land (ISO)'
+        placeholder: 'ES'
+    social_profiles_text:
+        label: 'Sociale profielen'
+        help: 'Eén https-URL per regel. Schrijf none om aan te geven dat de site geen sociale profielen heeft.'
+        placeholder: 'https://x.com/nowo'
+    google_site_verification:
+        label: 'Google-siteverificatie'
+    bing_site_verification:
+        label: 'Bing-siteverificatie'
+    default_title_en:
+        label: 'Standaardtitel (en)'
+    home_title_en:
+        label: 'Titel startpagina (en)'
+    default_description_en:
+        label: 'Standaardbeschrijving (en)'
+    organisation_description_en:
+        label: 'Beschrijving van de organisatie (en)'
+    default_title_es:
+        label: 'Standaardtitel (es)'
+    home_title_es:
+        label: 'Titel startpagina (es)'
+    default_description_es:
+        label: 'Standaardbeschrijving (es)'
+    organisation_description_es:
+        label: 'Beschrijving van de organisatie (es)'
+
+nowo_seo_surface:
+    meta_title:
+        label: 'Metatitel'
+        placeholder: 'Leeg laten om over te nemen'
+    meta_description:
+        label: 'Metabeschrijving'
+    meta_robots:
+        label: 'Meta robots'
+    canonical_override:
+        label: 'Canonieke URL overschrijven'
+        placeholder: '/pad of https://deze-site/…'
+    open_graph_image:
+        label: 'Open Graph-afbeelding'
+        placeholder: '/og.png of https://…'

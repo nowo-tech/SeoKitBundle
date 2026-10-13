@@ -6,3 +6,126 @@ seo:
         label: 'Mappa del sito'
     robots:
         label: 'Robots'
+
+nowo_seo_kit:
+    admin:
+        save: 'Salva'
+        edit: 'Modifica'
+        back: 'Indietro'
+        settings:
+            title: 'Impostazioni SEO'
+            intro: 'Valori predefiniti del sito ereditati da ogni pagina, più l’organizzazione dietro il knowledge graph.'
+            noindex_warning: 'Questa installazione è impostata su noindex. I motori di ricerca non indicizzeranno le pagine pubbliche.'
+            section:
+                wording: 'Testi per lingua'
+                organisation: 'Organizzazione'
+        surfaces:
+            title: 'SEO delle pagine'
+            intro: 'Metadati dell’head risolti per pagina. Le personalizzazioni vuote ereditano i valori predefiniti del sito.'
+            site_noindex: 'L’intero sito è noindex; gli avvisi published_but_noindex vengono soppressi.'
+            empty: 'Nessun elemento di audit registrato per questa lingua.'
+            edit_title: 'Modifica SEO — %surface%'
+            column:
+                surface: 'Pagina'
+                path: 'Percorso'
+                title: 'Titolo'
+                problems: 'Problemi'
+    flash:
+        settings_saved: 'Impostazioni SEO salvate.'
+        surface_saved: 'SEO della pagina salvato.'
+    robots:
+        index_follow: 'Index, follow'
+        index_nofollow: 'Index, nofollow'
+        noindex_follow: 'Noindex, follow'
+        noindex_nofollow: 'Noindex, nofollow'
+    title_template:
+        missing_placeholder: 'Il modello del titolo deve includere %placeholder%.'
+    social_profiles:
+        invalid: '"%url%" deve essere un URL http(s) assoluto.'
+    surface:
+        robots:
+            inherit: 'Eredita'
+        canonical:
+            outside_site: 'L’URL canonico deve restare sull’origine di questo sito.'
+        open_graph_image:
+            invalid: 'L’immagine Open Graph deve essere un percorso del sito o un URL https.'
+
+nowo_seo_site:
+    site_name:
+        label: 'Nome del sito'
+        placeholder: 'es. Nowo'
+        help: 'Mostrato nei titoli e nel JSON-LD dell’organizzazione quando non è impostata una ragione sociale.'
+    title_template:
+        label: 'Modello del titolo'
+        placeholder: '%page% · %site%'
+        help: 'Deve includere il segnaposto %page%.'
+    indexable:
+        label: 'Indicizzabile'
+        help: 'Se disattivato, robots è per impostazione predefinita noindex, nofollow.'
+    default_robots:
+        label: 'Robots predefinito'
+    default_open_graph_image:
+        label: 'Immagine Open Graph predefinita'
+        placeholder: '/og.png'
+    twitter_site:
+        label: 'Account Twitter / X del sito'
+        placeholder: '@nowo'
+    organisation_legal_name:
+        label: 'Ragione sociale dell’organizzazione'
+    organisation_logo:
+        label: 'Logo dell’organizzazione'
+        placeholder: '/logo.png'
+    contact_email:
+        label: 'E-mail di contatto'
+    contact_phone:
+        label: 'Telefono di contatto'
+    street_address:
+        label: 'Indirizzo'
+    postal_code:
+        label: 'CAP'
+    address_locality:
+        label: 'Città'
+    address_region:
+        label: 'Regione'
+    address_country:
+        label: 'Paese (ISO)'
+        placeholder: 'ES'
+    social_profiles_text:
+        label: 'Profili social'
+        help: 'Un URL https per riga. Scrivi none per indicare che il sito non ha profili social.'
+        placeholder: 'https://x.com/nowo'
+    google_site_verification:
+        label: 'Verifica del sito Google'
+    bing_site_verification:
+        label: 'Verifica del sito Bing'
+    default_title_en:
+        label: 'Titolo predefinito (en)'
+    home_title_en:
+        label: 'Titolo della home (en)'
+    default_description_en:
+        label: 'Descrizione predefinita (en)'
+    organisation_description_en:
+        label: 'Descrizione dell’organizzazione (en)'
+    default_title_es:
+        label: 'Titolo predefinito (es)'
+    home_title_es:
+        label: 'Titolo della home (es)'
+    default_description_es:
+        label: 'Descrizione predefinita (es)'
+    organisation_description_es:
+        label: 'Descrizione dell’organizzazione (es)'
+
+nowo_seo_surface:
+    meta_title:
+        label: 'Meta title'
+        placeholder: 'Lascia vuoto per ereditare'
+    meta_description:
+        label: 'Meta description'
+    meta_robots:
+        label: 'Meta robots'
+    canonical_override:
+        label: 'URL canonico personalizzato'
+        placeholder: '/percorso o https://questo-sito/…'
+    open_graph_image:
+        label: 'Immagine Open Graph'
+        placeholder: '/og.png o https://…'

@@ -34,6 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `nowo_seo_head()` now actually emits the announced CSP `nonce` on the JSON-LD `<script>`: it accepts an optional nonce argument (`{{ nowo_seo_head(nonce) }}`) and otherwise reads the request attribute `csp_nonce` (it was hard-coded to `null`).
+- German, French, Italian, Dutch and Portuguese catalogues now translate all admin, form and validation keys (73 keys were missing and fell back to English); a key-parity test guards every locale against `en`.
+
+### Deprecated
+
+- `@NowoSeoKitBundle/Resources/config/routes.yaml` and `routes_admin.yaml` (not used by the Flex recipe or docs): they ignore the `sitemap.*` / `robots.*` path and enable toggles and the `admin.*` toggles. Import `type: nowo_seo_kit` / `type: nowo_seo_kit_admin` instead; the files will be removed in 2.0.
+
+### Changed
+
+- Docs: `page_head.open_graph_regions` documented in CONFIGURATION.md, including that PageHead (and therefore `page_head.*`) is only registered when `base_url` is set, and that `persistence` / `admin` should be used with `base_url`.
+
 ## [1.13.0] - 2026-10-13
 
 ### Security

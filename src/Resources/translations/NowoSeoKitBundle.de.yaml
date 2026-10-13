@@ -6,3 +6,126 @@ seo:
         label: 'Sitemap'
     robots:
         label: 'Robots'
+
+nowo_seo_kit:
+    admin:
+        save: 'Speichern'
+        edit: 'Bearbeiten'
+        back: 'Zurück'
+        settings:
+            title: 'SEO-Einstellungen'
+            intro: 'Websiteweite Standardwerte, die jede Seite erbt, sowie die Organisation hinter dem Knowledge Graph.'
+            noindex_warning: 'Diese Installation ist auf noindex gesetzt. Suchmaschinen werden öffentliche Seiten nicht indexieren.'
+            section:
+                wording: 'Texte nach Sprache'
+                organisation: 'Organisation'
+        surfaces:
+            title: 'Seiten-SEO'
+            intro: 'Aufgelöste Head-Metadaten pro Seite. Leere Überschreibungen erben die Standardwerte der Website.'
+            site_noindex: 'Die gesamte Website ist noindex; Warnungen vom Typ published_but_noindex werden unterdrückt.'
+            empty: 'Für diese Sprache sind keine Audit-Objekte registriert.'
+            edit_title: 'SEO bearbeiten — %surface%'
+            column:
+                surface: 'Seite'
+                path: 'Pfad'
+                title: 'Titel'
+                problems: 'Probleme'
+    flash:
+        settings_saved: 'SEO-Einstellungen gespeichert.'
+        surface_saved: 'Seiten-SEO gespeichert.'
+    robots:
+        index_follow: 'Index, follow'
+        index_nofollow: 'Index, nofollow'
+        noindex_follow: 'Noindex, follow'
+        noindex_nofollow: 'Noindex, nofollow'
+    title_template:
+        missing_placeholder: 'Die Titelvorlage muss %placeholder% enthalten.'
+    social_profiles:
+        invalid: '„%url%“ muss eine absolute http(s)-URL sein.'
+    surface:
+        robots:
+            inherit: 'Erben'
+        canonical:
+            outside_site: 'Die kanonische URL muss auf dem Ursprung dieser Website bleiben.'
+        open_graph_image:
+            invalid: 'Das Open-Graph-Bild muss ein Pfad dieser Website oder eine https-URL sein.'
+
+nowo_seo_site:
+    site_name:
+        label: 'Name der Website'
+        placeholder: 'z. B. Nowo'
+        help: 'Wird in Titeln und im Organisations-JSON-LD angezeigt, wenn kein rechtlicher Name gesetzt ist.'
+    title_template:
+        label: 'Titelvorlage'
+        placeholder: '%page% · %site%'
+        help: 'Muss den Platzhalter %page% enthalten.'
+    indexable:
+        label: 'Indexierbar'
+        help: 'Wenn deaktiviert, ist robots standardmäßig noindex, nofollow.'
+    default_robots:
+        label: 'Standard-Robots'
+    default_open_graph_image:
+        label: 'Standard-Open-Graph-Bild'
+        placeholder: '/og.png'
+    twitter_site:
+        label: 'Twitter-/X-Konto der Website'
+        placeholder: '@nowo'
+    organisation_legal_name:
+        label: 'Rechtlicher Name der Organisation'
+    organisation_logo:
+        label: 'Logo der Organisation'
+        placeholder: '/logo.png'
+    contact_email:
+        label: 'Kontakt-E-Mail'
+    contact_phone:
+        label: 'Kontakttelefon'
+    street_address:
+        label: 'Straße und Hausnummer'
+    postal_code:
+        label: 'Postleitzahl'
+    address_locality:
+        label: 'Ort'
+    address_region:
+        label: 'Region'
+    address_country:
+        label: 'Land (ISO)'
+        placeholder: 'ES'
+    social_profiles_text:
+        label: 'Social-Media-Profile'
+        help: 'Eine https-URL pro Zeile. Schreiben Sie none, um anzugeben, dass die Website keine Social-Media-Profile hat.'
+        placeholder: 'https://x.com/nowo'
+    google_site_verification:
+        label: 'Google-Website-Verifizierung'
+    bing_site_verification:
+        label: 'Bing-Website-Verifizierung'
+    default_title_en:
+        label: 'Standardtitel (en)'
+    home_title_en:
+        label: 'Titel der Startseite (en)'
+    default_description_en:
+        label: 'Standardbeschreibung (en)'
+    organisation_description_en:
+        label: 'Beschreibung der Organisation (en)'
+    default_title_es:
+        label: 'Standardtitel (es)'
+    home_title_es:
+        label: 'Titel der Startseite (es)'
+    default_description_es:
+        label: 'Standardbeschreibung (es)'
+    organisation_description_es:
+        label: 'Beschreibung der Organisation (es)'
+
+nowo_seo_surface:
+    meta_title:
+        label: 'Meta-Titel'
+        placeholder: 'Leer lassen, um zu erben'
+    meta_description:
+        label: 'Meta-Beschreibung'
+    meta_robots:
+        label: 'Meta-Robots'
+    canonical_override:
+        label: 'Kanonische URL überschreiben'
+        placeholder: '/pfad oder https://diese-website/…'
+    open_graph_image:
+        label: 'Open-Graph-Bild'
+        placeholder: '/og.png oder https://…'

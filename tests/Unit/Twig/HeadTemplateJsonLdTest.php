@@ -45,15 +45,24 @@ final class HeadTemplateJsonLdTest extends TestCase
         self::assertSame(1, substr_count($html, '</script>'));
     }
 
+    public function testJsonLdScriptCarriesCspNonce(): void
+    {
+        $jsonLd = ['enabled' => true, 'json' => '{"@type":"Thing"}', 'document' => null, 'graph' => []];
+
+        self::assertStringContainsString('<script type="application/ld+json" nonce="r4nd0m">', $this->render($jsonLd, 'r4nd0m'));
+        self::assertStringContainsString('<script type="application/ld+json">', $this->render($jsonLd));
+    }
+
     /**
      * @param array{enabled: bool, json: ?string, document: array<string, mixed>|null, graph: list<array<string, mixed>>} $jsonLd
      */
-    private function render(array $jsonLd): string
+    private function render(array $jsonLd, ?string $cspNonce = null): string
     {
         $twig = new Environment(new FilesystemLoader(dirname(__DIR__, 3) . '/src/Resources/views'));
 
         return $twig->render('seo/head.html.twig', [
             'seo_include_title' => false,
+            'csp_nonce'         => $cspNonce,
             'seo'               => ['jsonLd' => $jsonLd, 'verification' => ['google' => null, 'bing' => null]],
         ]);
     }

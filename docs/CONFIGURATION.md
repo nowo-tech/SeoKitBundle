@@ -14,6 +14,7 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 - [sitemap](#sitemap)
 - [robots](#robots)
 - [templates](#templates)
+- [page_head](#page_head)
 - [persistence](#persistence)
 - [admin](#admin)
 - [Web servers](#web-servers)
@@ -37,7 +38,7 @@ Later layers override earlier ones:
 | `indexable` | `true` | When false (or a `SiteIndexabilityProviderInterface` returns false), robots disallow `/` and sitemap is empty/404. Page meta robots is forced to `noindex,nofollow` (overriding any `robots` set by defaults, pages, slugs or providers) unless it already contains `noindex`. |
 | `default_locale` | `en` | Fallback locale |
 | `locales` | `en, es, fr, de, it, pt, nl` | Locales for hreflang and sitemap |
-| `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests) |
+| `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests). Also switches on `AbsoluteUrlBuilder` and the PageHead pipeline (see [page_head](#page_head)); set it whenever `persistence` / `admin` are enabled (see [persistence](#persistence)). |
 
 ## Host extension points
 
@@ -155,6 +156,25 @@ slugs:
 
 Set `templates.head` to another logical Twig path to swap the head partial without a full-file vendor override. Full-file overrides under `templates/bundles/NowoSeoKitBundle/` (REQ-TWIG-001): [USAGE.md — Overriding templates](USAGE.md#overriding-templates-req-twig-001).
 
+## page_head
+
+Layered PageHead resolution for CMS hosts (`PageHeadResolver`, `PageHeadContext`, `ConfigPageHeadDefaultsProvider`).
+**These services — and therefore every `page_head.*` key — are only registered when `base_url` is set**; without it the keys are accepted but have no effect.
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `open_graph_regions` | `{es: ES, ca: ES, en: GB, pt: PT, fr: FR, it: IT}` | Map locale → region used to build `og:locale` (`<locale>_<REGION>`). Locales missing from the map fall back to the upper-cased locale (`de` → `de_DE`). Setting the key replaces the whole map. |
+
+```yaml
+nowo_seo_kit:
+    base_url: 'https://example.com'
+    page_head:
+        open_graph_regions:
+            en: US
+            es: MX
+            de: AT
+```
+
 ## persistence
 
 Opt-in Doctrine site settings (requires `doctrine/orm` + `doctrine/doctrine-bundle`).
@@ -169,11 +189,16 @@ Opt-in Doctrine site settings (requires `doctrine/orm` + `doctrine/doctrine-bund
 
 Tables: `nowo_seo_site_settings`, `nowo_seo_site_settings_translation`, `nowo_seo_surface`.
 
+**Set `base_url` together with persistence (and admin).** Without it:
+
+- the PageHead pipeline (`PageHeadResolver` / `PageHeadContext` / `AbsoluteUrlBuilder`) that CMS hosts use to render persisted surface overrides (canonical, hreflang, Open Graph URLs) is not registered;
+- `OriginUrlGuard` has no origin, so admin/API canonical overrides are only accepted as site-relative paths (`/path`) — absolute URLs, even on your own host, are rejected.
+
 Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
 
 ## admin
 
-Requires `persistence.enabled: true`. Import routes with `type: nowo_seo_kit_admin`.
+Requires `persistence.enabled: true` (and, in practice, `base_url` — see [persistence](#persistence)). Import routes with `type: nowo_seo_kit_admin`; only that loader honours the `enabled` / `settings` / `surfaces` / `api_enabled` toggles below. The legacy `@NowoSeoKitBundle/Resources/config/routes_admin.yaml` file is deprecated and ignores them.
 
 | Key | Default | Description |
 | --- | --- | --- |

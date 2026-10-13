@@ -1,3 +1,11 @@
+# DEPRECATED since 1.13.1, will be removed in 2.0.
+# These static routes ignore nowo_seo_kit.sitemap.{enabled,path} and robots.{enabled,path}.
+# Import the bundle loader instead (what the Flex recipe installs):
+#
+#   nowo_seo_kit:
+#       resource: .
+#       type: nowo_seo_kit
+
 nowo_seo_kit_sitemap:
     path: /sitemap.xml
     controller: Nowo\SeoKitBundle\Controller\SeoKitController::sitemap

@@ -92,6 +92,76 @@ final class SeoKitExtensionTest extends TestCase
         self::assertSame('NO_TITLE', $ext->renderHead());
     }
 
+    public function testRenderHeadPassesExplicitCspNonce(): void
+    {
+        [$ext] = $this->nonceExtension(null);
+
+        self::assertSame('nonce=abc123', $ext->renderHead('abc123'));
+    }
+
+    public function testRenderHeadFallsBackToRequestCspNonceAttribute(): void
+    {
+        [$ext, $request] = $this->nonceExtension('from-request');
+
+        self::assertSame('nonce=from-request', $ext->renderHead());
+        self::assertSame('nonce=explicit', $ext->renderHead('explicit'));
+
+        $request->attributes->set('csp_nonce', ['not-a-string']);
+        self::assertSame('nonce=', $ext->renderHead());
+    }
+
+    public function testRenderHeadWithoutNonceSourceRendersNoNonce(): void
+    {
+        [$ext] = $this->nonceExtension(null);
+
+        self::assertSame('nonce=', $ext->renderHead());
+        self::assertSame('nonce=', $ext->renderHead(''));
+    }
+
+    /**
+     * @return array{0: SeoKitExtension, 1: Request}
+     */
+    private function nonceExtension(?string $requestNonce): array
+    {
+        $stack   = $this->requestStack();
+        $request = $stack->getCurrentRequest();
+        self::assertNotNull($request);
+        if ($requestNonce !== null) {
+            $request->attributes->set('csp_nonce', $requestNonce);
+        }
+
+        $twig = new Environment(new ArrayLoader([
+            'head.twig' => 'nonce={{ csp_nonce }}',
+        ]));
+
+        return [new SeoKitExtension(true, $this->resolver($stack), $twig, ['head' => 'head.twig'], $stack), $request];
+    }
+
+    private function requestStack(): RequestStack
+    {
+        $stack   = new RequestStack();
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+        $request->setLocale('en');
+        $stack->push($request);
+
+        return $stack;
+    }
+
+    private function resolver(RequestStack $stack): SeoMetadataResolver
+    {
+        $config = $this->minimalConfig();
+
+        return new SeoMetadataResolver(
+            $config,
+            $stack,
+            new SeoRuntime(),
+            new SeoTemplateRenderer(),
+            new SeoPathBuilder($config),
+            $this->createMock(UrlGeneratorInterface::class),
+        );
+    }
+
     /**
      * @return array<string, mixed>
      */
