@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## To 1.13.0
+
+From **1.12.1** — security and fixes - surface API requires JSON, hreflang/robots/sitemap correctness, PHP 8.4/8.5 and Symfony 8 tested.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
+
+- `POST /_nowo/seo/surfaces/{key}/{locale}` now requires `Content-Type: application/json`; form-encoded posts get 415.
+- `indexable: false` now overrides page/provider robots values; noindex pages are dropped from the sitemap; hreflang no longer emits `?_locale=` alternates.
+- Symfony 7.0–7.3 are formally dropped (they were not installable anyway); Symfony 8.0/8.1 on PHP 8.4/8.5 are now tested in CI.
+
 ## To 1.12.1
 
 From **1.12.0** — dependency refresh and repository maintenance.
@@ -99,6 +111,7 @@ php bin/console cache:clear
 
 ## Table of contents
 
+- [To 1.13.0](#to-1130)
 - [To 1.12.1](#to-1121)
 - [To 1.12.0](#to-1120)
 - [To 1.11.1](#to-1111)

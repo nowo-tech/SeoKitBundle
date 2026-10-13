@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.13.0] - 2026-10-13](#1130---2026-10-13)
 - [[1.12.1] - 2026-10-13](#1121---2026-10-13)
 - [[1.12.0] - 2026-10-09](#1120---2026-10-09)
 - [[1.11.1] - 2026-10-06](#1111---2026-10-06)
@@ -33,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-10-13
+
 ### Security
 
 - Surface SEO JSON API (`POST /_nowo/seo/surfaces/{key}/{locale}`) now requires `Content-Type: application/json` (415 otherwise; 400 for a non-object body). Form-encoded cross-site posts are rejected, and JSON requests no longer fail with 422 when CSRF protection is enabled.
@@ -50,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Symfony requirement floors aligned to `^7.4 || ^8.0` for every component (Symfony 7.0–7.3 were already not installable because of the form/validator/translation floors). CI now covers PHP 8.4 / 8.5 and Symfony 8.0 / 8.1; branch alias `1.12.x-dev`.
+
+[1.13.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.13.0
 
 ## [1.12.1] - 2026-10-13
 
