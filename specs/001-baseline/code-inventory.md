@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/seo-kit-bundle`  
-**Last audited**: 2026-10-09 (v1.12.0)
+**Last audited**: 2026-10-13 (v1.12.0)
 
 Every production artifact under `src/` is listed below.
 

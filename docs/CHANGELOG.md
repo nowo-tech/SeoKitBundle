@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.12.1] - 2026-10-13](#1121---2026-10-13)
 - [[1.12.0] - 2026-10-09](#1120---2026-10-09)
 - [[1.11.1] - 2026-10-06](#1111---2026-10-06)
 - [[1.11.0] - 2026-10-06](#1110---2026-10-06)
@@ -32,9 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-10-13
+
 ### Changed
 
 - Development: `composer.json` pins `config.platform.php` to 8.2.0 so the committed lock stays installable on the minimum PHP; CI overrides the platform per matrix cell.
+- Repository: `.twig-cs-fixer.cache` is now git-ignored.
+
+### Dependencies
+
+- `doctrine/orm` 3.7.4 → 3.7.5 (development lock; #41).
+- `nowo-tech/form-kit-bundle` 2.6.1 → 2.7.1 (development lock; #42).
+
+[1.12.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.12.1
 
 ## [1.12.0] - 2026-10-09
 

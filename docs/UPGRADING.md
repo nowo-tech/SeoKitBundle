@@ -1,7 +1,16 @@
 # Upgrading
 
-
 ## Unreleased
+
+## To 1.12.1
+
+From **1.12.0** — dependency refresh and repository maintenance.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
+
+- No breaking changes. No application upgrade steps.
 
 ## To 1.12.0
 
@@ -90,6 +99,7 @@ php bin/console cache:clear
 
 ## Table of contents
 
+- [To 1.12.1](#to-1121)
 - [To 1.12.0](#to-1120)
 - [To 1.11.1](#to-1111)
 - [To 1.11.0](#to-1110)
