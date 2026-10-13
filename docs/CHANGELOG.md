@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.14.0] - 2026-10-13](#1140---2026-10-13)
 - [[1.13.0] - 2026-10-13](#1130---2026-10-13)
 - [[1.12.1] - 2026-10-13](#1121---2026-10-13)
 - [[1.12.0] - 2026-10-09](#1120---2026-10-09)
@@ -34,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-10-13
+
 ### Fixed
 
 - `nowo_seo_head()` now actually emits the announced CSP `nonce` on the JSON-LD `<script>`: it accepts an optional nonce argument (`{{ nowo_seo_head(nonce) }}`) and otherwise reads the request attribute `csp_nonce` (it was hard-coded to `null`).
@@ -46,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Docs: `page_head.open_graph_regions` documented in CONFIGURATION.md, including that PageHead (and therefore `page_head.*`) is only registered when `base_url` is set, and that `persistence` / `admin` should be used with `base_url`.
+
+[1.14.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.14.0
 
 ## [1.13.0] - 2026-10-13
 

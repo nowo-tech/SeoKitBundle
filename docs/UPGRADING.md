@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## To 1.14.0
+
+From **1.13.0** — complete translations, CSP nonce support in nowo_seo_head, legacy route files deprecated, page_head docs.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
+
 - If your app imports `@NowoSeoKitBundle/Resources/config/routes.yaml` or `routes_admin.yaml`, switch to the route loaders (`resource: .` with `type: nowo_seo_kit`, and `type: nowo_seo_kit_admin` for the admin); both files are deprecated and will be removed in 2.0. The loaders honour `sitemap.*`, `robots.*` and `admin.*` toggles.
 - `nowo_seo_head()` accepts an optional CSP nonce and falls back to the request attribute `csp_nonce`. If your CSP listener already sets that attribute, the JSON-LD `<script>` now carries `nonce="…"` automatically.
 
@@ -114,6 +122,7 @@ php bin/console cache:clear
 
 ## Table of contents
 
+- [To 1.14.0](#to-1140)
 - [To 1.13.0](#to-1130)
 - [To 1.12.1](#to-1121)
 - [To 1.12.0](#to-1120)
