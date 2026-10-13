@@ -1,0 +1,7 @@
+{% if app is defined and app %}
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="nowo-seo-kit-flash nowo-seo-kit-flash--{{ type }}" role="status">{{ message|trans({}, 'NowoSeoKitBundle') }}</div>
+        {% endfor %}
+    {% endfor %}
+{% endif %}

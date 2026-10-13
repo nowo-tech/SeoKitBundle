@@ -10,6 +10,7 @@
 <body>
 <main>
     <h1>{{ 'nowo_seo_kit.admin.settings.title'|trans({}, 'NowoSeoKitBundle') }}</h1>
+    {{ include('@NowoSeoKitBundle/admin/_flashes.html.twig') }}
     <p>{{ 'nowo_seo_kit.admin.settings.intro'|trans({}, 'NowoSeoKitBundle') }}</p>
 
     {% if not settings.indexable %}

@@ -33,6 +33,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Surface SEO JSON API (`POST /_nowo/seo/surfaces/{key}/{locale}`) now requires `Content-Type: application/json` (415 otherwise; 400 for a non-object body). Form-encoded cross-site posts are rejected, and JSON requests no longer fail with 422 when CSRF protection is enabled.
+- Raw `json_ld.json` strings are emitted with `</` escaped as `<\/`, so they cannot close the `<script>` element.
+- Sitemap XML escapes quotes in attribute values (`ENT_QUOTES`).
+
+### Fixed
+
+- hreflang alternates are no longer generated as `/page?_locale=xx` for routes without a `{_locale}` path variable (or localized route variants); such locales are skipped.
+- `indexable: false` (config or a defaults provider) now forces `noindex,nofollow` even when a page, slug or provider sets `robots: 'index, follow'`.
+- Opening the surface admin edit form (GET) no longer creates an empty `SeoSurface` row.
+- Sitemap no longer lists pages / slugs marked `noindex`.
+- Admin templates (settings, surfaces list and form) now render flash messages.
+
+### Changed
+
+- Symfony requirement floors aligned to `^7.4 || ^8.0` for every component (Symfony 7.0–7.3 were already not installable because of the form/validator/translation floors). CI now covers PHP 8.4 / 8.5 and Symfony 8.0 / 8.1; branch alias `1.12.x-dev`.
+
 ## [1.12.1] - 2026-10-13
 
 ### Changed

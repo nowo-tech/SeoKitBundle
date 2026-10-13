@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
+use Nowo\SeoKitBundle\Model\SeoMetadata;
 use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
@@ -13,9 +14,11 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGenerator;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-
-use const PHP_URL_PATH;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
 
 final class SeoMetadataResolverTest extends TestCase
 {
@@ -498,10 +501,46 @@ final class SeoMetadataResolverTest extends TestCase
 
     public function testResolveBuildsAlternatesViaUrlGeneratorWhenPathsMissing(): void
     {
+        $metadata = $this->resolveWithRealRouter('/en/products/7', 'app_products', ['_locale' => 'en', 'id' => 7]);
+
+        self::assertSame([
+            'https://example.com/en/products/7',
+            'https://example.com/es/products/7',
+        ], array_column($metadata->alternates, 'url'));
+        self::assertSame(['en', 'es'], array_column($metadata->alternates, 'hreflang'));
+    }
+
+    public function testResolveUsesLocalizedRouteVariantsForAlternates(): void
+    {
+        $metadata = $this->resolveWithRealRouter('/contact', 'app_contact', ['_locale' => 'en']);
+
+        self::assertSame([
+            'https://example.com/contact',
+            'https://example.com/contacto',
+        ], array_column($metadata->alternates, 'url'));
+    }
+
+    public function testResolveSkipsAlternatesForRoutesWithoutLocalePathVariable(): void
+    {
+        $metadata = $this->resolveWithRealRouter('/about', 'app_about', [], 'en');
+
+        // Only the current page: no "/about?_locale=es" pseudo-alternate.
+        self::assertSame(['https://example.com/about'], array_column($metadata->alternates, 'url'));
+        foreach ($metadata->alternates as $alternate) {
+            self::assertStringNotContainsString('_locale=', $alternate['url']);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $routeParams
+     */
+    private function resolveWithRealRouter(string $path, string $route, array $routeParams, string $locale = 'en'): SeoMetadata
+    {
         $config = [
             'enabled'        => true,
             'default_locale' => 'en',
             'locales'        => ['en', 'es'],
+            'base_url'       => 'https://example.com',
             'defaults'       => [
                 'site_name'          => '',
                 'title_template'     => '{title}',
@@ -509,40 +548,119 @@ final class SeoMetadataResolverTest extends TestCase
                 'x_default_hreflang' => false,
             ],
             'pages' => [
-                'app_dynamic' => ['title' => 'Dynamic'],
+                $route => ['title' => 'Dynamic'],
             ],
         ];
 
-        $request = Request::create('/dynamic');
-        $request->attributes->set('_route', 'app_dynamic');
-        $request->attributes->set('_locale', 'en');
-        $request->attributes->set('_route_params', ['id' => 7]);
+        $routes = new RouteCollection();
+        $routes->add('app_products', new Route('/{_locale}/products/{id}'));
+        $routes->add('app_about', new Route('/about'));
+        $routes->add('app_contact.en', new Route('/contact', ['_locale' => 'en', '_canonical_route' => 'app_contact']));
+        $routes->add('app_contact.es', new Route('/contacto', ['_locale' => 'es', '_canonical_route' => 'app_contact']));
 
-        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $urlGenerator->method('generate')->willReturnCallback(
-            static fn (string $route, array $params = []): string => '/generated/' . $route . '/' . ($params['_locale'] ?? 'en'),
-        );
+        $request = Request::create($path);
+        $request->attributes->set('_route', $route);
+        $request->attributes->set('_locale', $locale);
+        $request->attributes->set('_route_params', $routeParams);
+
+        $stack = new RequestStack();
+        $stack->push($request);
 
         $resolver = new SeoMetadataResolver(
             $config,
-            (static function () use ($request): RequestStack {
-                $stack = new RequestStack();
-                $stack->push($request);
-
-                return $stack;
-            })(),
+            $stack,
             new SeoRuntime(),
             new SeoTemplateRenderer(),
             new SeoPathBuilder($config),
-            $urlGenerator,
+            new UrlGenerator($routes, new RequestContext()),
         );
 
-        $metadata  = $resolver->resolve();
-        $hreflangs = array_column($metadata->alternates, 'hreflang');
+        return $resolver->resolve();
+    }
 
-        $this->assertContains('en', $hreflangs);
-        $this->assertContains('es', $hreflangs);
-        $this->assertSame('/dynamic', parse_url($metadata->alternates[0]['url'], PHP_URL_PATH));
+    public function testIndexableFalseOverridesRobotsFromLayers(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'indexable'      => false,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => ['site_name' => 'Site', 'title_template' => '{title}', 'robots' => 'index, follow', 'hreflang_enabled' => false],
+            'pages'          => ['app_home' => ['title' => 'Home', 'path' => '/', 'robots' => 'index, follow, max-image-preview:large']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        self::assertSame('noindex,nofollow', $this->createResolver($config, $request)->resolve()->robots);
+    }
+
+    public function testProviderIndexableFalseOverridesProviderAndPageRobots(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => ['site_name' => 'Site', 'title_template' => '{title}', 'hreflang_enabled' => false],
+            'pages'          => ['app_home' => ['title' => 'Home', 'path' => '/', 'robots' => 'index, follow']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $first = new class implements SeoDefaultsProviderInterface {
+            public function getDefaults(): array
+            {
+                return ['robots' => 'index, follow'];
+            }
+        };
+        $second = new class implements SeoDefaultsProviderInterface {
+            public function getDefaults(): array
+            {
+                return ['indexable' => false];
+            }
+        };
+
+        self::assertSame('noindex,nofollow', $this->createResolver($config, $request, null, [$first, $second])->resolve()->robots);
+    }
+
+    public function testIndexableFalseKeepsExistingNoindexDirectives(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'indexable'      => false,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => ['site_name' => 'Site', 'title_template' => '{title}', 'hreflang_enabled' => false],
+            'pages'          => ['app_home' => ['title' => 'Home', 'path' => '/', 'robots' => 'NOINDEX, noarchive']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        self::assertSame('NOINDEX, noarchive', $this->createResolver($config, $request)->resolve()->robots);
+    }
+
+    public function testRawJsonLdCannotCloseTheScriptElement(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => [
+                'site_name'        => 'Site',
+                'title_template'   => '{title}',
+                'hreflang_enabled' => false,
+                'json_ld'          => ['enabled' => true, 'json' => '{"name":"</script><script>alert(1)</script>"}'],
+            ],
+            'pages' => ['app_home' => ['title' => 'Home', 'path' => '/']],
+        ];
+        $request = Request::create('/');
+        $request->attributes->set('_route', 'app_home');
+
+        $json = $this->createResolver($config, $request)->resolve()->jsonLd['json'];
+
+        self::assertIsString($json);
+        self::assertStringNotContainsString('</', $json);
+        // Still valid JSON with the same value ("\/" is an escaped slash).
+        self::assertSame(['name' => '</script><script>alert(1)</script>'], json_decode($json, true));
     }
 
     public function testResolveSkipsAlternatesWhenUrlGeneratorFails(): void

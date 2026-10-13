@@ -216,4 +216,57 @@ final class SitemapGeneratorTest extends TestCase
         $this->assertStringContainsString('xhtml:link rel="alternate"', $xml);
         $this->assertStringContainsString('hreflang="es"', $xml);
     }
+
+    public function testEntriesSkipNoindexPagesAndSlugs(): void
+    {
+        $config = [
+            'base_url' => 'https://example.com',
+            'locales'  => ['en', 'es'],
+            'sitemap'  => ['enabled' => true],
+            'pages'    => [
+                'app_home'    => ['path' => '/'],
+                'app_private' => ['path' => '/private', 'robots' => 'noindex, follow'],
+                'app_landing' => [
+                    'path'    => '/landing',
+                    'robots'  => 'index, follow',
+                    'locales' => ['es' => ['path' => '/es/landing', 'robots' => 'NOINDEX']],
+                ],
+            ],
+            'slug_routes' => ['app_blog_show' => ['path_pattern' => '/blog/{slug}']],
+            'slugs'       => [
+                'app_blog_show' => [
+                    'public'  => [],
+                    'draft'   => ['noindex' => true],
+                    'archive' => ['robots' => 'noindex'],
+                ],
+            ],
+        ];
+        $generator = new SitemapGenerator($config, new SeoPathBuilder($config));
+
+        $locs = array_column($generator->entries(Request::create('https://example.com/')), 'loc');
+
+        $this->assertContains('https://example.com/', $locs);
+        $this->assertContains('https://example.com/landing', $locs);
+        $this->assertContains('https://example.com/blog/public', $locs);
+        $this->assertNotContains('https://example.com/private', $locs);
+        $this->assertNotContains('https://example.com/es/landing', $locs);
+        $this->assertNotContains('https://example.com/blog/draft', $locs);
+        $this->assertNotContains('https://example.com/blog/archive', $locs);
+    }
+
+    public function testToXmlEscapesQuotesInAttributes(): void
+    {
+        $generator = new SitemapGenerator([], new SeoPathBuilder([]));
+        $xml       = $generator->toXml([[
+            'loc'        => 'https://example.com/a?x="1"',
+            'changefreq' => 'weekly',
+            'priority'   => '0.5',
+            'alternates' => [['hreflang' => 'es"x', 'href' => 'https://example.com/es" onload="x']],
+        ]]);
+
+        $this->assertStringContainsString('hreflang="es&quot;x"', $xml);
+        $this->assertStringContainsString('href="https://example.com/es&quot; onload=&quot;x"', $xml);
+        $this->assertStringNotContainsString('onload="x"', $xml);
+        $this->assertNotFalse(simplexml_load_string($xml));
+    }
 }

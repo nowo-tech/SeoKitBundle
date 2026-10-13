@@ -10,7 +10,10 @@ use Symfony\Component\HttpFoundation\Request;
 use function is_array;
 use function is_string;
 use function sprintf;
+use function str_contains;
+use function strtolower;
 
+use const ENT_QUOTES;
 use const ENT_XML1;
 
 /**
@@ -71,7 +74,7 @@ final readonly class SitemapGenerator
                         continue;
                     }
                     $path = $this->paths->pagePath((string) $route, $locale);
-                    if ($path === null) {
+                    if ($path === null || $this->isNoindex($page, $locale)) {
                         continue;
                     }
                     $entries[] = [
@@ -98,7 +101,7 @@ final readonly class SitemapGenerator
                             continue;
                         }
                         $path = $this->paths->slugPath((string) $route, $locale, (string) $slug);
-                        if ($path === null) {
+                        if ($path === null || $this->isNoindex($cfg, $locale)) {
                             continue;
                         }
                         $entries[] = [
@@ -152,6 +155,25 @@ final readonly class SitemapGenerator
     }
 
     /**
+     * A noindex page must not be advertised in the sitemap (locale robots override the base layer).
+     *
+     * @param array<mixed> $cfg
+     */
+    private function isNoindex(array $cfg, string $locale): bool
+    {
+        if (($cfg['noindex'] ?? false) === true) {
+            return true;
+        }
+
+        $localeCfg = is_array($cfg['locales'][$locale] ?? null) ? $cfg['locales'][$locale] : [];
+        $robots    = is_string($localeCfg['robots'] ?? null) && $localeCfg['robots'] !== ''
+            ? $localeCfg['robots']
+            : ($cfg['robots'] ?? null);
+
+        return is_string($robots) && str_contains(strtolower($robots), 'noindex');
+    }
+
+    /**
      * @param list<array{loc: string, changefreq: string, priority: string, lastmod?: string, alternates?: list<array{hreflang: string, href: string}>}> $entries
      */
     public function toXml(array $entries): string
@@ -171,19 +193,19 @@ final readonly class SitemapGenerator
 
         foreach ($entries as $entry) {
             $xml .= "  <url>\n";
-            $xml .= '    <loc>' . htmlspecialchars($entry['loc'], ENT_XML1) . "</loc>\n";
+            $xml .= '    <loc>' . htmlspecialchars($entry['loc'], ENT_XML1 | ENT_QUOTES) . "</loc>\n";
             foreach ($entry['alternates'] ?? [] as $alt) {
                 $xml .= sprintf(
                     '    <xhtml:link rel="alternate" hreflang="%s" href="%s"/>' . "\n",
-                    htmlspecialchars($alt['hreflang'], ENT_XML1),
-                    htmlspecialchars($alt['href'], ENT_XML1),
+                    htmlspecialchars($alt['hreflang'], ENT_XML1 | ENT_QUOTES),
+                    htmlspecialchars($alt['href'], ENT_XML1 | ENT_QUOTES),
                 );
             }
             if (isset($entry['lastmod'])) {
-                $xml .= '    <lastmod>' . htmlspecialchars($entry['lastmod'], ENT_XML1) . "</lastmod>\n";
+                $xml .= '    <lastmod>' . htmlspecialchars($entry['lastmod'], ENT_XML1 | ENT_QUOTES) . "</lastmod>\n";
             }
-            $xml .= '    <changefreq>' . htmlspecialchars($entry['changefreq'], ENT_XML1) . "</changefreq>\n";
-            $xml .= '    <priority>' . htmlspecialchars($entry['priority'], ENT_XML1) . "</priority>\n";
+            $xml .= '    <changefreq>' . htmlspecialchars($entry['changefreq'], ENT_XML1 | ENT_QUOTES) . "</changefreq>\n";
+            $xml .= '    <priority>' . htmlspecialchars($entry['priority'], ENT_XML1 | ENT_QUOTES) . "</priority>\n";
             $xml .= "  </url>\n";
         }
 

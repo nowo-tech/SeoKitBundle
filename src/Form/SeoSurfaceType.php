@@ -78,6 +78,8 @@ class SeoSurfaceType extends AbstractSeoFormType
         $resolver->setDefaults([
             'data_class' => SeoSurface::class,
         ]);
+        // The JSON API passes csrf_protection: false; keep that valid when the CSRF form extension is absent.
+        $resolver->setDefined('csrf_protection');
     }
 
     public function getBlockPrefix(): string

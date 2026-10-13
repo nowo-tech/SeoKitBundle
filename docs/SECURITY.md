@@ -21,6 +21,8 @@ See [.github/SECURITY.md](../.github/SECURITY.md) for supported versions.
 - Keep `robots.disallow` aligned with admin and API paths.
 - Do not expose internal hostnames in `base_url` or canonical overrides.
 - Escape/encode user-controlled SEO fields in Twig (`title`, `description`, Open Graph values).
+- The surface SEO JSON API (`POST /_nowo/seo/surfaces/{key}/{locale}`) is protected by the admin role plus a required `Content-Type: application/json` (cross-site forms cannot send it without a CORS preflight). Do not enable permissive CORS (credentials + wildcard origins) on `/_nowo/seo/`.
+- Raw `json_ld.json` strings are rendered `|raw`; the resolver escapes `</` so the value cannot close the `<script>` element, but keep the JSON itself trusted.
 
 ## Dependencies
 

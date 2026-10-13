@@ -59,8 +59,10 @@ final class SeoSurfaceController extends AbstractController
             throw $this->createNotFoundException('Locale is not enabled.');
         }
 
-        $surface = $this->surfaces->getOrCreate($surfaceKey, $locale);
-        $form    = $this->createForm(SeoSurfaceType::class, $surface);
+        // Never persist on GET: a new override row is only written when a non-empty form is submitted.
+        $surface = $this->surfaces->findOneByKeyAndLocale($surfaceKey, $locale)
+            ?? (new SeoSurface())->setSurfaceKey($surfaceKey)->setLocale($locale);
+        $form = $this->createForm(SeoSurfaceType::class, $surface);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

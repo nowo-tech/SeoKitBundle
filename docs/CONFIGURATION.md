@@ -34,7 +34,7 @@ Later layers override earlier ones:
 | Key | Default | Description |
 | --- | --- | --- |
 | `enabled` | `true` | Master switch |
-| `indexable` | `true` | When false (or a `SiteIndexabilityProviderInterface` returns false), robots disallow `/` and sitemap is empty/404 |
+| `indexable` | `true` | When false (or a `SiteIndexabilityProviderInterface` returns false), robots disallow `/` and sitemap is empty/404. Page meta robots is forced to `noindex,nofollow` (overriding any `robots` set by defaults, pages, slugs or providers) unless it already contains `noindex`. |
 | `default_locale` | `en` | Fallback locale |
 | `locales` | `en, es, fr, de, it, pt, nl` | Locales for hreflang and sitemap |
 | `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests) |
@@ -75,7 +75,7 @@ Keyed by Symfony **route name**. Supports:
 - `title`, `description`, `robots`, `canonical`, `keywords`, `author`
 - `path` — public path for default locale (sitemap / hreflang)
 - `controller` — optional controller for static route loader
-- `in_sitemap`, `sitemap_priority`, `sitemap_changefreq`
+- `in_sitemap`, `sitemap_priority`, `sitemap_changefreq` (pages / slugs whose `robots` contains `noindex`, or slugs with `noindex: true`, are never listed in the sitemap)
 - `locales.<locale>` — per-locale title, description, path, etc.
 
 Example:
@@ -180,7 +180,7 @@ Requires `persistence.enabled: true`. Import routes with `type: nowo_seo_kit_adm
 | `enabled` | `false` | Master switch for admin + API loaders |
 | `settings` | `true` | Register `/settings/seo` |
 | `surfaces` | `true` | Register `/admin/seo/surfaces` |
-| `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}` |
+| `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. `POST` only accepts a JSON object with `Content-Type: application/json` (415 otherwise); no CSRF token is needed because cross-site forms cannot send JSON without a CORS preflight. |
 | `role` | `ROLE_ADMIN` | Access control |
 | `settings_template` / `surfaces_*_template` | kit defaults | Override with host Twig paths |
 

@@ -20,7 +20,13 @@ use function is_bool;
 use function is_int;
 use function is_scalar;
 use function is_string;
+use function parse_str;
+use function parse_url;
+use function str_replace;
 use function strlen;
+use function strtolower;
+
+use const PHP_URL_QUERY;
 
 /**
  * Merges SEO layers: defaults → slug_routes → pages → slugs → attribute → runtime.
@@ -50,12 +56,15 @@ final readonly class SeoMetadataResolver
             return $this->emptyMetadata();
         }
 
-        $route    = (string) $request->attributes->get('_route', '');
-        $locale   = (string) ($request->attributes->get('_locale') ?? $request->getLocale() ?: ($this->config['default_locale'] ?? 'en'));
-        $defaults = is_array($this->config['defaults'] ?? null) ? $this->config['defaults'] : [];
-        $defaults = $this->mergeDefaultsProviders($defaults);
+        $route            = (string) $request->attributes->get('_route', '');
+        $locale           = (string) ($request->attributes->get('_locale') ?? $request->getLocale() ?: ($this->config['default_locale'] ?? 'en'));
+        $defaults         = is_array($this->config['defaults'] ?? null) ? $this->config['defaults'] : [];
+        $providersNoindex = false;
+        $defaults         = $this->mergeDefaultsProviders($defaults, $providersNoindex);
+        // `indexable: false` (config or a defaults provider) must win over any robots value set by a layer.
+        $forceNoindex = ($this->config['indexable'] ?? true) !== true || $providersNoindex;
 
-        if (($this->config['indexable'] ?? true) !== true && (!isset($defaults['robots']) || $defaults['robots'] === '')) {
+        if ($forceNoindex && (!isset($defaults['robots']) || $defaults['robots'] === '')) {
             $defaults['robots'] = 'noindex,nofollow';
         }
 
@@ -172,6 +181,9 @@ final readonly class SeoMetadataResolver
         $robots = is_string($merged['robots'] ?? null) && $merged['robots'] !== ''
             ? $merged['robots']
             : 'index,follow';
+        if ($forceNoindex && !str_contains(strtolower($robots), 'noindex')) {
+            $robots = 'noindex,nofollow';
+        }
 
         $canonicalPath    = $this->resolveCanonicalPath($request, $route, $locale, $slug, $merged);
         $canonicalEnabled = (bool) ($defaults['canonical_enabled'] ?? true);
@@ -262,7 +274,7 @@ final readonly class SeoMetadataResolver
      *
      * @return array<string, mixed>
      */
-    private function mergeDefaultsProviders(array $defaults): array
+    private function mergeDefaultsProviders(array $defaults, bool &$noindex = false): array
     {
         foreach ($this->defaultsProviders as $provider) {
             $layer    = $provider->getDefaults();
@@ -281,8 +293,11 @@ final readonly class SeoMetadataResolver
             }
             if (array_key_exists('indexable', $layer) && is_bool($layer['indexable'])) {
                 // Hosts may signal indexability via defaults; mirror into config-like robots.
-                if ($layer['indexable'] === false && (!isset($defaults['robots']) || $defaults['robots'] === '')) {
-                    $defaults['robots'] = 'noindex,nofollow';
+                if ($layer['indexable'] === false) {
+                    $noindex = true;
+                    if (!isset($defaults['robots']) || $defaults['robots'] === '') {
+                        $defaults['robots'] = 'noindex,nofollow';
+                    }
                 }
             }
         }
@@ -416,6 +431,11 @@ final readonly class SeoMetadataResolver
                 } catch (Throwable) {
                     continue;
                 }
+                // Routes without a {_locale} path variable (or localized variants) only get `?_locale=xx`
+                // appended: that is not a real alternate page, so skip the locale.
+                if ($this->hasLocaleQueryParameter($path)) {
+                    continue;
+                }
             }
             $alternates[] = [
                 'locale'   => $locale,
@@ -441,6 +461,17 @@ final readonly class SeoMetadataResolver
         return $alternates;
     }
 
+    private function hasLocaleQueryParameter(string $url): bool
+    {
+        $query = parse_url($url, PHP_URL_QUERY);
+        if (!is_string($query) || $query === '') {
+            return false;
+        }
+        parse_str($query, $params);
+
+        return array_key_exists('_locale', $params);
+    }
+
     /**
      * @param array<string, mixed> $defaults
      * @param array<string, mixed> $merged
@@ -457,7 +488,8 @@ final readonly class SeoMetadataResolver
         $enabled = (bool) ($cfg['enabled'] ?? true);
 
         if (isset($cfg['json']) && is_string($cfg['json']) && $cfg['json'] !== '') {
-            return ['enabled' => $enabled, 'graph' => [], 'document' => null, 'json' => $cfg['json']];
+            // Rendered |raw inside <script>: neutralise "</" so a value cannot close the script element.
+            return ['enabled' => $enabled, 'graph' => [], 'document' => null, 'json' => str_replace('</', '<\\/', $cfg['json'])];
         }
 
         if (isset($cfg['document']) && is_array($cfg['document'])) {

@@ -48,16 +48,24 @@ final class SeoSurfaceApiController extends AbstractController
     public function post(string $surfaceKey, string $locale, Request $request): JsonResponse
     {
         $this->denyAccessUnlessGranted($this->role);
+
+        // JSON only: a cross-site HTML form cannot send application/json without a CORS preflight,
+        // which is what protects this endpoint (the form is built without a CSRF token).
+        if ($request->getContentTypeFormat() !== 'json') {
+            return $this->json(['ok' => false, 'errors' => ['Content-Type must be application/json.']], Response::HTTP_UNSUPPORTED_MEDIA_TYPE);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['ok' => false, 'errors' => ['Request body must be a JSON object.']], Response::HTTP_BAD_REQUEST);
+        }
+
         $surfaceKey = rawurldecode($surfaceKey);
         $surface    = $this->surfaces->findOneByKeyAndLocale($surfaceKey, $locale) ?? (new SeoSurface())
             ->setSurfaceKey($surfaceKey)
             ->setLocale($locale);
 
-        $form    = $this->createForm(SeoSurfaceType::class, $surface);
-        $payload = json_decode($request->getContent(), true);
-        if (!is_array($payload)) {
-            $payload = $request->request->all();
-        }
+        $form = $this->createForm(SeoSurfaceType::class, $surface, ['csrf_protection' => false]);
 
         $form->submit([
             'metaTitle'         => $payload['metaTitle'] ?? $payload['meta_title'] ?? null,

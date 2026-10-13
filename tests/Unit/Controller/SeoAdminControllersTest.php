@@ -19,6 +19,7 @@ use Nowo\SeoKitBundle\Tests\Support\FormKitTestSupport;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use Symfony\Component\Form\Extension\Csrf\CsrfExtension;
 use Symfony\Component\Form\Extension\HttpFoundation\HttpFoundationExtension;
 use Symfony\Component\Form\Extension\Validator\ValidatorExtension;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -31,6 +32,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Symfony\Component\Validator\Validation;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
@@ -94,7 +96,7 @@ final class SeoAdminControllersTest extends TestCase
         $id->setValue($surface, 7);
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->method('getOrCreate')->willReturn($surface);
+        $repo->method('findOneByKeyAndLocale')->willReturn($surface);
         $repo->expects(self::once())->method('remove')->with($surface);
 
         $config = $this->createMock(SeoSiteConfigProviderInterface::class);
@@ -131,7 +133,7 @@ final class SeoAdminControllersTest extends TestCase
         $surface->setSurfaceKey('page:home')->setLocale('en');
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->expects(self::never())->method('getOrCreate');
+        $repo->expects(self::never())->method('findOneByKeyAndLocale');
 
         $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), null, ['en'], 'en');
         $controller->setContainer($this->container());
@@ -146,8 +148,8 @@ final class SeoAdminControllersTest extends TestCase
         $surface->setSurfaceKey('page:home')->setLocale('en');
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->method('getOrCreate')->willReturn($surface);
-        $repo->expects(self::once())->method('save');
+        $repo->method('findOneByKeyAndLocale')->willReturn(null);
+        $repo->expects(self::once())->method('save')->with(self::callback(static fn (SeoSurface $saved): bool => $saved->getSurfaceKey() === 'page:home' && $saved->getLocale() === 'en' && $saved->getMetaTitle() === 'Home'));
 
         $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), null, ['en'], 'en');
         $controller->setContainer($this->container());
@@ -173,7 +175,11 @@ final class SeoAdminControllersTest extends TestCase
         $surface->setSurfaceKey('page:home')->setLocale('en');
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->method('getOrCreate')->willReturn($surface);
+        $repo->method('findOneByKeyAndLocale')->willReturn(null);
+        // Opening the form must not create (persist + flush) an empty override row.
+        $repo->expects(self::never())->method('getOrCreate');
+        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('remove');
 
         $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), null, ['es', 'en'], 'en');
         $controller->setContainer($this->container());
@@ -185,26 +191,54 @@ final class SeoAdminControllersTest extends TestCase
         self::assertStringContainsString('surfaces-form', (string) $response->getContent());
     }
 
-    public function testApiFallsBackToRequestPayloadWhenJsonIsNotArray(): void
+    public function testApiRejectsFormEncodedPost(): void
+    {
+        $repo = $this->createMock(SeoSurfaceRepository::class);
+        $repo->expects(self::never())->method('findOneByKeyAndLocale');
+        $repo->expects(self::never())->method('save');
+
+        $controller = new SeoSurfaceApiController($repo);
+        $controller->setContainer($this->container());
+
+        // Cross-site HTML form POST (no CSRF token possible): must be refused.
+        $request = Request::create('/_nowo/seo/surfaces/page:home/en', 'POST', [
+            'meta_title'         => 'From form',
+            'canonical_override' => '/home',
+        ]);
+
+        $response = $controller->post('page:home', 'en', $request);
+        self::assertSame(Response::HTTP_UNSUPPORTED_MEDIA_TYPE, $response->getStatusCode());
+
+        // text/plain is a "simple" CORS request too: refused even when the body is JSON.
+        $plain = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'text/plain'], '{"meta_title":"x"}');
+        self::assertSame(Response::HTTP_UNSUPPORTED_MEDIA_TYPE, $controller->post('page:home', 'en', $plain)->getStatusCode());
+    }
+
+    public function testApiRejectsNonObjectJson(): void
+    {
+        $repo = $this->createMock(SeoSurfaceRepository::class);
+        $repo->expects(self::never())->method('save');
+
+        $controller = new SeoSurfaceApiController($repo);
+        $controller->setContainer($this->container());
+
+        $request = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], 'null');
+        self::assertSame(Response::HTTP_BAD_REQUEST, $controller->post('page:home', 'en', $request)->getStatusCode());
+    }
+
+    public function testApiAcceptsJsonWithoutCsrfTokenWhenCsrfIsEnabled(): void
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
         $repo->expects(self::once())->method('save');
 
         $controller = new SeoSurfaceApiController($repo);
-        $controller->setContainer($this->container());
+        $controller->setContainer($this->container(csrf: true));
 
-        $request = Request::create('/_nowo/seo/surfaces/page:home/en', 'POST', [
-            'meta_title'         => 'From form',
-            'meta_description'   => 'Desc',
-            'canonical_override' => '/home',
-            'open_graph_image'   => '/og.png',
-        ], [], [], [], 'null');
+        $request  = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json; charset=UTF-8'], json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR));
+        $response = $controller->post('page:home', 'en', $request);
 
-        $content = $controller->post('page:home', 'en', $request)->getContent();
-        self::assertNotFalse($content);
-        $result = json_decode($content, true);
-        self::assertTrue($result['ok']);
+        self::assertSame(200, $response->getStatusCode(), (string) $response->getContent());
     }
 
     public function testApiGetPostValidationSaveAndClear(): void
@@ -222,13 +256,13 @@ final class SeoAdminControllersTest extends TestCase
         self::assertNotFalse($getContent);
         self::assertSame('page:home', json_decode($getContent, true)['surface_key']);
 
-        $invalid = Request::create('/', 'POST', [], [], [], [], json_encode([
+        $invalid = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
             'meta_title'         => 'Home',
             'canonical_override' => 'https://evil.example/',
         ], JSON_THROW_ON_ERROR));
         self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $controller->post('page:home', 'en', $invalid)->getStatusCode());
 
-        $valid = Request::create('/', 'POST', [], [], [], [], json_encode([
+        $valid = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
             'metaTitle'         => 'Home',
             'metaDescription'   => 'Desc',
             'metaRobots'        => null,
@@ -252,7 +286,7 @@ final class SeoAdminControllersTest extends TestCase
 
         $clearController = new SeoSurfaceApiController($repoClear);
         $clearController->setContainer($this->container());
-        $clearReq = Request::create('/', 'POST', [], [], [], [], json_encode([
+        $clearReq = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
             'metaTitle'         => '',
             'metaDescription'   => '',
             'metaRobots'        => null,
@@ -272,7 +306,7 @@ final class SeoAdminControllersTest extends TestCase
         return $this->requestStack ??= new RequestStack();
     }
 
-    private function container(): ContainerInterface
+    private function container(bool $csrf = false): ContainerInterface
     {
         $auth = $this->createMock(AuthorizationCheckerInterface::class);
         $auth->method('isGranted')->willReturn(true);
@@ -288,7 +322,7 @@ final class SeoAdminControllersTest extends TestCase
 
         $services = [
             'security.authorization_checker' => $auth,
-            'form.factory'                   => $this->formFactory(),
+            'form.factory'                   => $this->formFactory($csrf),
             'twig'                           => $twig,
             'router'                         => $router,
             'request_stack'                  => $this->requestStack(),
@@ -301,11 +335,15 @@ final class SeoAdminControllersTest extends TestCase
         return $container;
     }
 
-    private function formFactory(): FormFactoryInterface
+    private function formFactory(bool $csrf = false): FormFactoryInterface
     {
         $validator = Validation::createValidator();
+        $builder   = Forms::createFormFactoryBuilder();
+        if ($csrf) {
+            $builder->addExtension(new CsrfExtension(new CsrfTokenManager()));
+        }
 
-        return Forms::createFormFactoryBuilder()
+        return $builder
             ->addExtension(new HttpFoundationExtension())
             ->addExtension(new ValidatorExtension($validator))
             ->addType(FormKitTestSupport::siteSettingsType())
