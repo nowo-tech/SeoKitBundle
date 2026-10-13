@@ -648,7 +648,7 @@ final class SeoMetadataResolverTest extends TestCase
                 'site_name'        => 'Site',
                 'title_template'   => '{title}',
                 'hreflang_enabled' => false,
-                'json_ld'          => ['enabled' => true, 'json' => '{"name":"</script><script>alert(1)</script>"}'],
+                'json_ld'          => ['enabled' => true, 'json' => '{"name":"</script><script>alert(1)</script>","alt":"<!--<script>"}'],
             ],
             'pages' => ['app_home' => ['title' => 'Home', 'path' => '/']],
         ];
@@ -658,9 +658,10 @@ final class SeoMetadataResolverTest extends TestCase
         $json = $this->createResolver($config, $request)->resolve()->jsonLd['json'];
 
         self::assertIsString($json);
-        self::assertStringNotContainsString('</', $json);
-        // Still valid JSON with the same value ("\/" is an escaped slash).
-        self::assertSame(['name' => '</script><script>alert(1)</script>'], json_decode($json, true));
+        self::assertStringNotContainsString('<', $json);
+        self::assertStringNotContainsString('>', $json);
+        // Still valid JSON with the same values (\u003C / \u003E are JSON escapes).
+        self::assertSame(['name' => '</script><script>alert(1)</script>', 'alt' => '<!--<script>'], json_decode($json, true));
     }
 
     public function testResolveSkipsAlternatesWhenUrlGeneratorFails(): void

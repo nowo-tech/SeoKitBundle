@@ -118,7 +118,7 @@ curl -s https://your-host/sitemap.xml | head
 curl -s https://your-host/robots.txt
 ```
 
-> **Deprecated route files.** `@NowoSeoKitBundle/Resources/config/routes.yaml` and `routes_admin.yaml` are deprecated since 1.13.1 and will be removed in 2.0: they hard-code `/sitemap.xml` / `/robots.txt` and every admin/API controller, ignoring the `sitemap.*`, `robots.*` and `admin.*` path/enable toggles. Import `type: nowo_seo_kit` (and `type: nowo_seo_kit_admin`) instead — see [INSTALLATION.md — Routes](INSTALLATION.md#routes).
+> **Deprecated route files.** `@NowoSeoKitBundle/Resources/config/routes.yaml` and `routes_admin.yaml` are deprecated since 1.14.0 and will be removed in 2.0: they hard-code `/sitemap.xml` / `/robots.txt` and every admin/API controller, ignoring the `sitemap.*`, `robots.*` and `admin.*` path/enable toggles. Import `type: nowo_seo_kit` (and `type: nowo_seo_kit_admin`) instead — see [INSTALLATION.md — Routes](INSTALLATION.md#routes).
 
 ## Overriding templates (REQ-TWIG-001)
 

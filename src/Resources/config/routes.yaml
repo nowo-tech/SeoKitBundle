@@ -1,4 +1,4 @@
-# DEPRECATED since 1.13.1, will be removed in 2.0.
+# DEPRECATED since 1.14.0, will be removed in 2.0.
 # These static routes ignore nowo_seo_kit.sitemap.{enabled,path} and robots.{enabled,path}.
 # Import the bundle loader instead (what the Flex recipe installs):
 #

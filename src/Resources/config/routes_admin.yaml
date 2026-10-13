@@ -1,4 +1,4 @@
-# DEPRECATED since 1.13.1, will be removed in 2.0.
+# DEPRECATED since 1.14.0, will be removed in 2.0.
 # Importing these attribute routes registers every admin/API controller and ignores
 # nowo_seo_kit.admin.{enabled,settings,surfaces,api_enabled}. Import the bundle loader instead:
 #

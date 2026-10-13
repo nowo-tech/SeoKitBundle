@@ -488,8 +488,9 @@ final readonly class SeoMetadataResolver
         $enabled = (bool) ($cfg['enabled'] ?? true);
 
         if (isset($cfg['json']) && is_string($cfg['json']) && $cfg['json'] !== '') {
-            // Rendered |raw inside <script>: neutralise "</" so a value cannot close the script element.
-            return ['enabled' => $enabled, 'graph' => [], 'document' => null, 'json' => str_replace('</', '<\\/', $cfg['json'])];
+            // Rendered |raw inside <script>: encode "<" and ">" like JSON_HEX_TAG (valid JSON, "<" can only appear
+            // inside strings) so a value can neither close the script element nor open "<!--" (script data escape).
+            return ['enabled' => $enabled, 'graph' => [], 'document' => null, 'json' => str_replace(['<', '>'], ['\\u003C', '\\u003E'], $cfg['json'])];
         }
 
         if (isset($cfg['document']) && is_array($cfg['document'])) {
