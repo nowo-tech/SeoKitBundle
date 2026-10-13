@@ -19,6 +19,7 @@ coverage.xml
 
 ###> php-cs-fixer ###
 .php-cs-fixer.cache
+/.twig-cs-fixer.cache
 ###< php-cs-fixer ###
 
 ###> node ###
