@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.14.1](#to-1141)
 - [To 1.14.0](#to-1140)
 - [To 1.13.0](#to-1130)
 - [To 1.12.1](#to-1121)
@@ -69,6 +70,16 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.14.1
+
+From **1.14.0** — security - raw JSON-LD fully escaped (< and >); deprecation version notes corrected.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
+
+- No application upgrade steps. Raw `json_ld.json` strings now have every `<` and `>` escaped (`\u003C`/`\u003E`), which JSON parsers treat identically.
 
 ## To 1.14.0
 

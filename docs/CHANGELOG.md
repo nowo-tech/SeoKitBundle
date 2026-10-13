@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.14.1] - 2026-10-13](#1141---2026-10-13)
 - [[1.14.0] - 2026-10-13](#1140---2026-10-13)
 - [[1.13.0] - 2026-10-13](#1130---2026-10-13)
 - [[1.12.1] - 2026-10-13](#1121---2026-10-13)
@@ -35,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-10-13
+
 ### Security
 
 - Raw `json_ld.json` strings now have every `<` / `>` encoded as `\u003C` / `\u003E` (same as `JSON_HEX_TAG` for `document` / `graph`). 1.13.0 only escaped `</`, so a `<!--<script>` sequence could still put the HTML parser into the script-data escaped state and swallow the rest of the head. The JSON value is unchanged for consumers.
@@ -43,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `composer.json` branch alias `dev-main` moved from `1.12.x-dev` to `1.14.x-dev`.
 - `routes.yaml`, `routes_admin.yaml` and USAGE.md said the legacy route files were deprecated "since 1.13.1"; the deprecation shipped in 1.14.0.
+
+[1.14.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.14.1
 
 ## [1.14.0] - 2026-10-13
 
