@@ -27,9 +27,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.2', '8.3']
-        symfony: ['7.0', '7.4', '8.0', '8.1']
+        php: ['8.2', '8.3', '8.4', '8.5']
+        symfony: ['7.4', '8.0', '8.1']
         exclude:
+          # Symfony 8 requires PHP >= 8.4.
           - php: '8.2'
             symfony: '8.0'
           - php: '8.2'
@@ -57,18 +58,21 @@ jobs:
       - name: Install dependencies
         run: |
           composer require \
-            symfony/config:^${{ matrix.symfony }} \
-            symfony/dependency-injection:^${{ matrix.symfony }} \
-            symfony/framework-bundle:^${{ matrix.symfony }} \
-            symfony/http-foundation:^${{ matrix.symfony }} \
-            symfony/http-kernel:^${{ matrix.symfony }} \
-            symfony/routing:^${{ matrix.symfony }} \
-            symfony/twig-bundle:^${{ matrix.symfony }} \
-            symfony/yaml:^${{ matrix.symfony }} \
+            symfony/config:${{ matrix.symfony }}.* \
+            symfony/dependency-injection:${{ matrix.symfony }}.* \
+            symfony/form:${{ matrix.symfony }}.* \
+            symfony/framework-bundle:${{ matrix.symfony }}.* \
+            symfony/http-foundation:${{ matrix.symfony }}.* \
+            symfony/http-kernel:${{ matrix.symfony }}.* \
+            symfony/routing:${{ matrix.symfony }}.* \
+            symfony/translation:${{ matrix.symfony }}.* \
+            symfony/twig-bundle:${{ matrix.symfony }}.* \
+            symfony/validator:${{ matrix.symfony }}.* \
+            symfony/yaml:${{ matrix.symfony }}.* \
             --no-interaction --no-update
           composer require --dev \
-            symfony/browser-kit:^${{ matrix.symfony }} \
-            symfony/phpunit-bridge:^${{ matrix.symfony }} \
+            symfony/browser-kit:${{ matrix.symfony }}.* \
+            symfony/phpunit-bridge:${{ matrix.symfony }}.* \
             --no-interaction --no-update
           composer update --no-interaction --prefer-dist
       - name: Composer audit (Critical/High)

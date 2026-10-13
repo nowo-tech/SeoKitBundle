@@ -62,7 +62,7 @@ Add to your base layout:
 ## Requirements
 
 - PHP >= 8.2, < 8.6
-- Symfony **7.4+** or **8.x** (FormKit / form stack; other components still declare `^7.0 || ^8.0`)
+- Symfony **7.4+** or **8.x**
 - `nowo-tech/form-kit-bundle` ^2.4 (hard dependency)
 
 GEO (Generative Engine Optimization — **not** geolocation) is a companion package: [`nowo-tech/generative-seo-kit-bundle`](https://packagist.org/packages/nowo-tech/generative-seo-kit-bundle) (`llms.txt`, AI crawler robots groups via this bundle’s SPI, citation index, `nowo:generative-seo:audit`). This kit stays classical SEO (head, sitemap, canonical, hreflang).
@@ -94,6 +94,7 @@ GEO (Generative Engine Optimization — **not** geolocation) is a companion pack
 
 | Version | PHP | Symfony | Status |
 |---------|-----|---------|--------|
+| 1.12.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.11.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.10.x | >= 8.2 | 7.4 – 8.1+ | Stable |
 | 1.9.x | >= 8.2 | 7.4 – 8.1+ | Stable |
