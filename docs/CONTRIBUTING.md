@@ -56,3 +56,7 @@ This project follows the [Contributor Covenant](../CODE_OF_CONDUCT.md). Report i
 ## Pull requests
 
 Use the GitHub PR template. Update `docs/CHANGELOG.md` for user-visible changes and `specs/001-baseline/code-inventory.md` when adding production files under `src/`.
+
+## AI co-author trailers
+
+Do **not** add AI co-author trailers to commit messages: neither `Co-authored-by: Cursor` / `cursoragent@cursor.com` nor `Co-Authored-By: Claude …` / `noreply@anthropic.com` (REQ-GIT-001). Run `make setup-hooks` so the `commit-msg` hook strips them.
