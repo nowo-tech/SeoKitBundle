@@ -36,6 +36,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`/settings/seo` per-locale wording as locale tabs**: `defaultTitle_<locale>`, `homeTitle_<locale>`,
+  `defaultDescription_<locale>` and `organisationDescription_<locale>` render as one tab per enabled locale through
+  the FormKit `locale_tabs` include (`fields` mode), shown with the UiKit `locale_tabs` partial when UiKit is
+  registered: default locale first and marked, the first tab with errors opened, keyboard navigation, every locale
+  visible as a stacked fieldset without JavaScript. The settings page loads `nowo-ui.css` and `nowo-ui-tabs.js` when
+  UiKit is registered. Field names, the form data and the stored translations are unchanged; translations of locales
+  that are not enabled stay untouched on save.
+- Requires `nowo-tech/form-kit-bundle` **^2.13** (was ^2.4) and `nowo-tech/ui-kit-bundle` **^2.5.1** (new).
+- The surfaces pages (one record per locale) keep their link navigation.
+
 ## [1.14.1] - 2026-10-13
 
 ### Security

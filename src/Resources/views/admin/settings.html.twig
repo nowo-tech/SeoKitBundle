@@ -1,11 +1,21 @@
 {#
   Override in the host for branded chrome. Default is a minimal functional layout.
+
+  The per-locale wording (`defaultTitle_<locale>`, `homeTitle_<locale>`, `defaultDescription_<locale>`,
+  `organisationDescription_<locale>`) renders as one tab per enabled locale through the FormKit `locale_tabs` include
+  (UiKit `locale_tabs` partial when nowo-tech/ui-kit-bundle is registered): DOM ids `tab-nowo-seo-kit-settings-wording-<locale>`
+  (tab) and `tab-nowo-seo-kit-settings-wording-<locale>-panel` (panel). Without JavaScript every locale stays visible
+  as a stacked fieldset.
 #}
 <!DOCTYPE html>
 <html lang="{{ default_locale|default('en') }}">
 <head>
     <meta charset="utf-8">
     <title>{{ 'nowo_seo_kit.admin.settings.title'|trans({}, 'NowoSeoKitBundle') }}</title>
+    {% if nowo_form_kit_ui_kit_locale_tabs() %}
+        <link rel="stylesheet" href="{{ asset('css/nowo-ui.css', 'nowo_ui_kit') }}">
+        <script src="{{ asset('js/nowo-ui-tabs.js', 'nowo_ui_kit') }}" defer></script>
+    {% endif %}
 </head>
 <body>
 <main>
@@ -26,15 +36,15 @@
         {{ form_row(form.twitterSite) }}
 
         <h2>{{ 'nowo_seo_kit.admin.settings.section.wording'|trans({}, 'NowoSeoKitBundle') }}</h2>
-        {% for locale in enabled_locales %}
-            <fieldset>
-                <legend>{{ locale|upper }}</legend>
-                {{ form_row(attribute(form, 'defaultTitle_' ~ locale)) }}
-                {{ form_row(attribute(form, 'homeTitle_' ~ locale)) }}
-                {{ form_row(attribute(form, 'defaultDescription_' ~ locale)) }}
-                {{ form_row(attribute(form, 'organisationDescription_' ~ locale)) }}
-            </fieldset>
-        {% endfor %}
+        {{ include('@NowoFormKitBundle/form/_locale_tabs.html.twig', {
+            field: form,
+            fields: form.vars.localised_fields,
+            locales: enabled_locales,
+            default_locale: default_locale,
+            tabs_id: 'nowo-seo-kit-settings-wording',
+            testid: 'nowo-seo-kit-settings-wording',
+            bundle: 'SeoKitBundle',
+        }, with_context: false) }}
 
         <h2>{{ 'nowo_seo_kit.admin.settings.section.organisation'|trans({}, 'NowoSeoKitBundle') }}</h2>
         {{ form_row(form.organisationLegalName) }}

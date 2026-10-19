@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+  - [Locale tabs on `/settings/seo`](#locale-tabs-on-settingsseo)
 - [To 1.14.1](#to-1141)
 - [To 1.14.0](#to-1140)
 - [To 1.13.0](#to-1130)
@@ -70,6 +71,24 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+### Locale tabs on `/settings/seo`
+
+- Composer: `nowo-tech/form-kit-bundle` **^2.13** and the new requirement `nowo-tech/ui-kit-bundle` **^2.5.1**.
+  Symfony Flex registers `NowoUiKitBundle`; without Flex add it to `config/bundles.php` (without it the tabs fall
+  back to the neutral FormKit markup, which needs a `tabs` Stimulus controller or `nowo-ui-tabs.js` to switch).
+- **Template**: `@NowoSeoKitBundle/admin/settings.html.twig` no longer prints one `<fieldset><legend>XX</legend>` per
+  locale. The per-locale wording renders through
+  `include('@NowoFormKitBundle/form/_locale_tabs.html.twig', {field: form, fields: form.vars.localised_fields, …})`.
+  New DOM ids: tab `tab-nowo-seo-kit-settings-wording-<locale>`, panel
+  `tab-nowo-seo-kit-settings-wording-<locale>-panel`, wrapper `data-testid="nowo-seo-kit-settings-wording"`.
+  E2E selectors on the old fieldsets need updating; the input names (`nowo_seo_site[defaultTitle_es]`…) are
+  unchanged. Overrides of `settings.html.twig` (`nowo_seo_kit.admin.settings_template`) keep working; copy the
+  include to get the tabs.
+- When UiKit is registered the default template links `css/nowo-ui.css` and `js/nowo-ui-tabs.js` from the
+  `nowo_ui_kit` asset package (run `assets:install`). Host layouts that already print the UiKit `scripts` partial
+  need nothing else.
+- No data-model change.
 
 ## To 1.14.1
 

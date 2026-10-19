@@ -2,6 +2,10 @@ admin_seo:
     resource: ../src/Controller/SeoAdminController.php
     type: attribute
 
+admin_seo_settings_preview:
+    resource: ../src/Controller/SiteSettingsPreviewController.php
+    type: attribute
+
 controllers:
     resource: ../src/Controller/DemoController.php
     type: attribute

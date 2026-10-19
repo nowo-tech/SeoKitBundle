@@ -7,3 +7,7 @@ services:
 
     App\:
         resource: '../src/'
+
+    # The bundle registers this form type only with persistence + admin enabled; the settings preview needs it.
+    Nowo\SeoKitBundle\Form\SeoSiteSettingsType:
+        tags: ['form.type']
