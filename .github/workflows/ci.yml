@@ -58,21 +58,21 @@ jobs:
       - name: Install dependencies
         run: |
           composer require \
-            symfony/config:${{ matrix.symfony }}.* \
-            symfony/dependency-injection:${{ matrix.symfony }}.* \
-            symfony/form:${{ matrix.symfony }}.* \
-            symfony/framework-bundle:${{ matrix.symfony }}.* \
-            symfony/http-foundation:${{ matrix.symfony }}.* \
-            symfony/http-kernel:${{ matrix.symfony }}.* \
-            symfony/routing:${{ matrix.symfony }}.* \
-            symfony/translation:${{ matrix.symfony }}.* \
-            symfony/twig-bundle:${{ matrix.symfony }}.* \
-            symfony/validator:${{ matrix.symfony }}.* \
-            symfony/yaml:${{ matrix.symfony }}.* \
+            symfony/config:^${{ matrix.symfony }} \
+            symfony/dependency-injection:^${{ matrix.symfony }} \
+            symfony/form:^${{ matrix.symfony }} \
+            symfony/framework-bundle:^${{ matrix.symfony }} \
+            symfony/http-foundation:^${{ matrix.symfony }} \
+            symfony/http-kernel:^${{ matrix.symfony }} \
+            symfony/routing:^${{ matrix.symfony }} \
+            symfony/translation:^${{ matrix.symfony }} \
+            symfony/twig-bundle:^${{ matrix.symfony }} \
+            symfony/validator:^${{ matrix.symfony }} \
+            symfony/yaml:^${{ matrix.symfony }} \
             --no-interaction --no-update
           composer require --dev \
-            symfony/browser-kit:${{ matrix.symfony }}.* \
-            symfony/phpunit-bridge:${{ matrix.symfony }}.* \
+            symfony/browser-kit:^${{ matrix.symfony }} \
+            symfony/phpunit-bridge:^${{ matrix.symfony }} \
             --no-interaction --no-update
           composer update --no-interaction --prefer-dist
       - name: Composer audit (Critical/High)
