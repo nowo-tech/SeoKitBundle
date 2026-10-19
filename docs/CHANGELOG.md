@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.15.0] - 2026-10-19](#1150---2026-10-19)
 - [[1.14.1] - 2026-10-13](#1141---2026-10-13)
 - [[1.14.0] - 2026-10-13](#1140---2026-10-13)
 - [[1.13.0] - 2026-10-13](#1130---2026-10-13)
@@ -36,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-10-19
+
+Locale tabs for the per-locale wording on /settings/seo (FormKit 2.13 fields mode, UiKit 2.5 renderer). See [UPGRADING](UPGRADING.md#to-1150).
+
 ### Changed
 
 - **`/settings/seo` per-locale wording as locale tabs**: `defaultTitle_<locale>`, `homeTitle_<locale>`,
@@ -47,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that are not enabled stay untouched on save.
 - Requires `nowo-tech/form-kit-bundle` **^2.13** (was ^2.4) and `nowo-tech/ui-kit-bundle` **^2.5.1** (new).
 - The surfaces pages (one record per locale) keep their link navigation.
+
+[1.15.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.15.0
 
 ## [1.14.1] - 2026-10-13
 
@@ -428,7 +435,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.10.1...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.15.0...HEAD
 [1.10.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.1
 [1.10.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.0
 [1.9.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.9.0

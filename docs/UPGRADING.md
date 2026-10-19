@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.15.0](#to-1150)
   - [Locale tabs on `/settings/seo`](#locale-tabs-on-settingsseo)
 - [To 1.14.1](#to-1141)
 - [To 1.14.0](#to-1140)
@@ -71,6 +72,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.15.0
+
+From **1.14.1**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 ### Locale tabs on `/settings/seo`
 
