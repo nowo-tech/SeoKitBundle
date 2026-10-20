@@ -8,6 +8,7 @@
 - [Usage in Cursor](#usage-in-cursor)
 - [Configuration](#configuration)
 - [Privacy](#privacy)
+- [Spec-driven development](#spec-driven-development)
 
 ## Setup
 
@@ -39,3 +40,7 @@ Adjust if your `engram` binary is not on `PATH`.
 ## Privacy
 
 Do not store secrets, credentials, or customer PII in Engram memory.
+
+## Spec-driven development
+
+Engram is the cross-session memory plane; it does not define product behavior. Local `REQ-*` traceability, user stories and the Spec Kit baseline are documented in [SPEC-DRIVEN-DEVELOPMENT.md](SPEC-DRIVEN-DEVELOPMENT.md) (see also [SPEC-KIT.md](SPEC-KIT.md)).

@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/seo-kit-bundle`  
-**Last audited**: 2026-10-13 (v1.12.0)
+**Last audited**: 2026-10-20 (v1.15.0)
 
 Every production artifact under `src/` is listed below.
 
@@ -100,6 +100,7 @@ Every production artifact under `src/` is listed below.
 | `Resources/views/admin/settings.html.twig` | Admin site settings | FR-SEO-001 |
 | `Resources/views/admin/surfaces_index.html.twig` | Surface list | FR-SEO-001 |
 | `Resources/views/admin/surfaces_form.html.twig` | Surface form | FR-SEO-001 |
+| `Resources/views/admin/_flashes.html.twig` | Admin flash messages partial (translated, `role="status"`) | FR-SEO-001, FR-I18N-001 |
 
 ## Translations (`src/Resources/translations/`)
 
@@ -112,3 +113,15 @@ Every production artifact under `src/` is listed below.
 | `Resources/translations/NowoSeoKitBundle.it.yaml` | i18n | FR-I18N-001 |
 | `Resources/translations/NowoSeoKitBundle.pt.yaml` | i18n | FR-I18N-001 |
 | `Resources/translations/NowoSeoKitBundle.nl.yaml` | i18n | FR-I18N-001 |
+
+## Coverage summary
+
+| Category | Files | Mapped |
+| --- | ---: | ---: |
+| PHP classes | 73 | 73 |
+| Symfony config | 3 | 3 |
+| Twig views | 5 | 5 |
+| Translations | 7 | 7 |
+| **Total production sources** | **88** | **88** |
+
+Audit command (production count): `git ls-files src | wc -l` → **88** (2026-10-20).

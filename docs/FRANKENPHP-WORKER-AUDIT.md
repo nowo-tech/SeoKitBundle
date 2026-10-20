@@ -10,6 +10,19 @@
 | Original verdict | ⚠️ Viable with conditions — safe only when `services_resetter` runs (scenario A) |
 | Remediation | W-01…W-04 resolved in **v1.10.1**: request-start reset in `SeoRuntimeClearSubscriber` (`kernel.request` 4096, main only), `SeoRuntime implements ResetInterface`, `ResetsClosedEntityManagerTrait` + unique-violation recovery in both repositories, refresh of the managed settings row. Regression tests simulate consecutive requests on the same instances without `reset()` |
 
+## Table of contents
+
+- [Execution model assumed](#execution-model-assumed)
+- [Summary](#summary)
+- [Services reviewed](#services-reviewed)
+- [Findings](#findings)
+  - [W-01 — `PageHeadContext` keeps the previous page head without a reset (Medium)](#w-01--pageheadcontext-keeps-the-previous-page-head-without-a-reset-medium)
+  - [W-02 — Site settings are memoized per worker (Medium)](#w-02--site-settings-are-memoized-per-worker-medium)
+  - [W-03 — Failed `flush()` on the read path is swallowed and leaves a closed EntityManager (Medium, scenario B only)](#w-03--failed-flush-on-the-read-path-is-swallowed-and-leaves-a-closed-entitymanager-medium-scenario-b-only)
+  - [W-04 — `SeoRuntime` is cleared on `kernel.terminate`, not by the resetter (Low)](#w-04--seoruntime-is-cleared-on-kernelterminate-not-by-the-resetter-low)
+- [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
+- [Re-audit triggers](#re-audit-triggers)
+
 ## Execution model assumed
 
 FrankenPHP worker mode boots the Symfony kernel once per worker and serves many requests with the same container. This audit assumes the **strict** variant: the kernel is **not** rebooted between requests, so every shared service, static property and PHP global survives from one request to the next. Two scenarios are evaluated:

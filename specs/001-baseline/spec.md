@@ -106,3 +106,25 @@ As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`Organizat
 - Search Console / analytics integration
 - Dynamic slug discovery from database (only configured slugs appear in sitemap)
 - `/llms.txt`, citation index, and default AI crawler catalog (companion `nowo-tech/generative-seo-kit-bundle`)
+
+---
+
+## Success Criteria
+
+- **SC-001**: **88/88** production files under `src/` mapped in [`code-inventory.md`](code-inventory.md) (audited 2026-10-20; `git ls-files src | wc -l`).
+- **SC-002**: Configuration keys match `DependencyInjection/Configuration.php` and [`docs/CONFIGURATION.md`](../../docs/CONFIGURATION.md).
+- **SC-003**: PHPUnit passes with the project coverage floor; PHPStan (including the FrankenPHP rulesets) and PHP-CS-Fixer report no errors.
+- **SC-004**: Translation key parity across the 7 locales (FR-I18N-001).
+- **SC-005**: The Symfony 8 demo boots (`make -C demo/symfony8 up`, demo healthcheck in `release-check-demos`).
+
+---
+
+## Validation
+
+```bash
+composer test              # PHPUnit
+composer cs-check          # PHP-CS-Fixer (dry run)
+composer phpstan           # PHPStan
+make release-check         # full pre-release gate (Docker)
+git ls-files src | wc -l   # must equal the inventory total (SC-001)
+```

@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Documentation: wave-1 REQ compliance — README GitHub stars badge, section order (Version information and Demos before Documentation) and documentation list order, canonical issue templates, CONTRIBUTING Cursor Agent settings (REQ-IDE-006), tables of contents, SPEC-DRIVEN-DEVELOPMENT rewritten to the REQ-DOCS-013 pattern (user stories, scope/non-goals, REQ table, Engram relationship), full GitHub Spec Kit manual, Spec Kit infrastructure (`.specify/`) initialized for Cursor Agent, baseline spec success criteria and validation commands, inventory 88/88 with coverage summary.
+
 ## [1.15.0] - 2026-10-19
 
 Locale tabs for the per-locale wording on /settings/seo (FormKit 2.13 fields mode, UiKit 2.5 renderer). See [UPGRADING](UPGRADING.md#to-1150).

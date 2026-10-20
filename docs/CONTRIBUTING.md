@@ -9,6 +9,8 @@ Thank you for contributing to SeoKitBundle.
 - [Quality checks](#quality-checks)
 - [Code of Conduct](#code-of-conduct)
 - [Pull requests](#pull-requests)
+- [AI co-author trailers](#ai-co-author-trailers)
+- [Cursor Agent (REQ-IDE-006)](#cursor-agent-req-ide-006)
 
 ## Setup
 
@@ -60,3 +62,18 @@ Use the GitHub PR template. Update `docs/CHANGELOG.md` for user-visible changes 
 ## AI co-author trailers
 
 Do **not** add AI co-author trailers to commit messages: neither `Co-authored-by: Cursor` / `cursoragent@cursor.com` nor `Co-Authored-By: Claude …` / `noreply@anthropic.com` (REQ-GIT-001). Run `make setup-hooks` so the `commit-msg` hook strips them.
+
+## Cursor Agent (REQ-IDE-006)
+
+Contributors using Cursor Agent on this repository should:
+
+1. **Submit with Ctrl+Enter** (macOS: **⌘+Enter**). **Enter** inserts a newline; **Ctrl+Enter** / **⌘+Enter** submits the prompt. UI: **Cursor Settings → Agents / Chat → Submit with Ctrl + Enter**.
+2. **Queue follow-ups** while the agent is running. In user `settings.json` (not a repo file):
+
+```json
+{
+  "cursor.composer.queueMessageDefaultBehavior": "queue"
+}
+```
+
+Do **not** use `"steer"` as the org default: steer interrupts the running agent as soon as a follow-up is sent.

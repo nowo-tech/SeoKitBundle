@@ -5,11 +5,18 @@
 - [Twig](#twig)
 - [PHP attribute](#php-attribute)
 - [Runtime overrides](#runtime-overrides)
+- [Optional Doctrine persistence](#optional-doctrine-persistence)
+- [Optional SEO admin](#optional-seo-admin)
+- [Audit CLI](#audit-cli)
+- [Typed JSON-LD](#typed-json-ld)
+  - [Extra robots.txt groups](#extra-robotstxt-groups)
 - [Sitemap and robots](#sitemap-and-robots)
 - [Overriding templates (REQ-TWIG-001)](#overriding-templates-req-twig-001)
 - [Translations](#translations)
 - [Demo](#demo)
 - [Dependency updates (maintainers)](#dependency-updates-maintainers)
+- [Surface keys (1.8+)](#surface-keys-18)
+- [Absolute URLs (1.8.1+)](#absolute-urls-181)
 
 ## Twig
 

@@ -5,9 +5,9 @@ SeoKitBundle serves `/sitemap.xml`, `/robots.txt`, and application pages through
 ## Table of contents
 
 - [FrankenPHP](#frankenphp)
-- [Nginx + php-fpm](#nginx-php-fpm)
+- [Nginx + php-fpm](#nginx--php-fpm)
   - [Trusted proxies](#trusted-proxies)
-- [php-fpm only (Apache / other front controllers)](#php-fpm-only-apache-other-front-controllers)
+- [php-fpm only (Apache / other front controllers)](#php-fpm-only-apache--other-front-controllers)
 - [Caching](#caching)
 - [Multilingual routes](#multilingual-routes)
 - [Checklist](#checklist)
