@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.16.0] - 2026-10-23](#1160---2026-10-23)
 - [[1.15.0] - 2026-10-19](#1150---2026-10-19)
 - [[1.14.1] - 2026-10-13](#1141---2026-10-13)
 - [[1.14.0] - 2026-10-13](#1140---2026-10-13)
@@ -37,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-10-23
+
+REQ wave 2: CSRF header on the JSON surface API, table prefix, backed enums, kernel tests, demo Symfony Forms and release gates. See [UPGRADING](UPGRADING.md#to-1160).
+
 ### Added
 
 - `doctrine.table_prefix` (default `''`): `TablePrefixListener` prefixes the SeoKit tables and their named unique constraints when persistence is enabled (REQ-ORM-002).
@@ -61,6 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependencies refreshed (Composer and pnpm/npm lock files of the bundle and its demos, campaign 2026-10-19).
 - `.php-cs-fixer.dist.php`: `new ParallelConfig(2)` (REQ-CS-001).
 - Documentation: wave-1 REQ compliance — README GitHub stars badge, section order (Version information and Demos before Documentation) and documentation list order, canonical issue templates, CONTRIBUTING Cursor Agent settings (REQ-IDE-006), tables of contents, SPEC-DRIVEN-DEVELOPMENT rewritten to the REQ-DOCS-013 pattern (user stories, scope/non-goals, REQ table, Engram relationship), full GitHub Spec Kit manual, Spec Kit infrastructure (`.specify/`) initialized for Cursor Agent, baseline spec success criteria and validation commands, inventory 88/88 with coverage summary.
+
+[1.16.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.16.0
 
 ## [1.15.0] - 2026-10-19
 
@@ -460,7 +467,7 @@ Locale tabs for the per-locale wording on /settings/seo (FormKit 2.13 fields mod
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.15.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.16.0...HEAD
 [1.10.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.1
 [1.10.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.0
 [1.9.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.9.0
