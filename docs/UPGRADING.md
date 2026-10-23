@@ -3,6 +3,8 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+  - [JSON surface API needs an `X-CSRF-Token` header](#json-surface-api-needs-an-x-csrf-token-header)
+  - [Optional table prefix](#optional-table-prefix)
 - [To 1.15.0](#to-1150)
   - [Locale tabs on `/settings/seo`](#locale-tabs-on-settingsseo)
 - [To 1.14.1](#to-1141)
@@ -72,6 +74,29 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+### JSON surface API needs an `X-CSRF-Token` header
+
+`POST /_nowo/seo/surfaces/{key}/{locale}` now validates a CSRF token sent in the `X-CSRF-Token` header (REQ-SEC-005). Requests without it get **403**.
+
+- Read the token from the `csrf_token` field of `GET /_nowo/seo/surfaces/{key}/{locale}` (or render `csrf_token('nowo_seo_kit_surface_api')` in Twig) and send it with every `POST`:
+
+  ```js
+  const { csrf_token } = await (await fetch(url, { credentials: 'same-origin' })).json();
+  await fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf_token },
+      body: JSON.stringify({ metaTitle: 'Home' }),
+  });
+  ```
+
+- The host needs `symfony/security-csrf` and `framework.csrf_protection` enabled; without a token manager every `POST` is refused (fail-closed).
+- API clients authenticated only by a Bearer / API token (no session cookie) can opt out with `nowo_seo_kit.admin.api_csrf_protection: false`.
+
+### Optional table prefix
+
+New `nowo_seo_kit.doctrine.table_prefix` (default `''`, no change). Setting it renames the SeoKit tables (e.g. `app_nowo_seo_surface`): generate and review a Doctrine migration before deploying. See [CONFIGURATION.md — doctrine](CONFIGURATION.md#doctrine).
 
 ## To 1.15.0
 

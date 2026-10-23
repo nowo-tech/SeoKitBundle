@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/seo-kit-bundle`  
-**Last audited**: 2026-10-20 (v1.15.0)
+**Last audited**: 2026-10-22 (REQ wave 2: table prefix listener, closed-set enums)
 
 Every production artifact under `src/` is listed below.
 
@@ -20,9 +20,12 @@ Every production artifact under `src/` is listed below.
 | `DependencyInjection/Configuration.php` | Config tree (`robots.groups`, PageHead, persistence, admin) | FR-SEO-001, FR-SEO-008, FR-SEO-010 |
 | `DependencyInjection/SeoKitExtension.php` | DI extension | FR-SEO-001 |
 | `DependencyInjection/Compiler/TwigPathsPass.php` | Twig namespace paths | FR-SEO-006 |
+| `Doctrine/TablePrefixListener.php` | Optional `doctrine.table_prefix` (REQ-ORM-002) | FR-SEO-001 |
 | `Entity/SeoSiteSettings.php` | Optional Doctrine site settings | FR-SEO-001 |
 | `Entity/SeoSiteSettingsTranslation.php` | Site settings i18n | FR-I18N-001 |
 | `Entity/SeoSurface.php` | Surface override entity | FR-SEO-001 |
+| `Enum/SitemapChangeFreq.php` | `sitemap_changefreq` value set | FR-SEO-005 |
+| `Enum/TwitterCard.php` | `defaults.twitter.card` value set | FR-SEO-002 |
 | `EventSubscriber/SeoRuntimeClearSubscriber.php` | Request-scoped runtime reset | FR-SEO-002 |
 | `Form/AbstractSeoFormType.php` | FormKit admin forms | FR-SEO-001 |
 | `Form/SeoSiteSettingsType.php` | Site settings form (social profiles `none` sentinel) | FR-SEO-001, FR-SEO-011 |
@@ -118,10 +121,10 @@ Every production artifact under `src/` is listed below.
 
 | Category | Files | Mapped |
 | --- | ---: | ---: |
-| PHP classes | 73 | 73 |
+| PHP classes | 76 | 76 |
 | Symfony config | 3 | 3 |
 | Twig views | 5 | 5 |
 | Translations | 7 | 7 |
-| **Total production sources** | **88** | **88** |
+| **Total production sources** | **91** | **91** |
 
-Audit command (production count): `git ls-files src | wc -l` → **88** (2026-10-20).
+Audit command (production count): `git ls-files src | wc -l` → **91** (2026-10-22).

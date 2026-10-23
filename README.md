@@ -123,8 +123,8 @@ make test
 make test-coverage
 ```
 
-- Tests: PHPUnit (unit)
-- PHP: **100%** lines (`make test-coverage`)
+- Tests: PHPUnit (`tests/Unit` + kernel integration in `tests/Integration`)
+- PHP: **100%** lines (2520/2520, `make test-coverage`). TS/JS: N/A. Python: N/A.
 
 ## License
 

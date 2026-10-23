@@ -6,7 +6,7 @@ help:
 	@echo "Symfony 8 (port 8050):"
 	@echo "  up-symfony8 down-symfony8 install-symfony8 shell-symfony8"
 	@echo ""
-	@echo "  release-check          Verify demo health (HTTP 200 + sitemap + robots)"
+	@echo "  release-check          Lint + verify demo health (HTTP 200 public/admin pages, sitemap, robots)"
 
 up-symfony8:
 	@$(MAKE) -C symfony8 up
@@ -26,15 +26,8 @@ update-bundle-symfony8:
 release-check:
 	@$(MAKE) up-symfony8
 	@$(MAKE) update-bundle-symfony8
-	@PORT=$$(grep "^PORT=" symfony8/.env 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
-	[ -z "$$PORT" ] && PORT=$$(grep "^PORT=" symfony8/.env.example 2>/dev/null | cut -d= -f2 | tr -d '\r'); \
-	[ -z "$$PORT" ] && PORT=8050; \
-	curl -sf "http://localhost:$$PORT/" >/dev/null && \
-	curl -sf "http://localhost:$$PORT/en" >/dev/null && \
-	curl -sf "http://localhost:$$PORT/sitemap.xml" | grep -q '<urlset' && \
-	curl -sf "http://localhost:$$PORT/robots.txt" | grep -q 'User-agent' && \
-	echo "Symfony 8 SEO demo healthcheck OK (port $$PORT)" || \
-	(echo "Symfony 8 SEO demo healthcheck failed" && exit 1)
+	@$(MAKE) -C symfony8 test
+	@$(MAKE) -C symfony8 verify
 
 # REQ-MAKE-008: update-deps-all (REQ-MAKE-008)
 DEMOS := symfony8

@@ -1145,6 +1145,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         fallback_site_name?: scalar|Param|null, // Default: ""
  *         register_audit_command?: bool|Param, // Register nowo:seo:audit (always available when persistence is enabled; uses tagged audit subjects). // Default: true
  *     },
+ *     doctrine?: array{ // Doctrine options for the bundle-owned entities (persistence.enabled).
+ *         table_prefix?: scalar|Param|null, // Prepended to every SeoKit table and named unique constraint (REQ-ORM-002), e.g. "app_" yields app_nowo_seo_surface. Empty = unchanged. // Default: ""
+ *     },
  *     admin?: array{ // Optional admin UI + JSON API for site settings and surface overrides (requires persistence.enabled).
  *         enabled?: bool|Param, // Default: false
  *         settings?: bool|Param, // Register /settings/seo site settings controller. // Default: true
@@ -1154,6 +1157,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         surfaces_index_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_index.html.twig"
  *         surfaces_form_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_form.html.twig"
  *         api_enabled?: bool|Param, // Register JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}. // Default: true
+ *         api_csrf_protection?: bool|Param, // Require a CSRF token (X-CSRF-Token header, from the GET response csrf_token) on JSON API writes. Disable only behind a Bearer/API-token firewall without session cookies. // Default: true
  *     },
  * }
  * @psalm-type WebProfilerConfig = array{

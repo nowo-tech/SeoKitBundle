@@ -73,6 +73,7 @@
         "symfony/console": "^7.4 || ^8.0",
         "symfony/phpunit-bridge": "^7.4 || ^8.0",
         "symfony/security-bundle": "^7.4 || ^8.0",
+        "symfony/security-csrf": "^7.4 || ^8.0",
         "vincentlanglet/twig-cs-fixer": "^4.0"
     },
     "autoload": {
@@ -141,7 +142,8 @@
         "doctrine/doctrine-bundle": "Registers ORM mappings when persistence is enabled",
         "symfony/cache": "Optional cache.app for SeoSiteConfigProvider snapshots",
         "symfony/console": "Required for nowo:seo:audit",
-        "symfony/security-bundle": "Access control on admin controllers"
+        "symfony/security-bundle": "Access control on admin controllers",
+        "symfony/security-csrf": "CSRF tokens for the admin forms and the X-CSRF-Token header of the JSON surface API (admin.api_csrf_protection)"
     },
     "extra": {
         "branch-alias": {

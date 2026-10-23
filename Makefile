@@ -8,7 +8,7 @@ COMPOSE_BIN := $(shell docker compose version >/dev/null 2>&1 && echo "docker co
 COMPOSE     := $(COMPOSE_BIN) -f $(COMPOSE_FILE)
 SERVICE_PHP := php
 
-.PHONY: help ensure-up up down down-dev build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan igor qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps check-twig-extra
+.PHONY: help ensure-up up down down-dev build shell install test test-coverage coverage-php-percent cs-check cs-fix rector rector-dry phpstan igor qa release-check release-check-demos composer-sync clean update validate validate-translations assets setup-hooks check-no-cursor-coauthor strip-cursor-coauthor-from-history update-deps check-twig-extra check-open-prs check-no-raw-html-form demo-smoke twig-lint
 
 # Default target
 help:
@@ -34,12 +34,15 @@ help:
 	@echo "  phpstan       Run PHPStan static analysis"
 	@echo "  igor          Run Igor worker-state audit (REQ-CS-008)"
 	@echo "  qa            Run all QA checks (cs-check + test)"
-	@echo "  release-check Pre-release: co-author audit, cs-fix, cs-check, rector-dry, phpstan, igor, test-coverage, demo healthchecks"
+	@echo "  release-check Pre-release: co-author audit, open PRs, Twig gates, cs-fix, cs-check, rector-dry, phpstan, igor, translations, test-coverage, demo healthchecks"
+	@echo "  check-open-prs           Fail if unresolved open GitHub PRs remain (REQ-REL-003)"
+	@echo "  check-no-raw-html-form   Fail on raw <form>/<input>/<textarea>/<select> in Twig (REQ-TWIG-005)"
+	@echo "  demo-smoke    Boot demo/symfony8 and assert HTTP 200 (REQ-TEST-011)"
 	@echo "  composer-sync Validate composer.json and align composer.lock (no install)"
 	@echo "  clean         Remove vendor and cache"
 	@echo "  update-deps   Update composer dependencies in bundle + demos (REQ-MAKE-008)"
 	@echo "  validate      Run composer validate --strict"
-	@echo "  validate-translations Validate translation YAML files"
+	@echo "  validate-translations YAML parse + key parity across locales (REQ-MAKE-004)"
 	@echo "  assets        No-op (no frontend assets in this bundle)"
 	@echo "  setup-hooks   Install git hooks"
 	@echo ""
@@ -83,7 +86,7 @@ test: ensure-up
 	$(COMPOSE) exec $(SERVICE_PHP) composer test
 
 test-coverage: ensure-up
-	$(COMPOSE) exec $(SERVICE_PHP) composer test-coverage | tee coverage-php.txt
+	bash -o pipefail -c '$(COMPOSE) exec -T $(SERVICE_PHP) composer test-coverage | tee coverage-php.txt'
 	./.scripts/php-coverage-percent.sh coverage-php.txt
 
 coverage-php-percent:
@@ -115,14 +118,27 @@ check-twig-extra:
 # Run Igor worker-state audit (REQ-CS-008)
 igor: ensure-up
 	$(COMPOSE) exec -T php composer igor
-release-check: ensure-up check-no-cursor-coauthor check-twig-extra composer-sync cs-fix cs-check rector-dry phpstan igor test-coverage release-check-demos
+release-check: ensure-up check-no-cursor-coauthor check-open-prs check-twig-extra check-no-raw-html-form composer-sync cs-fix cs-check rector-dry phpstan igor validate-translations test-coverage release-check-demos demo-smoke
 
 check-no-cursor-coauthor:
 	@chmod +x .scripts/check-no-cursor-coauthor.sh
 	@./.scripts/check-no-cursor-coauthor.sh HEAD
 
+check-open-prs:
+	@chmod +x .scripts/check-open-prs.sh
+	@./.scripts/check-open-prs.sh
+
+check-no-raw-html-form:
+	@chmod +x .scripts/check-no-raw-html-form.sh
+	@./.scripts/check-no-raw-html-form.sh
+
+# Demo healthchecks must fail the release (no `|| true`).
 release-check-demos:
-	@if [ -f demo/Makefile ]; then $(MAKE) -C demo release-check 2>/dev/null || true; else true; fi
+	@if [ -f demo/Makefile ]; then $(MAKE) -C demo release-check; fi
+
+# REQ-TEST-011 — boot demo/symfony8 and assert HTTP 200 on the home page, sitemap and robots.
+demo-smoke:
+	@$(MAKE) -C demo/symfony8 verify
 
 composer-sync: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer validate --strict
@@ -142,7 +158,7 @@ validate: ensure-up
 	$(COMPOSE) exec -T $(SERVICE_PHP) composer validate --strict
 
 validate-translations: ensure-up
-	$(COMPOSE) exec -T $(SERVICE_PHP) php -r "require 'vendor/autoload.php'; foreach (glob('src/Resources/translations/*.yaml') as \$$file) { Symfony\\Component\\Yaml\\Yaml::parseFile(\$$file); } echo 'Translation files are valid.' . PHP_EOL;"
+	$(COMPOSE) exec -T $(SERVICE_PHP) php .scripts/validate-translations.php
 
 assets:
 	@echo "No frontend assets in this bundle."

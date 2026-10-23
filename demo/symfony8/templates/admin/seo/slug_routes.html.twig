@@ -30,9 +30,9 @@
                     </td>
                     <td class="actions">
                         <a class="btn" href="{{ path('admin_seo_slug_route_edit', {route: route}) }}">Edit</a>
-                        <form method="post" action="{{ path('admin_seo_slug_route_delete', {route: route}) }}" onsubmit="return confirm('Delete slug route {{ route }} and its slugs?');">
+                        {{ form_start(delete_forms[route], {attr: {onsubmit: 'return confirm(\'Delete slug route ' ~ route ~ ' and its slugs?\');'}}) }}
                             <button class="btn btn-danger" type="submit">Delete</button>
-                        </form>
+                        {{ form_end(delete_forms[route]) }}
                     </td>
                 </tr>
             {% else %}

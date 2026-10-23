@@ -12,17 +12,29 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 use function is_array;
+use function is_string;
 
 /**
  * JSON API for editor pencils: load/save one surface override without a full admin page.
+ *
+ * Writes require the admin role, a JSON body and (unless `admin.api_csrf_protection` is false) a CSRF token in the
+ * `X-CSRF-Token` header; `GET` returns that token as `csrf_token`. CSRF is fail-closed: without a token manager every
+ * `POST` is refused (REQ-SEC-005).
  */
 final class SeoSurfaceApiController extends AbstractController
 {
+    public const CSRF_TOKEN_ID = 'nowo_seo_kit_surface_api';
+    public const CSRF_HEADER   = 'X-CSRF-Token';
+
     public function __construct(
         private readonly SeoSurfaceRepository $surfaces,
         private readonly string $role = 'ROLE_ADMIN',
+        private readonly ?CsrfTokenManagerInterface $csrfTokenManager = null,
+        private readonly bool $csrfProtection = true,
     ) {
     }
 
@@ -41,6 +53,7 @@ final class SeoSurfaceApiController extends AbstractController
             'meta_robots'        => $surface?->getMetaRobots(),
             'canonical_override' => $surface?->getCanonicalOverride(),
             'open_graph_image'   => $surface?->getOpenGraphImage(),
+            'csrf_token'         => $this->csrfProtection ? $this->csrfTokenManager?->getToken(self::CSRF_TOKEN_ID)->getValue() : null,
         ]);
     }
 
@@ -49,10 +62,14 @@ final class SeoSurfaceApiController extends AbstractController
     {
         $this->denyAccessUnlessGranted($this->role);
 
-        // JSON only: a cross-site HTML form cannot send application/json without a CORS preflight,
-        // which is what protects this endpoint (the form is built without a CSRF token).
+        // JSON only: a cross-site HTML form cannot send application/json without a CORS preflight.
         if ($request->getContentTypeFormat() !== 'json') {
             return $this->json(['ok' => false, 'errors' => ['Content-Type must be application/json.']], Response::HTTP_UNSUPPORTED_MEDIA_TYPE);
+        }
+
+        // Explicit CSRF token in a header on top of the JSON requirement (REQ-SEC-005); the inner form has none.
+        if ($this->csrfProtection && !$this->isCsrfHeaderValid($request)) {
+            return $this->json(['ok' => false, 'errors' => ['Missing or invalid CSRF token (' . self::CSRF_HEADER . ' header).']], Response::HTTP_FORBIDDEN);
         }
 
         $payload = json_decode($request->getContent(), true);
@@ -96,6 +113,18 @@ final class SeoSurfaceApiController extends AbstractController
         $this->surfaces->save($surface);
 
         return $this->json(['ok' => true, 'cleared' => false, 'id' => $surface->getId()]);
+    }
+
+    private function isCsrfHeaderValid(Request $request): bool
+    {
+        if (!$this->csrfTokenManager instanceof CsrfTokenManagerInterface) {
+            return false;
+        }
+
+        $token = $request->headers->get(self::CSRF_HEADER);
+
+        return is_string($token) && $token !== ''
+            && $this->csrfTokenManager->isTokenValid(new CsrfToken(self::CSRF_TOKEN_ID, $token));
     }
 
     private function isEmpty(SeoSurface $seo): bool

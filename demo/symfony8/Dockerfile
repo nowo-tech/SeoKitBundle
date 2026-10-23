@@ -1,4 +1,5 @@
-FROM dunglas/frankenphp:1-php8.4-alpine
+# REQ-DEMO-010: newest PHP published in the official FrankenPHP images that Symfony 8 and composer.json allow.
+FROM dunglas/frankenphp:1-php8.5-alpine
 
 RUN apk add --no-cache git unzip bash curl ca-certificates
 

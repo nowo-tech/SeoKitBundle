@@ -10,6 +10,7 @@ use Nowo\SeoKitBundle\Command\SeoAuditCommand;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSiteSettingsController;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
+use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
@@ -113,6 +114,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
         if (($config['persistence']['enabled'] ?? false) === true) {
             $this->registerPersistence($container, $config['persistence']);
+            $this->registerTablePrefix($container, (string) ($config['doctrine']['table_prefix'] ?? ''));
             $manager = new Definition(SeoSurfaceManager::class);
             $manager->setAutowired(true);
             $manager->setAutoconfigured(true);
@@ -255,8 +257,20 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     }
 
     /**
-     * @param array<string, mixed> $config
+     * REQ-ORM-002: the listener only exists when a prefix is configured.
      */
+    private function registerTablePrefix(ContainerBuilder $container, string $prefix): void
+    {
+        $container->setParameter(Configuration::ALIAS . '.doctrine.table_prefix', $prefix);
+        if ($prefix === '') {
+            return;
+        }
+
+        $listener = new Definition(TablePrefixListener::class);
+        $listener->setArgument('$tablePrefix', $prefix);
+        $listener->addTag('doctrine.event_listener', ['event' => 'loadClassMetadata']);
+        $container->setDefinition(TablePrefixListener::class, $listener);
+    }
 
     /**
      * @param array<string, mixed> $config
@@ -379,6 +393,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             $api->setAutowired(true);
             $api->setAutoconfigured(true);
             $api->setArgument('$role', $role);
+            $api->setArgument('$csrfTokenManager', new Reference('security.csrf.token_manager', ContainerInterface::NULL_ON_INVALID_REFERENCE));
+            $api->setArgument('$csrfProtection', ($admin['api_csrf_protection'] ?? true) === true);
             $api->addTag('controller.service_arguments');
             $container->setDefinition(SeoSurfaceApiController::class, $api);
         }

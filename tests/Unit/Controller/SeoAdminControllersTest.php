@@ -32,7 +32,9 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Validator\Validation;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
@@ -219,26 +221,66 @@ final class SeoAdminControllersTest extends TestCase
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->expects(self::never())->method('save');
 
-        $controller = new SeoSurfaceApiController($repo);
-        $controller->setContainer($this->container());
+        $controller = $this->apiController($repo);
 
-        $request = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], 'null');
+        $request = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'tok', 'CONTENT_TYPE' => 'application/json'], 'null');
         self::assertSame(Response::HTTP_BAD_REQUEST, $controller->post('page:home', 'en', $request)->getStatusCode());
     }
 
-    public function testApiAcceptsJsonWithoutCsrfTokenWhenCsrfIsEnabled(): void
+    public function testApiAcceptsJsonWithCsrfHeaderWhenFormCsrfIsEnabled(): void
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
         $repo->expects(self::once())->method('save');
 
-        $controller = new SeoSurfaceApiController($repo);
-        $controller->setContainer($this->container(csrf: true));
+        $controller = $this->apiController($repo, formCsrf: true);
 
-        $request  = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json; charset=UTF-8'], json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR));
+        $request  = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'tok', 'CONTENT_TYPE' => 'application/json; charset=UTF-8'], json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR));
         $response = $controller->post('page:home', 'en', $request);
 
         self::assertSame(200, $response->getStatusCode(), (string) $response->getContent());
+    }
+
+    public function testApiRefusesMissingOrInvalidCsrfHeader(): void
+    {
+        $repo = $this->createMock(SeoSurfaceRepository::class);
+        $repo->expects(self::never())->method('save');
+
+        $controller = $this->apiController($repo);
+        $body       = json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR);
+
+        $missing = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], $body);
+        self::assertSame(Response::HTTP_FORBIDDEN, $controller->post('page:home', 'en', $missing)->getStatusCode());
+
+        $invalid = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'forged', 'CONTENT_TYPE' => 'application/json'], $body);
+        self::assertSame(Response::HTTP_FORBIDDEN, $controller->post('page:home', 'en', $invalid)->getStatusCode());
+    }
+
+    public function testApiCsrfFailsClosedWithoutTokenManager(): void
+    {
+        $repo = $this->createMock(SeoSurfaceRepository::class);
+        $repo->expects(self::never())->method('save');
+
+        $controller = new SeoSurfaceApiController($repo);
+        $controller->setContainer($this->container());
+
+        $request = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'tok', 'CONTENT_TYPE' => 'application/json'], json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR));
+        self::assertSame(Response::HTTP_FORBIDDEN, $controller->post('page:home', 'en', $request)->getStatusCode());
+        self::assertNull(json_decode((string) $controller->get('page:home', 'en')->getContent(), true)['csrf_token']);
+    }
+
+    public function testApiCsrfCanBeDisabledForTokenFirewalls(): void
+    {
+        $repo = $this->createMock(SeoSurfaceRepository::class);
+        $repo->method('findOneByKeyAndLocale')->willReturn(null);
+        $repo->expects(self::once())->method('save');
+
+        $controller = new SeoSurfaceApiController($repo, 'ROLE_ADMIN', null, false);
+        $controller->setContainer($this->container());
+
+        $request = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR));
+        self::assertSame(200, $controller->post('page:home', 'en', $request)->getStatusCode());
+        self::assertNull(json_decode((string) $controller->get('page:home', 'en')->getContent(), true)['csrf_token']);
     }
 
     public function testApiGetPostValidationSaveAndClear(): void
@@ -247,22 +289,22 @@ final class SeoAdminControllersTest extends TestCase
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
         $repo->expects(self::once())->method('save')->with(self::isInstanceOf(SeoSurface::class));
 
-        $controller = new SeoSurfaceApiController($repo);
-        $controller->setContainer($this->container());
+        $controller = $this->apiController($repo);
 
         $get = $controller->get('page:home', 'en');
         self::assertSame(200, $get->getStatusCode());
         $getContent = $get->getContent();
         self::assertNotFalse($getContent);
         self::assertSame('page:home', json_decode($getContent, true)['surface_key']);
+        self::assertSame('tok', json_decode($getContent, true)['csrf_token']);
 
-        $invalid = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        $invalid = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'tok', 'CONTENT_TYPE' => 'application/json'], json_encode([
             'meta_title'         => 'Home',
             'canonical_override' => 'https://evil.example/',
         ], JSON_THROW_ON_ERROR));
         self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $controller->post('page:home', 'en', $invalid)->getStatusCode());
 
-        $valid = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        $valid = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'tok', 'CONTENT_TYPE' => 'application/json'], json_encode([
             'metaTitle'         => 'Home',
             'metaDescription'   => 'Desc',
             'metaRobots'        => null,
@@ -284,9 +326,8 @@ final class SeoAdminControllersTest extends TestCase
         $repoClear->method('findOneByKeyAndLocale')->willReturn($persisted);
         $repoClear->expects(self::once())->method('remove')->with($persisted);
 
-        $clearController = new SeoSurfaceApiController($repoClear);
-        $clearController->setContainer($this->container());
-        $clearReq = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        $clearController = $this->apiController($repoClear);
+        $clearReq        = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'tok', 'CONTENT_TYPE' => 'application/json'], json_encode([
             'metaTitle'         => '',
             'metaDescription'   => '',
             'metaRobots'        => null,
@@ -300,6 +341,23 @@ final class SeoAdminControllersTest extends TestCase
     }
 
     private ?RequestStack $requestStack = null;
+
+    /**
+     * API controller whose CSRF manager accepts the token value "tok" only.
+     */
+    private function apiController(SeoSurfaceRepository $repo, bool $formCsrf = false): SeoSurfaceApiController
+    {
+        $manager = $this->createMock(CsrfTokenManagerInterface::class);
+        $manager->method('getToken')->willReturnCallback(static fn (string $id): CsrfToken => new CsrfToken($id, 'tok'));
+        $manager->method('isTokenValid')->willReturnCallback(
+            static fn (CsrfToken $token): bool => $token->getId() === SeoSurfaceApiController::CSRF_TOKEN_ID && $token->getValue() === 'tok',
+        );
+
+        $controller = new SeoSurfaceApiController($repo, 'ROLE_ADMIN', $manager);
+        $controller->setContainer($this->container(csrf: $formCsrf));
+
+        return $controller;
+    }
 
     private function requestStack(): RequestStack
     {

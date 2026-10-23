@@ -22,6 +22,8 @@ services:
       - APP_SECRET=${APP_SECRET:-demo-secret}
       - FRANKENPHP_MODE=${FRANKENPHP_MODE:-worker}
       - DEFAULT_URI=http://localhost:${PORT:-8050}
+    # REQ-DEMO-009: public resolvers so Composer / outbound HTTP work on hosts whose Docker DNS
+    # (corporate VPN, WSL2) cannot resolve external names from inside the container.
     dns:
       - 8.8.8.8
       - 8.8.4.4

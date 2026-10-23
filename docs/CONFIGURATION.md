@@ -16,6 +16,7 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 - [templates](#templates)
 - [page_head](#page_head)
 - [persistence](#persistence)
+- [doctrine](#doctrine)
 - [admin](#admin)
 - [Web servers](#web-servers)
 
@@ -194,6 +195,22 @@ Tables: `nowo_seo_site_settings`, `nowo_seo_site_settings_translation`, `nowo_se
 - the PageHead pipeline (`PageHeadResolver` / `PageHeadContext` / `AbsoluteUrlBuilder`) that CMS hosts use to render persisted surface overrides (canonical, hreflang, Open Graph URLs) is not registered;
 - `OriginUrlGuard` has no origin, so admin/API canonical overrides are only accepted as site-relative paths (`/path`) — absolute URLs, even on your own host, are rejected.
 
+## doctrine
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `table_prefix` | `''` | Prepended to every SeoKit table and named unique constraint (REQ-ORM-002). Letters, digits and underscores only. Empty keeps the names above. Applied by a `loadClassMetadata` listener that only touches `Nowo\SeoKitBundle\Entity\*` and is registered only when persistence is enabled and the prefix is not empty. |
+
+```yaml
+nowo_seo_kit:
+    persistence:
+        enabled: true
+    doctrine:
+        table_prefix: 'app_'   # app_nowo_seo_site_settings, app_nowo_seo_site_settings_translation, app_nowo_seo_surface
+```
+
+Changing the prefix renames the tables: generate a Doctrine migration (`doctrine:migrations:diff`) and review the `RENAME TABLE` statements before deploying.
+
 Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
 
 ## admin
@@ -205,7 +222,8 @@ Requires `persistence.enabled: true` (and, in practice, `base_url` — see [pers
 | `enabled` | `false` | Master switch for admin + API loaders |
 | `settings` | `true` | Register `/settings/seo` |
 | `surfaces` | `true` | Register `/admin/seo/surfaces` |
-| `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. `POST` only accepts a JSON object with `Content-Type: application/json` (415 otherwise); no CSRF token is needed because cross-site forms cannot send JSON without a CORS preflight. |
+| `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. `POST` only accepts a JSON object with `Content-Type: application/json` (415 otherwise). |
+| `api_csrf_protection` | `true` | `POST` also requires an `X-CSRF-Token` header (token id `nowo_seo_kit_surface_api`, returned as `csrf_token` by `GET`); missing/invalid token or no CSRF manager → 403. Set `false` only behind a Bearer / API-token firewall without session cookies. |
 | `role` | `ROLE_ADMIN` | Access control |
 | `settings_template` / `surfaces_*_template` | kit defaults | Override with host Twig paths |
 

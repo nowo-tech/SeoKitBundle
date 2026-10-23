@@ -1,0 +1,17 @@
+---
+description: Twig templates (bundle views and demo templates)
+globs:
+  - "templates/**/*.twig"
+  - "src/**/Resources/views/**/*.twig"
+  - "demo/**/templates/**/*.twig"
+alwaysApply: false
+---
+
+Prefer:
+- small, backward-compatible template changes
+- preserving current block structure (hosts override `@NowoSeoKitBundle` templates)
+- Symfony Form rendering (`form_start` / `form_row` / `form_end`) instead of raw `<form>` / `<input>` markup (REQ-TWIG-005)
+- reusing existing classes, ids, and hooks
+
+This bundle ships no public JS/CSS assets (`make assets` is a no-op); do not add a `src/Resources/public` tree for a local change.
+Do not rewrite entire templates for a local change.

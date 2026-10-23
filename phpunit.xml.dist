@@ -21,6 +21,11 @@
         </include>
     </source>
 
+    <php>
+        <!-- REQ-SF-005: fail on direct deprecations from this package -->
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="max[direct]=0"/>
+    </php>
+
     <coverage>
         <report>
             <html outputDirectory="coverage"/>

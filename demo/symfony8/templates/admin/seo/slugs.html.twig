@@ -42,9 +42,9 @@
                         </td>
                         <td class="actions">
                             <a class="btn" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
-                            <form method="post" action="{{ path('admin_seo_slug_delete', {route: route, slug: slug}) }}" onsubmit="return confirm('Delete slug {{ slug }}?');">
+                            {{ form_start(delete_forms[route][slug], {attr: {onsubmit: 'return confirm(\'Delete slug ' ~ slug ~ '?\');'}}) }}
                                 <button class="btn btn-danger" type="submit">Delete</button>
-                            </form>
+                            {{ form_end(delete_forms[route][slug]) }}
                         </td>
                     </tr>
                 {% endfor %}

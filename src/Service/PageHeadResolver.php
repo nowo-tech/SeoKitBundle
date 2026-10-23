@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Service;
 
+use Nowo\SeoKitBundle\Enum\TwitterCard;
 use Nowo\SeoKitBundle\Model\HreflangSet;
 use Nowo\SeoKitBundle\Model\PageHead;
 use Nowo\SeoKitBundle\Model\PageHeadDefaults;
@@ -54,7 +55,7 @@ final readonly class PageHeadResolver
             ogImageHeight: $ogImage === null ? null : $defaults->ogImageHeight,
             ogLocale: $this->openGraphLocale($input->locale),
             ogLocaleAlternates: $this->openGraphAlternates($input->locale, $hreflang),
-            twitterCard: $ogImage === null ? 'summary' : 'summary_large_image',
+            twitterCard: ($ogImage === null ? TwitterCard::Summary : TwitterCard::SummaryLargeImage)->value,
             structuredData: $this->structuredData($input, $title, $description, $canonical),
             pathsByLocale: $input->pathsByLocale,
             breadcrumbs: $input->breadcrumbs,

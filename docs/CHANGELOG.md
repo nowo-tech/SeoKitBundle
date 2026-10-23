@@ -37,7 +37,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `doctrine.table_prefix` (default `''`): `TablePrefixListener` prefixes the SeoKit tables and their named unique constraints when persistence is enabled (REQ-ORM-002).
+- `admin.api_csrf_protection` (default `true`) and backed enums `SitemapChangeFreq` / `TwitterCard` for the `sitemap_changefreq` and `defaults.twitter.card` value sets (REQ-PHP-001).
+- Kernel integration tests under `tests/Integration/` (sitemap.xml, robots.txt through the HTTP kernel) (REQ-TEST-002).
+- `make check-open-prs`, `make check-no-raw-html-form`, `make demo-smoke` and the `Demo smoke` workflow; demo `restart`, `test` and `verify` targets (REQ-MAKE-002/003, REQ-TEST-011).
+- `docs/SECURITY.md`: attack surface / threat model, CSRF and logging sections; `.github/SECURITY.md` names the package and lists current versions (REQ-SEC-001/003, REQ-OBS-001).
+- Cursor rule `20-twig-and-public-assets.mdc` (REQ-IDE-003).
+
+### Security
+
+- The JSON surface API (`POST /_nowo/seo/surfaces/{key}/{locale}`) requires an `X-CSRF-Token` header (token returned as `csrf_token` by `GET`); fail-closed without a CSRF manager (REQ-SEC-005). See [UPGRADING](UPGRADING.md#json-surface-api-needs-an-x-csrf-token-header).
+
 ### Changed
+
+- Demo admin pages use Symfony Forms (`form_start` / `form_end`, CSRF-protected POST deletes) instead of raw HTML forms (REQ-DEMO-001); Symfony 8 demo runs on PHP 8.5 (REQ-DEMO-010); DNS settings documented (REQ-DEMO-009).
+- `release-check` adds open-PR, raw-form, translation-parity and demo-smoke gates; demo healthcheck failures now fail the release; `test-coverage` keeps PHPUnit's exit code through `tee`.
+- `validate-translations` checks key parity across locales (REQ-MAKE-004).
+- CI: PHPStan, raw-form gate and translation parity run on every push and PR (REQ-CS-006); tests run with `SYMFONY_DEPRECATIONS_HELPER=max[direct]=0` (REQ-SF-005).
+- `.scripts/check-no-cursor-coauthor.sh` accepts git worktrees.
 
 - Dependencies refreshed (Composer and pnpm/npm lock files of the bundle and its demos, campaign 2026-10-19).
 - `.php-cs-fixer.dist.php`: `new ParallelConfig(2)` (REQ-CS-001).

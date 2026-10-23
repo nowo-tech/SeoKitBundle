@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Service;
 
+use Nowo\SeoKitBundle\Enum\SitemapChangeFreq;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -79,7 +80,7 @@ final readonly class SitemapGenerator
                     }
                     $entries[] = [
                         'loc'        => $this->paths->absoluteUrl($request, $path),
-                        'changefreq' => (string) ($page['sitemap_changefreq'] ?? 'weekly'),
+                        'changefreq' => (string) ($page['sitemap_changefreq'] ?? SitemapChangeFreq::Weekly->value),
                         'priority'   => number_format((float) ($page['sitemap_priority'] ?? 0.8), 1, '.', ''),
                     ];
                 }
@@ -106,7 +107,7 @@ final readonly class SitemapGenerator
                         }
                         $entries[] = [
                             'loc'        => $this->paths->absoluteUrl($request, $path),
-                            'changefreq' => (string) ($slugRoute['sitemap_changefreq'] ?? 'weekly'),
+                            'changefreq' => (string) ($slugRoute['sitemap_changefreq'] ?? SitemapChangeFreq::Weekly->value),
                             'priority'   => number_format((float) ($slugRoute['sitemap_priority'] ?? 0.6), 1, '.', ''),
                         ];
                     }
@@ -123,7 +124,7 @@ final readonly class SitemapGenerator
                 }
                 $normalized = [
                     'loc'        => $entry['loc'],
-                    'changefreq' => is_string($entry['changefreq'] ?? null) ? $entry['changefreq'] : 'weekly',
+                    'changefreq' => is_string($entry['changefreq'] ?? null) ? $entry['changefreq'] : SitemapChangeFreq::Weekly->value,
                     'priority'   => isset($entry['priority'])
                         ? number_format((float) $entry['priority'], 1, '.', '')
                         : '0.5',

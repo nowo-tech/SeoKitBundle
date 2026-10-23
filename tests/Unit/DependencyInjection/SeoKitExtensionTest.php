@@ -11,6 +11,7 @@ use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
 use Nowo\SeoKitBundle\DependencyInjection\Configuration;
 use Nowo\SeoKitBundle\DependencyInjection\SeoKitExtension;
+use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
@@ -29,9 +30,12 @@ use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Reference;
 
 final class SeoKitExtensionTest extends TestCase
 {
@@ -106,6 +110,52 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(SeoSiteSettingsType::class));
         self::assertTrue($container->hasDefinition(SeoAdminRouteLoader::class));
         self::assertTrue($container->hasDefinition(OriginUrlGuard::class));
+
+        $api = $container->getDefinition(SeoSurfaceApiController::class);
+        self::assertTrue($api->getArgument('$csrfProtection'));
+        $manager = $api->getArgument('$csrfTokenManager');
+        self::assertInstanceOf(Reference::class, $manager);
+        self::assertSame('security.csrf.token_manager', (string) $manager);
+        self::assertSame(ContainerInterface::NULL_ON_INVALID_REFERENCE, $manager->getInvalidBehavior());
+    }
+
+    public function testLoadAdminApiCsrfCanBeDisabled(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'admin'       => ['enabled' => true, 'api_csrf_protection' => false],
+        ]], $container);
+
+        self::assertFalse($container->getDefinition(SeoSurfaceApiController::class)->getArgument('$csrfProtection'));
+    }
+
+    public function testTablePrefixListenerIsRegisteredOnlyWithAPrefix(): void
+    {
+        $without = new ContainerBuilder();
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true]]], $without);
+        self::assertFalse($without->hasDefinition(TablePrefixListener::class));
+        self::assertSame('', $without->getParameter(Configuration::ALIAS . '.doctrine.table_prefix'));
+
+        $with = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'doctrine'    => ['table_prefix' => 'app_'],
+        ]], $with);
+        $listener = $with->getDefinition(TablePrefixListener::class);
+        self::assertSame('app_', $listener->getArgument('$tablePrefix'));
+        self::assertSame([['event' => 'loadClassMetadata']], $listener->getTag('doctrine.event_listener'));
+        self::assertSame('app_', $with->getParameter(Configuration::ALIAS . '.doctrine.table_prefix'));
+
+        $noPersistence = new ContainerBuilder();
+        (new SeoKitExtension())->load([['doctrine' => ['table_prefix' => 'app_']]], $noPersistence);
+        self::assertFalse($noPersistence->hasDefinition(TablePrefixListener::class));
+    }
+
+    public function testTablePrefixRejectsUnsafeCharacters(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        (new SeoKitExtension())->load([['doctrine' => ['table_prefix' => 'app-; drop']]], new ContainerBuilder());
     }
 
     public function testLoadAdminCanDisableSubControllers(): void

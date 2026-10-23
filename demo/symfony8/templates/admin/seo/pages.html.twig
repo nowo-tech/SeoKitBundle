@@ -35,9 +35,9 @@
                     </td>
                     <td class="actions">
                         <a class="btn" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
-                        <form method="post" action="{{ path('admin_seo_page_delete', {route: route}) }}" onsubmit="return confirm('Delete page {{ route }}?');">
+                        {{ form_start(delete_forms[route], {attr: {onsubmit: 'return confirm(\'Delete page ' ~ route ~ '?\');'}}) }}
                             <button class="btn btn-danger" type="submit">Delete</button>
-                        </form>
+                        {{ form_end(delete_forms[route]) }}
                     </td>
                 </tr>
             {% else %}

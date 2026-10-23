@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\DependencyInjection;
 
+use Nowo\SeoKitBundle\Enum\SitemapChangeFreq;
+use Nowo\SeoKitBundle\Enum\TwitterCard;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
+
+use function is_string;
+use function preg_match;
 
 /**
  * Hierarchical SEO configuration.
@@ -55,6 +60,7 @@ final class Configuration implements ConfigurationInterface
         $this->addTemplatesNode($root);
         $this->addPageHeadNode($root);
         $this->addPersistenceNode($root);
+        $this->addDoctrineNode($root);
         $this->addAdminNode($root);
 
         return $treeBuilder;
@@ -74,6 +80,26 @@ final class Configuration implements ConfigurationInterface
                         'es' => 'ES', 'ca' => 'ES', 'en' => 'GB',
                         'pt' => 'PT', 'fr' => 'FR', 'it' => 'IT',
                     ])
+                ->end()
+            ->end()
+            ->end()
+        ->end();
+    }
+
+    private function addDoctrineNode(ArrayNodeDefinition $root): void
+    {
+        $root->children()
+            ->arrayNode('doctrine')
+            ->info('Doctrine options for the bundle-owned entities (persistence.enabled).')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode('table_prefix')
+                    ->info('Prepended to every SeoKit table and named unique constraint (REQ-ORM-002), e.g. "app_" yields app_nowo_seo_surface. Empty = unchanged.')
+                    ->defaultValue('')
+                    ->validate()
+                        ->ifTrue(static fn (mixed $v): bool => !is_string($v) || preg_match('/^[A-Za-z0-9_]*$/', $v) !== 1)
+                        ->thenInvalid('nowo_seo_kit.doctrine.table_prefix may only contain letters, digits and underscores; got %s.')
+                    ->end()
                 ->end()
             ->end()
             ->end()
@@ -131,6 +157,10 @@ final class Configuration implements ConfigurationInterface
                     ->info('Register JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}.')
                     ->defaultTrue()
                 ->end()
+                ->booleanNode('api_csrf_protection')
+                    ->info('Require a CSRF token (X-CSRF-Token header, from the GET response csrf_token) on JSON API writes. Disable only behind a Bearer/API-token firewall without session cookies.')
+                    ->defaultTrue()
+                ->end()
             ->end();
     }
 
@@ -183,8 +213,8 @@ final class Configuration implements ConfigurationInterface
             ->booleanNode('in_sitemap')->defaultTrue()->end()
             ->floatNode('sitemap_priority')->min(0)->max(1)->defaultValue(0.8)->end()
             ->enumNode('sitemap_changefreq')
-                ->values(['always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never'])
-                ->defaultValue('weekly')
+                ->values(SitemapChangeFreq::values())
+                ->defaultValue(SitemapChangeFreq::Weekly->value)
             ->end()
             ->arrayNode('locales')
                 ->useAttributeAsKey('locale')
@@ -227,8 +257,8 @@ final class Configuration implements ConfigurationInterface
             ->booleanNode('in_sitemap')->defaultTrue()->end()
             ->floatNode('sitemap_priority')->min(0)->max(1)->defaultValue(0.6)->end()
             ->enumNode('sitemap_changefreq')
-                ->values(['always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never'])
-                ->defaultValue('weekly')
+                ->values(SitemapChangeFreq::values())
+                ->defaultValue(SitemapChangeFreq::Weekly->value)
             ->end()
             ->arrayNode('locales')
                 ->useAttributeAsKey('locale')
@@ -389,8 +419,8 @@ final class Configuration implements ConfigurationInterface
             ->children()
                 ->booleanNode('enabled')->defaultTrue()->end()
                 ->enumNode('card')
-                    ->values(['summary', 'summary_large_image', 'app', 'player'])
-                    ->defaultValue('summary_large_image')
+                    ->values(TwitterCard::values())
+                    ->defaultValue(TwitterCard::SummaryLargeImage->value)
                 ->end()
                 ->scalarNode('site')->defaultNull()->end()
                 ->scalarNode('creator')->defaultNull()->end()

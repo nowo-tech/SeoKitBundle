@@ -1,20 +1,16 @@
-# Security Policy
+# Security Policy — SeoKitBundle
+
+Security policy for **SeoKitBundle** (`nowo-tech/seo-kit-bundle`).
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.10.x  | :white_check_mark: |
-| 1.9.x   | :white_check_mark: |
-| 1.8.x   | :white_check_mark: |
-| 1.7.x   | :white_check_mark: |
-| 1.6.x   | :white_check_mark: |
-| 1.5.x   | :white_check_mark: |
-| 1.4.x   | :white_check_mark: |
-| 1.3.x   | :white_check_mark: |
-| 1.2.x   | :white_check_mark: |
-| 1.1.x   | :x:                |
-| 1.0.x   | :x:                |
+Security fixes land on the latest minor; upgrade within the 1.x line to receive them.
+
+| Version  | Supported          |
+| -------- | ------------------ |
+| 1.16.x   | :white_check_mark: |
+| 1.15.x   | :white_check_mark: (until 1.17.0) |
+| < 1.15   | :x:                |
 
 ## Reporting a Vulnerability
 

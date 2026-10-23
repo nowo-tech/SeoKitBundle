@@ -80,13 +80,18 @@ jobs:
 
 
       - run: composer test
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: max[direct]=0  # REQ-SF-005
 
       - if: matrix.php == '8.2' && matrix.symfony == '7.4'
         run: composer test-coverage
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: max[direct]=0  # REQ-SF-005
 
+  # REQ-CS-006: code style, PHPStan, Twig/translation gates on every push and PR.
   cs-check:
+    name: Code style + PHPStan
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
@@ -95,6 +100,12 @@ jobs:
           tools: composer:v2
       - run: composer update --no-interaction --prefer-dist --no-progress
       - run: composer cs-check
+      - name: PHPStan
+        run: composer phpstan
+      - name: Raw HTML form gate (REQ-TWIG-005)
+        run: ./.scripts/check-no-raw-html-form.sh
+      - name: Translation key parity (REQ-MAKE-004)
+        run: php .scripts/validate-translations.php
 
   coverage:
     name: Code Coverage
