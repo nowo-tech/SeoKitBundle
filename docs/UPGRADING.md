@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.16.1](#to-1161)
 - [To 1.16.0](#to-1160)
   - [JSON surface API needs an `X-CSRF-Token` header](#json-surface-api-needs-an-x-csrf-token-header)
   - [Optional table prefix](#optional-table-prefix)
@@ -75,6 +76,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.16.1
+
+From **1.16.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 ## To 1.16.0
 
