@@ -104,6 +104,20 @@ jobs:
       - name: Translation key parity (REQ-MAKE-004)
         run: php .scripts/validate-translations.php
 
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - run: composer update --no-interaction --prefer-dist --no-progress
+
+      - name: PHPStan (level and ignoreErrors from phpstan.neon.dist; fails the build on any error)
+        run: composer phpstan --no-interaction
+
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
