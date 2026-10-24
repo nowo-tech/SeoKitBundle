@@ -38,6 +38,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Admin views `admin/settings.html.twig` and `admin/surfaces_form.html.twig` render the form body through the child loop
+  (`{% for child in form %}` + `not child.rendered` + `form_row(child)`) instead of one `form_row(form.<field>)` per field
+  (REQ-TWIG-003). Same fields, same order; the settings page still emits the per-locale wording tabs and the organisation
+  heading right before `organisationLegalName`. Fields added to `SeoSiteSettingsType` / `SeoSurfaceType` now appear
+  without template overrides.
+
 ## [1.16.0] - 2026-10-23
 
 REQ wave 2: CSRF header on the JSON surface API, table prefix, backed enums, kernel tests, demo Symfony Forms and release gates. See [UPGRADING](UPGRADING.md#to-1160).

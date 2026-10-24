@@ -11,11 +11,11 @@
     <p>{{ locale|upper }}</p>
 
     {{ form_start(form) }}
-        {{ form_row(form.metaTitle) }}
-        {{ form_row(form.metaDescription) }}
-        {{ form_row(form.metaRobots) }}
-        {{ form_row(form.canonicalOverride) }}
-        {{ form_row(form.openGraphImage) }}
+        {% for child in form %}
+            {% if not child.rendered %}
+                {{ form_row(child) }}
+            {% endif %}
+        {% endfor %}
         <button type="submit">{{ 'nowo_seo_kit.admin.save'|trans({}, 'NowoSeoKitBundle') }}</button>
         <a href="{{ path('nowo_seo_kit_admin_surfaces', {locale: locale}) }}">{{ 'nowo_seo_kit.admin.back'|trans({}, 'NowoSeoKitBundle') }}</a>
     {{ form_end(form) }}

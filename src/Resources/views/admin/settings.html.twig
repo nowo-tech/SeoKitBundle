@@ -28,37 +28,30 @@
     {% endif %}
 
     {{ form_start(form) }}
-        {{ form_row(form.siteName) }}
-        {{ form_row(form.titleTemplate) }}
-        {{ form_row(form.indexable) }}
-        {{ form_row(form.defaultRobots) }}
-        {{ form_row(form.defaultOpenGraphImage) }}
-        {{ form_row(form.twitterSite) }}
+        {#
+          Child loop (REQ-TWIG-003): fields follow SeoSiteSettingsType. The per-locale wording tabs and the
+          organisation heading are emitted right before `organisationLegalName`; the tabs include renders (and marks
+          rendered) every localised child, so the loop skips them afterwards.
+        #}
+        {% for child in form %}
+            {% if not child.rendered %}
+                {% if child.vars.name == 'organisationLegalName' %}
+                    <h2>{{ 'nowo_seo_kit.admin.settings.section.wording'|trans({}, 'NowoSeoKitBundle') }}</h2>
+                    {{ include('@NowoFormKitBundle/form/_locale_tabs.html.twig', {
+                        field: form,
+                        fields: form.vars.localised_fields,
+                        locales: enabled_locales,
+                        default_locale: default_locale,
+                        tabs_id: 'nowo-seo-kit-settings-wording',
+                        testid: 'nowo-seo-kit-settings-wording',
+                        bundle: 'SeoKitBundle',
+                    }, with_context: false) }}
 
-        <h2>{{ 'nowo_seo_kit.admin.settings.section.wording'|trans({}, 'NowoSeoKitBundle') }}</h2>
-        {{ include('@NowoFormKitBundle/form/_locale_tabs.html.twig', {
-            field: form,
-            fields: form.vars.localised_fields,
-            locales: enabled_locales,
-            default_locale: default_locale,
-            tabs_id: 'nowo-seo-kit-settings-wording',
-            testid: 'nowo-seo-kit-settings-wording',
-            bundle: 'SeoKitBundle',
-        }, with_context: false) }}
-
-        <h2>{{ 'nowo_seo_kit.admin.settings.section.organisation'|trans({}, 'NowoSeoKitBundle') }}</h2>
-        {{ form_row(form.organisationLegalName) }}
-        {{ form_row(form.organisationLogo) }}
-        {{ form_row(form.contactEmail) }}
-        {{ form_row(form.contactPhone) }}
-        {{ form_row(form.streetAddress) }}
-        {{ form_row(form.postalCode) }}
-        {{ form_row(form.addressLocality) }}
-        {{ form_row(form.addressRegion) }}
-        {{ form_row(form.addressCountry) }}
-        {{ form_row(form.socialProfilesText) }}
-        {{ form_row(form.googleSiteVerification) }}
-        {{ form_row(form.bingSiteVerification) }}
+                    <h2>{{ 'nowo_seo_kit.admin.settings.section.organisation'|trans({}, 'NowoSeoKitBundle') }}</h2>
+                {% endif %}
+                {{ form_row(child) }}
+            {% endif %}
+        {% endfor %}
 
         <button type="submit">{{ 'nowo_seo_kit.admin.save'|trans({}, 'NowoSeoKitBundle') }}</button>
     {{ form_end(form) }}
