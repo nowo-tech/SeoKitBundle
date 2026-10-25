@@ -39,6 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Demo: the SEO admin CRUD forms (`admin/seo/page_form`, `slug_form`, `slug_route_form`) guard their child loop with `not child.rendered` (the CSRF token now renders through the loop instead of being skipped by name), and the CSRF-only delete forms (`pages`, `slugs`, `slug_routes`) render their token through the same loop; same URLs, field names and confirm prompts (REQ-TWIG-003 / REQ-TWIG-005).
+- Docs: USAGE states the Symfony Form / child-loop rule for admin and demo forms and that host overrides and demos must not reintroduce raw `<form>` / `<input>` (REQ-TWIG-005 rule 9).
+
 ## [1.16.1] - 2026-10-24
 
 Bundle views render form bodies through the child loop (REQ-TWIG-003). See [UPGRADING](UPGRADING.md#to-1161).

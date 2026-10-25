@@ -18,18 +18,22 @@
 
     {{ form_start(form, {attr: {class: 'stack'}}) }}
         {% for child in form %}
-            {% if child.vars.name == 'locales' %}
-                {% for locale_form in child %}
-                    <fieldset>
-                        <legend>{{ locale_form.vars.label }}</legend>
-                        {% for field in locale_form %}
-                            {{ form_row(field) }}
-                        {% endfor %}
-                    </fieldset>
-                {% endfor %}
-                {% do child.setRendered %}
-            {% elseif child.vars.name != '_token' %}
-                {{ form_row(child) }}
+            {% if not child.rendered %}
+                {% if child.vars.name == 'locales' %}
+                    {% for locale_form in child %}
+                        <fieldset>
+                            <legend>{{ locale_form.vars.label }}</legend>
+                            {% for field in locale_form %}
+                                {% if not field.rendered %}
+                                    {{ form_row(field) }}
+                                {% endif %}
+                            {% endfor %}
+                        </fieldset>
+                    {% endfor %}
+                    {% do child.setRendered %}
+                {% else %}
+                    {{ form_row(child) }}
+                {% endif %}
             {% endif %}
         {% endfor %}
 

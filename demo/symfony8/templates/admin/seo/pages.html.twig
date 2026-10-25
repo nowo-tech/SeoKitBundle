@@ -36,6 +36,11 @@
                     <td class="actions">
                         <a class="btn" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
                         {{ form_start(delete_forms[route], {attr: {onsubmit: 'return confirm(\'Delete page ' ~ route ~ '?\');'}}) }}
+                            {% for child in delete_forms[route] %}
+                                {% if not child.rendered %}
+                                    {{ form_row(child) }}
+                                {% endif %}
+                            {% endfor %}
                             <button class="btn btn-danger" type="submit">Delete</button>
                         {{ form_end(delete_forms[route]) }}
                     </td>

@@ -88,6 +88,8 @@ Requires persistence. Enable `nowo_seo_kit.admin.enabled: true`, import routes w
 
 Admin forms are built with **[FormKit](https://github.com/nowo-tech/FormKitBundle)** (`AbstractSeoFormType`, profile `seo_kit`). Register `Nowo\FormKitBundle\NowoFormKitBundle` (Flex recipe) so labels resolve from `NowoSeoKitBundle` translations.
 
+**Forms (REQ-TWIG-003 / REQ-TWIG-005):** every admin and demo form (settings, surfaces, the demo SEO CRUD and its CSRF-only deletes) is a PHP Form Type created in the controller and rendered with `form_start`, the rendered-aware child loop `{% for child in form %}{% if not child.rendered %}{{ form_row(child) }}{% endif %}{% endfor %}` (custom markup for a few children first, then the loop) and `form_end`. Host overrides and demos must not reintroduce raw `<form>` / `<input>` / `<textarea>` / `<select>`; `make check-no-raw-html-form` (part of `make release-check`) fails on them, with no allowlist.
+
 ## Audit CLI
 
 ```bash
