@@ -62,6 +62,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
         $container->setParameter(Configuration::ALIAS . '.config', $config);
         $container->setParameter(Configuration::ALIAS . '.enabled', $config['enabled']);
+        $container->setParameter(Configuration::ALIAS . '.x_robots_tag.enabled', $config['x_robots_tag']['enabled']);
         $container->setParameter(Configuration::ALIAS . '.templates', $config['templates']);
         $container->setParameter(Configuration::ALIAS . '.locales', $config['locales']);
         $container->setParameter(Configuration::ALIAS . '.persistence', $config['persistence']);

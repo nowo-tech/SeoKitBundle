@@ -27,6 +27,7 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Hierarchical SEO config** — defaults → slug_routes → pages → slugs → attribute → runtime
 - ✅ **Twig head helper** — `{{ nowo_seo_head() }}` with Open Graph, Twitter, JSON-LD, canonical, hreflang
 - ✅ **Multilingual paths** — locale-specific paths and translated slugs
+- ✅ **X-Robots-Tag** — opt-in `x_robots_tag.enabled`: the page's robots value as a response header (HTML, JSON, files)
 - ✅ **Sitemap & robots** — `/sitemap.xml` and `/robots.txt` served by Symfony; extra User-agent groups via `robots.groups` or `GeoRobotsGroupsProviderInterface` (GEO crawler policy: [GenerativeSeoKitBundle](https://github.com/nowo-tech/GenerativeSeoKitBundle))
 - ✅ **Typed JSON-LD** — Organization, LocalBusiness, Person, FAQPage, BlogPosting and related nodes
 - ✅ **Runtime overrides** — `SeoRuntime` for dynamic titles from controllers

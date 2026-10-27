@@ -51,6 +51,11 @@ services:
             $siteConfigProvider: '@?Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider'
         tags: ['kernel.event_subscriber']
 
+    Nowo\SeoKitBundle\EventSubscriber\XRobotsTagSubscriber:
+        arguments:
+            $enabled: '%nowo_seo_kit.x_robots_tag.enabled%'
+        tags: ['kernel.event_subscriber']
+
     Nowo\SeoKitBundle\Routing\SeoStaticRouteLoader:
         arguments:
             $config: '%nowo_seo_kit.config%'

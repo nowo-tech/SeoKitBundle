@@ -36,6 +36,7 @@ Later layers override earlier ones:
 | Key | Default | Description |
 | --- | --- | --- |
 | `enabled` | `true` | Master switch |
+| `x_robots_tag.enabled` | `false` | Send the page's resolved robots value as an `X-Robots-Tag` response header on every main response (HTML, JSON, files); a response that already has the header keeps it. |
 | `indexable` | `true` | When false (or a `SiteIndexabilityProviderInterface` returns false), robots disallow `/` and sitemap is empty/404. Page meta robots is forced to `noindex,nofollow` (overriding any `robots` set by defaults, pages, slugs or providers) unless it already contains `noindex`. |
 | `default_locale` | `en` | Fallback locale |
 | `locales` | `en, es, fr, de, it, pt, nl` | Locales for hreflang and sitemap |

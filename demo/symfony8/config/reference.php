@@ -977,6 +977,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * @psalm-type NowoSeoKitConfig = array{
  *     enabled?: bool|Param, // Default: true
  *     indexable?: bool|Param, // Master switch: when false, defaults robots to noindex, robots.txt disallows /, and sitemap is empty/404. // Default: true
+ *     x_robots_tag?: array{ // Send the page's resolved robots value as an X-Robots-Tag response header (every response: HTML, JSON, files…). A response that already carries the header keeps it.
+ *         enabled?: bool|Param, // Default: false
+ *     },
  *     default_locale?: scalar|Param|null, // Default: "en"
  *     locales?: list<scalar|Param|null>,
  *     base_url?: scalar|Param|null, // Absolute origin for canonicals/sitemap when Request host is unavailable (e.g. CLI). // Default: null

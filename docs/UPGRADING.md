@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.17.0](#to-1170)
 - [To 1.16.1](#to-1161)
 - [To 1.16.0](#to-1160)
   - [JSON surface API needs an `X-CSRF-Token` header](#json-surface-api-needs-an-x-csrf-token-header)
@@ -76,6 +77,13 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+Nothing yet.
+
+## To 1.17.0
+
+- New opt-in `x_robots_tag.enabled` (default `false`): nothing changes unless you turn it on. Enabled, every main
+  response gets `X-Robots-Tag` with the page's resolved robots value.
 
 ## To 1.16.1
 

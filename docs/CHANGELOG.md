@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.17.0] - 2026-10-27](#1170---2026-10-27)
 - [[1.16.1] - 2026-10-24](#1161---2026-10-24)
 - [[1.16.0] - 2026-10-23](#1160---2026-10-23)
 - [[1.15.0] - 2026-10-19](#1150---2026-10-19)
@@ -38,6 +39,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100---2026-07-16)
 
 ## [Unreleased]
+
+## [1.17.0] - 2026-10-27
+
+### Added
+
+- `x_robots_tag.enabled` (default `false`): sends the page's resolved robots value (defaults → slug routes → pages →
+  slugs → attribute → runtime; `indexable: false` forces noindex) as an `X-Robots-Tag` header on every main response —
+  HTML, JSON or files, with or without `nowo_seo_head()` in the layout (`EventSubscriber\XRobotsTagSubscriber`). A
+  response that already carries the header keeps it. Typical use: a private app with `defaults.robots:
+  'noindex,nofollow'` and an indexable sign-in page (`pages.<login route>.robots: 'index,follow'`).
 
 ### Changed
 
