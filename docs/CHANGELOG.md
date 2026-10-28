@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.18.0] - 2026-10-28](#1180---2026-10-28)
 - [[1.17.0] - 2026-10-27](#1170---2026-10-27)
 - [[1.16.1] - 2026-10-24](#1161---2026-10-24)
 - [[1.16.0] - 2026-10-23](#1160---2026-10-23)
@@ -39,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100---2026-07-16)
 
 ## [Unreleased]
+
+## [1.18.0] - 2026-10-28
+
+Security: admin CSRF fails closed and the recipe sets base_url from DEFAULT_URI. See [UPGRADING](UPGRADING.md#to-1180).
 
 ### Security
 
@@ -508,7 +513,7 @@ Locale tabs for the per-locale wording on /settings/seo (FormKit 2.13 fields mod
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.16.1...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.18.0...HEAD
 [1.10.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.1
 [1.10.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.0
 [1.9.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.9.0
