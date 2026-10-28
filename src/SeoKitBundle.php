@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle;
 
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\SeoKitBundle\DependencyInjection\SeoKitExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -18,6 +19,7 @@ final class SeoKitBundle extends Bundle
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
+        $container->addCompilerPass(new CsrfProtectionPass());
         $container->addCompilerPass(new TwigPathsPass());
     }
 

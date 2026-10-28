@@ -21,14 +21,14 @@ See [.github/SECURITY.md](../.github/SECURITY.md) for supported versions.
 
 | Surface | Exposure | Protection |
 |---------|----------|------------|
-| `GET /sitemap.xml`, `GET /robots.txt` (bundle route loader) | Public, unauthenticated | Read-only; URLs built from config and tagged providers only, never from request input; absolute URLs use `base_url` (or the request host) through `OriginUrlGuard`. |
+| `GET /sitemap.xml`, `GET /robots.txt` (bundle route loader) | Public, unauthenticated | Read-only; URLs built from config and tagged providers only, never from request input; absolute URLs use `base_url`; without it they follow the request `Host` header (`OriginUrlGuard` only validates canonical overrides), so set `base_url` (the recipe uses `%env(default::DEFAULT_URI)%`) or `framework.trusted_hosts` before the public sitemap (cached `public, max-age=3600`) goes behind a shared cache. |
 | Twig `nowo_seo_head()` / `nowo_seo_metadata()` | Every page that renders them | Values are escaped by Twig; JSON-LD is encoded with `<` / `>` escaped so it cannot break out of `<script>`. |
 | Admin UI `/settings/seo`, `/admin/seo/surfaces` (`admin.enabled`, off by default) | Session-authenticated | `admin.role` (default `ROLE_ADMIN`) on every action; Symfony Forms with CSRF; canonical overrides restricted to the site origin. |
 | JSON pencil API `GET/POST /_nowo/seo/surfaces/{key}/{locale}` (`admin.api_enabled`) | Session-authenticated | `admin.role`; `POST` requires `Content-Type: application/json` **and** an `X-CSRF-Token` header (see below); payload goes through the same validated `SeoSurfaceType`. |
 | `nowo:seo:audit` console command | Operators only | Read-only report over tagged audit subjects. |
 | Doctrine entities (`persistence.enabled`, off by default) | Database | Bundle-owned tables (optionally prefixed with `doctrine.table_prefix`); no raw SQL. |
 
-Threats considered: SEO spam / open redirect through canonical overrides (blocked by the origin guard), stored XSS through SEO fields (Twig escaping + JSON-LD encoding), cross-site request forgery against the admin UI and the JSON API (Form CSRF + header token), host-header poisoning of absolute URLs (set `base_url` in production). Out of scope: authentication itself (the host firewall) and the content of host-provided providers.
+Threats considered: SEO spam / open redirect through canonical overrides (blocked by the origin guard), stored XSS through SEO fields (Twig escaping + JSON-LD encoding), cross-site request forgery against the admin UI and the JSON API (Form CSRF + header token; the container refuses to compile with `admin.enabled` and form CSRF disabled — `CsrfProtectionPass`), host-header poisoning of absolute URLs (set `base_url` in production). Out of scope: authentication itself (the host firewall) and the content of host-provided providers.
 
 ## CSRF on session mutations (REQ-SEC-005)
 

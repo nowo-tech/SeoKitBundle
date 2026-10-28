@@ -3,7 +3,8 @@ nowo_seo_kit:
     enabled: true
     default_locale: en
     # locales: [en, es, fr, de, it, pt, nl]
-    # base_url: 'https://example.com'
+    # Absolute URLs (canonical, og:url, hreflang, sitemap, robots) — without it they follow the request Host header.
+    base_url: '%env(default::DEFAULT_URI)%'
 
     defaults:
         site_name: 'My Application'

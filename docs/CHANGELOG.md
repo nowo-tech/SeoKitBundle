@@ -40,6 +40,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Admin CSRF fails closed.** With `admin.enabled: true` the container refuses to compile without
+  `security.csrf.token_manager` + `form.type_extension.csrf`, or with `framework.form.csrf_protection: false`
+  (`CsrfProtectionPass`): the settings / surface forms would otherwise accept cross-site posts.
+- **Recipe sets `base_url: '%env(default::DEFAULT_URI)%'`.** Without `base_url`, canonical, og:url, hreflang, sitemap
+  `<loc>` and the robots `Sitemap:` line follow the request `Host` header (cache / canonical poisoning without
+  `trusted_hosts`); existing hosts should set it — see [SECURITY](SECURITY.md). Docs corrected (the absolute URLs do not
+  go through `OriginUrlGuard`); `.github/SECURITY.md` lists 1.17.x.
+
 ## [1.17.0] - 2026-10-27
 
 ### Added
