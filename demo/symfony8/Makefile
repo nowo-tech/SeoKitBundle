@@ -9,7 +9,7 @@ COMPOSE ?= $(shell $(DOCKER_BIN) compose version >/dev/null 2>&1 && echo "$(DOCK
 endif
 SERVICE_PHP = php
 
-.PHONY: help up down restart build install shell update-bundle ensure-up ensure-env test verify
+.PHONY: help up down restart build install shell update-bundle ensure-up ensure-env test verify test-e2e demo-screenshots
 
 help:
 	@echo "Symfony 8 Demo - Seo Kit Bundle"
@@ -22,6 +22,8 @@ help:
 	@echo "  make update-bundle  Sync bundle autoload and clear cache"
 	@echo "  make test           Lint demo container, Twig templates and YAML config"
 	@echo "  make verify         HTTP 200 healthcheck (home, /en, sitemap, robots, admin)"
+	@echo "  make test-e2e       Playwright happy path (official Playwright image)"
+	@echo "  make demo-screenshots Refresh docs/images/demo/*.webp"
 
 up: ensure-env
 	@$(COMPOSE) up -d
@@ -89,3 +91,28 @@ verify: ensure-up
 # REQ-MAKE-008: update-deps (REQ-MAKE-008)
 BUNDLE_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 include $(BUNDLE_ROOT)/.scripts/Makefile.demo-update-deps.mk
+
+# REQ-DEMO-013: Playwright e2e and README screenshots (official Playwright image, nothing to install on the host).
+PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.63.0-jammy
+
+test-e2e: ensure-up
+	@mkdir -p e2e/node_modules
+	@PORT=$$(grep -E '^PORT=' .env 2>/dev/null | cut -d= -f2); PORT=$${PORT:-8050}; \
+	docker run --rm --network host \
+		-v "$(CURDIR)/e2e:/e2e" -w /e2e \
+		-e DEMO_BASE_URL=http://127.0.0.1:$$PORT \
+		$(PLAYWRIGHT_IMAGE) \
+		bash -lc 'npm install --no-fund --no-audit && npx playwright test --project=chromium'
+
+demo-screenshots: ensure-up
+	@mkdir -p ../../docs/images/demo e2e/node_modules
+	@PORT=$$(grep -E '^PORT=' .env 2>/dev/null | cut -d= -f2); PORT=$${PORT:-8050}; \
+	docker run --rm --network host \
+		-v "$(CURDIR)/e2e:/e2e" \
+		-v "$(CURDIR)/../../docs/images/demo:/screenshots" \
+		-w /e2e \
+		-e DEMO_BASE_URL=http://127.0.0.1:$$PORT \
+		-e SCREENSHOT_DIR=/screenshots \
+		$(PLAYWRIGHT_IMAGE) \
+		bash -lc 'npm install --no-fund --no-audit && npx playwright test --project=screenshots && node scripts/to-webp.mjs /screenshots'
+	@echo "Screenshots written under docs/images/demo/ (WebP)"

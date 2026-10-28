@@ -10,6 +10,8 @@ Symfony SEO kit: multilingual static routes, slug SEO layers (defaults / pages /
 
 This bundle is **FrankenPHP worker mode friendly**.
 
+![SEO admin dashboard listing pages, slug routes and slugs with their localized SEO URLs for en, es and fr](docs/images/demo/seo-admin.webp)
+
 ## Table of contents
 
 - [Features](#features)
@@ -93,6 +95,8 @@ make -C demo up-symfony8   # http://localhost:8050 (default PORT)
 ```
 
 Demo extras: locale switch, `/` default-locale home, SEO Admin at `/admin/seo`. See [docs/DEMO-FRANKENPHP.md](docs/DEMO-FRANKENPHP.md).
+
+The screenshot at the top is the demo SEO Admin. Refresh it with `make -C demo/symfony8 demo-screenshots`; `make -C demo/symfony8 test-e2e` runs the Playwright happy path (localized metadata, hreflang switch, sitemap/robots, admin).
 
 ## Documentation
 
