@@ -83,7 +83,7 @@ None. The bundle ships no local pagination, flash, confirm, modal, page header, 
 ## Navigation
 
 `Nowo\SeoKitBundle\Ui\SeoKitAreaNav` publishes the area `seo_kit` to the UiKit area-nav registry (SEO settings | Page
-SEO, the enabled pages only): `nowo_ui_area_nav('seo_kit')` mounts it in a host menu (DashboardMenu). The pages render
+SEO, the enabled pages only; null for users the access checker refuses): `nowo_ui_area_nav('seo_kit')` mounts it in a host menu (DashboardMenu). The pages render
 the same navigation as page-header tabs when both pages are enabled (fallback for hosts without DashboardMenu).
 
 ## Allowed exceptions

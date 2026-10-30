@@ -15,6 +15,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\User\InMemoryUser;
 
 use function base64_encode;
 use function sys_get_temp_dir;
@@ -50,6 +53,15 @@ final class SeoKitAdminKernelTest extends TestCase
 
         $registry = $this->container()->get(AreaNavRegistry::class);
         self::assertInstanceOf(AreaNavRegistry::class, $registry);
+        // no user: the admin navigation is not published
+        self::assertFalse($registry->has(SeoKitAreaNav::AREA));
+
+        $tokens = $this->container()->get('security.token_storage');
+        self::assertInstanceOf(TokenStorageInterface::class, $tokens);
+        $tokens->setToken(new UsernamePasswordToken(new InMemoryUser('editor', null, ['ROLE_USER']), 'main', ['ROLE_USER']));
+        self::assertFalse($registry->has(SeoKitAreaNav::AREA));
+
+        $tokens->setToken(new UsernamePasswordToken(new InMemoryUser('admin', null, ['ROLE_ADMIN']), 'main', ['ROLE_ADMIN']));
         self::assertTrue($registry->has(SeoKitAreaNav::AREA));
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Ui;
 
+use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
 use Nowo\UiKitBundle\View\AreaNav;
 use Nowo\UiKitBundle\View\AreaNavItem;
@@ -14,17 +15,21 @@ use function is_string;
 /**
  * Publishes the SeoKit admin navigation (SEO settings | Page SEO, the enabled pages only) to the UiKit area-nav
  * registry (REQ-UI-003 "Navigation integration"): a host menu (DashboardMenu) mounts it with
- * `nowo_ui_area_nav('seo_kit')`. The admin pages render the same navigation as page-header tabs (fallback for hosts
+ * `nowo_ui_area_nav('seo_kit')`, only for users the admin access checker grants (no admin paths for others). The admin pages render the same navigation as page-header tabs (fallback for hosts
  * without DashboardMenu). `current` (an href) marks the active item. Stateless: safe in worker mode.
  */
 final readonly class SeoKitAreaNav implements AreaNavProviderInterface
 {
     public const AREA = 'seo_kit';
 
+    /**
+     * @param SeoKitAccessCheckerInterface|null $accessChecker when set, users it refuses get no navigation (null)
+     */
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private bool $settings = true,
         private bool $surfaces = true,
+        private ?SeoKitAccessCheckerInterface $accessChecker = null,
     ) {
     }
 
@@ -33,7 +38,7 @@ final readonly class SeoKitAreaNav implements AreaNavProviderInterface
      */
     public function areaNav(string $area, array $context = []): ?AreaNav
     {
-        if ($area !== self::AREA) {
+        if ($area !== self::AREA || ($this->accessChecker instanceof SeoKitAccessCheckerInterface && !$this->accessChecker->canAccess())) {
             return null;
         }
 

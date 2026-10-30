@@ -101,7 +101,8 @@ tokens) — **no page template to copy**. Stylesheets and scripts stack through 
 [CONFIGURATION.md — Host layout and CSS stack](CONFIGURATION.md#host-layout-and-css-stack) for the bridge and the
 framework table, and [TEMPLATES.md](TEMPLATES.md) for the pages, view models and data blocks.
 
-A host menu (DashboardMenu) mounts the admin navigation with `nowo_ui_area_nav('seo_kit')` (SEO settings | Page SEO);
+A host menu (DashboardMenu) mounts the admin navigation with `nowo_ui_area_nav('seo_kit')` (SEO settings | Page SEO;
+nothing for users the admin access checker refuses);
 the pages also show it as header tabs. The surfaces list has one row action (Edit, `edit` kind through the UiKit
 `row_actions` partial, so `row_actions_display: icon | text | icon_text` applies); there is no delete action and no
 modal (an empty override form clears the stored row).

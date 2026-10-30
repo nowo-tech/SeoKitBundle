@@ -36,6 +36,7 @@ use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\ArrayNode;
 use Symfony\Component\Config\Definition\BaseNode;
@@ -478,5 +479,94 @@ final class SeoKitExtensionTest extends TestCase
             'web_ui'   => ['enabled' => true, 'settings' => true, 'surfaces' => true, 'path_prefix' => null, 'layout_template' => null, 'templates' => SeoKitPages::TEMPLATES, 'form_themes' => [], 'api_enabled' => true, 'api_csrf_protection' => true],
             'security' => ['access_roles' => ['ROLE_ADMIN'], 'access_checker' => null, 'allow_unauthenticated' => 'env_0123_bool_SEO_PUBLIC_ADMIN'],
         ]);
+    }
+
+    public function testLegacyRoleFromAnEnvPlaceholderIsRefused(): void
+    {
+        $container   = new ContainerBuilder();
+        $placeholder = $container->getParameterBag()->get('env(SEO_ROLE)');
+        self::assertIsString($placeholder);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('admin.role must be a literal role name');
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'admin'       => ['enabled' => true, 'role' => $placeholder],
+        ]], $container);
+    }
+
+    public function testAccessRolesFromAnEnvPlaceholderAreRefused(): void
+    {
+        $placeholder = (new ContainerBuilder())->getParameterBag()->get('env(SEO_ROLE)');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('access_roles entries must be literal role names');
+        $config                             = $this->processed(['web_ui' => ['enabled' => true]]);
+        $config['security']['access_roles'] = [$placeholder];
+        SeoKitExtension::resolveWebUi($config);
+    }
+
+    /**
+     * @return iterable<string, array{0: array<string, mixed>, 1: string}>
+     */
+    public static function conflictingLegacyKeys(): iterable
+    {
+        yield 'csrf' => [['web_ui' => ['api_csrf_protection' => true], 'admin' => ['api_csrf_protection' => false]], 'admin.api_csrf_protection'];
+        yield 'role' => [['security' => ['access_roles' => ['ROLE_SEO']], 'admin' => ['role' => 'ROLE_USER']], 'admin.role'];
+        yield 'enabled' => [['web_ui' => ['enabled' => false], 'admin' => ['enabled' => true]], 'admin.enabled'];
+        yield 'template' => [['web_ui' => ['templates' => ['settings' => 'a.html.twig']], 'admin' => ['settings_template' => 'b.html.twig']], 'admin.settings_template'];
+    }
+
+    /**
+     * @param array<string, mixed> $raw
+     */
+    #[DataProvider('conflictingLegacyKeys')]
+    public function testLegacyAndNewKeysSetToDifferentValuesAreAnError(array $raw, string $legacyKey): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('nowo_seo_kit.' . $legacyKey . ' and its replacement');
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true]] + $raw], new ContainerBuilder());
+    }
+
+    public function testLegacyAndNewKeysWithTheSameValueAreAccepted(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([
+            ['persistence' => ['enabled' => true], 'admin' => ['enabled' => true, 'role' => 'ROLE_SEO', 'api_csrf_protection' => true]],
+            ['web_ui' => ['enabled' => true, 'api_csrf_protection' => true], 'security' => ['access_roles' => ['ROLE_SEO']]],
+        ], $container);
+
+        self::assertSame(['ROLE_SEO'], $container->getDefinition(ConfigurableSeoKitAccessChecker::class)->getArgument('$accessRoles'));
+    }
+
+    public function testExplicitWebUiKeysAreCollectedFromEveryConfigFile(): void
+    {
+        self::assertSame(
+            ['web_ui.enabled', 'web_ui.templates.settings', 'security.access_roles'],
+            SeoKitExtension::explicitWebUiKeys([
+                'not-an-array',
+                ['web_ui' => ['enabled' => true, 'templates' => ['settings' => 'x.html.twig']]],
+                ['web_ui' => ['enabled' => false], 'security' => ['access_roles' => []]],
+                ['security' => ['allow_unauthenticated' => false]],
+            ]),
+        );
+    }
+
+    public function testAreaNavReceivesTheAccessChecker(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true], 'web_ui' => ['enabled' => true]]], $container);
+
+        self::assertSame(SeoKitAccessCheckerInterface::class, (string) $container->getDefinition(SeoKitAreaNav::class)->getArgument('$accessChecker'));
+    }
+
+    /**
+     * @param array<string, mixed> $raw
+     *
+     * @return array<string, mixed>
+     */
+    private function processed(array $raw): array
+    {
+        return (new Processor())->processConfiguration(new Configuration(), [$raw]);
     }
 }

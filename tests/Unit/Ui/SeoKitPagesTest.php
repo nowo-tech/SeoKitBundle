@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Tests\Unit\Ui;
 
+use Nowo\SeoKitBundle\Security\AllowAllSeoKitAccessChecker;
+use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Tests\Support\AdminPageFixtures;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
@@ -107,5 +109,19 @@ final class SeoKitPagesTest extends TestCase
 
         $surfacesOnly = (new SeoKitAreaNav(AdminPageFixtures::urls(), false, true))->areaNav(SeoKitAreaNav::AREA);
         self::assertSame(['/admin/seo/surfaces'], array_map(static fn ($item): string => $item->href, $surfacesOnly->items ?? []));
+    }
+
+    public function testAreaNavIsHiddenFromUsersTheAccessCheckerRefuses(): void
+    {
+        $denied = new SeoKitAreaNav(AdminPageFixtures::urls(), accessChecker: new class implements SeoKitAccessCheckerInterface {
+            public function canAccess(): bool
+            {
+                return false;
+            }
+        });
+        self::assertNull($denied->areaNav(SeoKitAreaNav::AREA));
+
+        $granted = new SeoKitAreaNav(AdminPageFixtures::urls(), accessChecker: new AllowAllSeoKitAccessChecker());
+        self::assertCount(2, $granted->areaNav(SeoKitAreaNav::AREA)->items ?? []);
     }
 }

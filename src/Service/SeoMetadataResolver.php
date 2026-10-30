@@ -24,6 +24,7 @@ use function parse_str;
 use function parse_url;
 use function preg_match;
 use function str_replace;
+use function str_starts_with;
 use function strlen;
 use function strtolower;
 
@@ -34,8 +35,8 @@ use const PHP_URL_QUERY;
  */
 final readonly class SeoMetadataResolver
 {
-    /** Request attributes never offered as placeholders (case-insensitive). */
-    private const SECRET_ATTRIBUTE_PATTERN = '/nonce|token|csrf|secret|password/i';
+    /** Route parameters never offered as placeholders (case-insensitive). */
+    private const SECRET_ATTRIBUTE_PATTERN = '/nonce|token|csrf|secret|passw|key|auth|sig|hash|session|jwt|credential/i';
 
     /**
      * @param array<string, mixed> $config
@@ -136,7 +137,7 @@ final readonly class SeoMetadataResolver
         }
 
         $variables = array_merge(
-            $this->scalarAttributes($request),
+            $this->routeParameters($request),
             $this->runtime->getVariables(),
             [
                 'site_name' => (string) ($defaults['site_name'] ?? ''),
@@ -364,17 +365,22 @@ final readonly class SeoMetadataResolver
     }
 
     /**
-     * Scalar request attributes as title / description placeholders, without secrets that a template could leak into
-     * the page head (CSP nonces, CSRF / auth tokens, passwords).
+     * Route parameters (`_route_params`: the placeholders of the matched route, e.g. `{slug}`, `{id}`) as title /
+     * description placeholders — an allowlist: other request attributes (firewall context, CSP nonce, API keys set by
+     * listeners) are never offered, internal `_*` parameters are skipped, and parameters named like secrets (nonce,
+     * token, key, password, …) are dropped as well. Runtime variables (`SeoRuntime::setVariable()`) and the built-ins
+     * (`site_name`, `separator`, `locale`, `slug`) are added by the caller.
      *
      * @return array<string, string>
      */
-    private function scalarAttributes(Request $request): array
+    private function routeParameters(Request $request): array
     {
-        $out = [];
-        foreach ($request->attributes->all() as $key => $value) {
-            if (is_scalar($value) && preg_match(self::SECRET_ATTRIBUTE_PATTERN, (string) $key) !== 1) {
-                $out[(string) $key] = (string) $value;
+        $params = $request->attributes->get('_route_params', []);
+        $out    = [];
+        foreach (is_array($params) ? $params : [] as $key => $value) {
+            $key = (string) $key;
+            if (is_scalar($value) && !str_starts_with($key, '_') && preg_match(self::SECRET_ATTRIBUTE_PATTERN, $key) !== 1) {
+                $out[$key] = (string) $value;
             }
         }
 

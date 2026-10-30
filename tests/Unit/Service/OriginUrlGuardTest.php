@@ -65,4 +65,13 @@ final class OriginUrlGuardTest extends TestCase
         self::assertTrue($guard->isSafeCanonical("  /pricing\n"));
         self::assertTrue($guard->isSafeOpenGraphImage(' /og.png '));
     }
+
+    public function testOriginWithTrailingSlashStillMatchesItsUrls(): void
+    {
+        $guard = new OriginUrlGuard('https://nowo.tech/');
+
+        self::assertTrue($guard->isSafeCanonical('https://nowo.tech/es/pricing'));
+        self::assertTrue($guard->belongsToSite('https://nowo.tech'));
+        self::assertFalse($guard->isSafeCanonical('https://nowo.tech.evil.example/'));
+    }
 }

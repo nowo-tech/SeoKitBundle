@@ -162,6 +162,39 @@ final class SeoAdminFormsTest extends TestCase
         self::assertSame(['None'], $settings->getSocialProfiles());
     }
 
+    public function testSiteSettingsPartialSubmitIsAValidationErrorNotATypeError(): void
+    {
+        $settings = (new SeoSiteSettings())->setSiteName('Nowo')->setTitleTemplate('%title% · ' . SeoSiteSettings::TITLE_PLACEHOLDER);
+        $form     = $this->factory()->create(SeoSiteSettingsType::class, $settings, [
+            'enabled_locales' => ['en'],
+            'default_locale'  => 'en',
+        ]);
+
+        $form->submit(['indexable' => '1']);
+
+        self::assertFalse($form->isValid());
+        foreach (['siteName', 'titleTemplate', 'defaultRobots'] as $field) {
+            self::assertGreaterThan(0, $form->get($field)->getErrors()->count(), $field);
+        }
+        // the entity keeps its previous values
+        self::assertSame('Nowo', $settings->getSiteName());
+    }
+
+    public function testRequiredSetterIgnoresNonEntityDataAndMissingValues(): void
+    {
+        $setter   = new ReflectionMethod(SeoSiteSettingsType::class, 'setRequired');
+        $type     = FormKitTestSupport::siteSettingsType();
+        $form     = $this->factory()->createNamedBuilder('siteName', TextType::class)->getForm();
+        $settings = (new SeoSiteSettings())->setSiteName('Nowo');
+
+        $setter->invoke($type, ['not' => 'an entity'], 'Other', $form);
+        $setter->invoke($type, $settings, null, $form);
+        self::assertSame('Nowo', $settings->getSiteName());
+
+        $setter->invoke($type, $settings, 'Renamed', $form);
+        self::assertSame('Renamed', $settings->getSiteName());
+    }
+
     public function testSiteSettingsListenersIgnoreNonEntityData(): void
     {
         $type = FormKitTestSupport::siteSettingsType();
