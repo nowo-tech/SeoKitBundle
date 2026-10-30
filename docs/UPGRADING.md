@@ -123,6 +123,15 @@ nowo_seo_kit:
 - The admin UI now needs **SecurityBundle** (the container does not compile without it) unless
   `security.allow_unauthenticated: true` (demo only), and an empty role list needs a custom `security.access_checker`.
 - `admin.role: PUBLIC_ACCESS` (or an empty role) is refused: use `allow_unauthenticated` for a demo.
+- A deprecated key and its replacement set to different values (e.g. `admin.api_csrf_protection: false` next to
+  `web_ui.api_csrf_protection: true`, or `admin.role: ROLE_USER` next to `security.access_roles: [ROLE_SEO]`) no longer
+  boots: remove the `admin.*` line. `admin.role` and `security.access_roles` must be literal roles (no `%env()%`).
+- Do not keep importing the deprecated `@NowoSeoKitBundle/Resources/config/routes_admin.yaml` next to the
+  `nowo_seo_kit_admin` loader: imported after it, it replaces the `web_ui.path_prefix` routes by name with the 1.x paths.
+- `web_ui.path_prefix` refuses `.` / `..` segments.
+- Title / description placeholders come from the route parameters only (`{slug}`, `{id}`, … of the matched route);
+  other request attributes (set by listeners) and parameters named like secrets (`*key*`, `*token*`, `*auth*`, …) stay
+  literal. Pass extra values with `SeoRuntime::setVariable()`.
 - `security.allow_unauthenticated: true` only compiles with `kernel.debug` (never in `prod`); the security switches
   must be literal booleans.
 - Add `access_control` for the admin paths and `^/_nowo/seo/` (see

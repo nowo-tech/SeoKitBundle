@@ -55,10 +55,14 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 
 use function array_key_exists;
+use function array_keys;
+use function array_unique;
+use function array_values;
 use function in_array;
 use function is_array;
 use function is_bool;
 use function is_string;
+use function preg_match;
 use function sprintf;
 use function trim;
 
@@ -70,7 +74,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     public function load(array $configs, ContainerBuilder $container): void
     {
         $config             = $this->processConfiguration(new Configuration(), $configs);
-        [$webUi, $security] = self::resolveWebUi($config);
+        [$webUi, $security] = self::resolveWebUi($config, self::explicitWebUiKeys($configs));
         $config['web_ui']   = $webUi;
         $config['security'] = $security;
 
@@ -353,15 +357,17 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     }
 
     /**
-     * Resolves `web_ui` / `security`, mapping the deprecated 1.x `admin` keys (a legacy key that is set wins), and
+     * Resolves `web_ui` / `security`, mapping the deprecated 1.x `admin` keys (a legacy key that is set replaces the
+     * default; set together with its replacement to another value it is an error), and
      * enforces the fail-closed access contract (REQ-UI-002): an empty role list needs a custom checker or
      * `allow_unauthenticated`.
      *
      * @param array<string, mixed> $config processed configuration
+     * @param list<string> $explicit new keys set explicitly by the host ({@see self::explicitWebUiKeys()})
      *
      * @return array{0: array{enabled: bool, settings: bool, surfaces: bool, path_prefix: string|null, layout_template: string|null, templates: array<string, string>, form_themes: list<string>, api_enabled: bool, api_csrf_protection: bool}, 1: array{access_roles: list<string>, access_checker: string|null, allow_unauthenticated: bool}}
      */
-    public static function resolveWebUi(array $config): array
+    public static function resolveWebUi(array $config, array $explicit = []): array
     {
         /** @var array{enabled: bool, settings: bool, surfaces: bool, path_prefix: string|null, layout_template: string|null, templates: array<string, string>, form_themes: list<string>, api_enabled: bool, api_csrf_protection: bool} $webUi */
         $webUi = $config['web_ui'];
@@ -372,6 +378,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
         foreach (['enabled', 'settings', 'surfaces', 'api_enabled', 'api_csrf_protection'] as $key) {
             if (is_bool($legacy[$key] ?? null)) {
+                self::assertNoLegacyConflict('admin.' . $key, 'web_ui.' . $key, $legacy[$key], $webUi[$key], $explicit);
                 $webUi[$key] = $legacy[$key];
             }
         }
@@ -385,15 +392,25 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         }
         foreach (['settings_template' => 'settings', 'surfaces_index_template' => 'surfaces_index', 'surfaces_form_template' => 'surfaces_form'] as $key => $page) {
             if (is_string($legacy[$key] ?? null) && $legacy[$key] !== '') {
+                self::assertNoLegacyConflict('admin.' . $key, 'web_ui.templates.' . $page, $legacy[$key], $webUi['templates'][$page] ?? null, $explicit);
                 $webUi['templates'][$page] = $legacy[$key];
             }
         }
         if (is_string($legacy['role'] ?? null)) {
             $role = trim($legacy['role']);
+            if (self::isEnvPlaceholder($role)) {
+                throw new InvalidArgumentException('nowo_seo_kit.admin.role must be a literal role name (no %env()% placeholder: the value would only be known at runtime, past the PUBLIC_ACCESS check); set nowo_seo_kit.security.access_roles.');
+            }
             if ($role === '' || in_array($role, Configuration::PUBLIC_ATTRIBUTES, true)) {
                 throw new InvalidArgumentException(sprintf('nowo_seo_kit.admin.role "%s" would open the admin UI to everybody; set nowo_seo_kit.security.access_roles (or allow_unauthenticated for a demo).', $legacy['role']));
             }
+            self::assertNoLegacyConflict('admin.role', 'security.access_roles', [$role], $security['access_roles'], $explicit);
             $security['access_roles'] = [$role];
+        }
+        foreach ($security['access_roles'] as $role) {
+            if (self::isEnvPlaceholder($role)) {
+                throw new InvalidArgumentException('nowo_seo_kit.security.access_roles entries must be literal role names (no %env()% placeholder).');
+            }
         }
 
         $checker = $security['access_checker'];
@@ -402,6 +419,59 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         }
 
         return [$webUi, $security];
+    }
+
+    /**
+     * A deprecated `admin.*` key and its replacement both set explicitly with different values is a configuration
+     * error (a leftover legacy line must never weaken the migrated value silently).
+     *
+     * @param list<string> $explicit paths of the new keys set explicitly by the host (`web_ui.enabled`, …)
+     */
+    private static function assertNoLegacyConflict(string $legacyKey, string $newKey, mixed $legacyValue, mixed $newValue, array $explicit): void
+    {
+        if (in_array($newKey, $explicit, true) && $legacyValue !== $newValue) {
+            throw new InvalidArgumentException(sprintf('nowo_seo_kit.%s and its replacement nowo_seo_kit.%s are both set with different values; remove the deprecated admin.* key.', $legacyKey, $newKey));
+        }
+    }
+
+    /**
+     * Symfony env placeholder (`%env(X)%` seen at build time): `env_<16 hex>_<name>_<hash>`.
+     */
+    private static function isEnvPlaceholder(string $value): bool
+    {
+        return preg_match('/env_[0-9a-f]{16}_/', $value) === 1;
+    }
+
+    /**
+     * Paths of the `web_ui.*` / `security.access_roles` keys the host sets explicitly in any configuration file.
+     *
+     * @param array<int, mixed> $configs raw configurations
+     *
+     * @return list<string>
+     */
+    public static function explicitWebUiKeys(array $configs): array
+    {
+        $paths = [];
+        foreach ($configs as $raw) {
+            if (!is_array($raw)) {
+                continue;
+            }
+            foreach (is_array($raw['web_ui'] ?? null) ? $raw['web_ui'] : [] as $key => $value) {
+                if ($key === 'templates' && is_array($value)) {
+                    foreach (array_keys($value) as $page) {
+                        $paths[] = 'web_ui.templates.' . $page;
+                    }
+
+                    continue;
+                }
+                $paths[] = 'web_ui.' . $key;
+            }
+            if (is_array($raw['security'] ?? null) && array_key_exists('access_roles', $raw['security'])) {
+                $paths[] = 'security.access_roles';
+            }
+        }
+
+        return array_values(array_unique($paths));
     }
 
     /**
@@ -420,6 +490,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $areaNav->setArgument('$urlGenerator', new Reference('router'));
         $areaNav->setArgument('$settings', $webUi['settings']);
         $areaNav->setArgument('$surfaces', $webUi['surfaces']);
+        $areaNav->setArgument('$accessChecker', new Reference(SeoKitAccessCheckerInterface::class));
         $areaNav->addTag(AreaNavProviderInterface::TAG);
         $container->setDefinition(SeoKitAreaNav::class, $areaNav);
 

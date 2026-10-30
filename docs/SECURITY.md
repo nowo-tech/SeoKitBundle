@@ -100,11 +100,20 @@ Record confirmation in the release PR or tag notes.
 
 | Field | Value |
 |-------|--------|
-| Date | 2026-10-28 (supersedes 2026-07-29, Pass good) |
-| Method | Claude Code static security review of `main` `ba8f407` (v1.17.0 + 3); org record `BUNDLES_SECURITY_ANALYSIS.md` Appendix AR |
-| Grade | **Pass (conditional)** |
+| Date | 2026-10-30 (supersedes 2026-10-28 Pass conditional, Appendix AR) |
+| Method | Independent Claude Code security review with runtime PoC (micro-kernel: SecurityBundle HTTP basic, Doctrine SQLite, FormKit, UiKit) of `main` `d717c64` (1.19.0 candidate); org record `BUNDLES_SECURITY_ANALYSIS.md` Appendix BV |
+| Grade | **Pass (good)** |
 | Overall risk | **Low** |
 | Open Critical / High / Medium | None |
-| Findings | L1 absolute URLs from the request `Host` without `base_url`; L2 admin forms fail open when the host disables form CSRF; L3 stale supported versions; Info I1–I7 |
-| Remediation | 1.18.0: L1 (recipe `base_url: '%env(default::DEFAULT_URI)%'`, threat-model note), L2 (`CsrfProtectionPass`). Unreleased: L3 (`.github/SECURITY.md` 1.18.x), I1 (control characters in canonical / image URLs), I2 (image URL fields of the site settings), I3 (API locale / key length), I4 (secret-looking request attributes are not placeholders), I5 (single-encoded edit links), I6 (`security.access_roles` fail closed); I7 (sitemap chunking) stays on the roadmap |
-| Next | Independent re-audit of the admin UI rework (UiKit page contract, access checker) before the next release grade is recorded |
+| Findings | L1 deprecated `admin.role` accepted an `%env()%` placeholder (runtime `PUBLIC_ACCESS` past the build-time check); L2 deprecated `admin.*` keys silently overrode their replacements; Info I1–I11 |
+| Remediation (Unreleased) | L1: `%env()%` placeholders refused in `admin.role` and `security.access_roles`. L2: a deprecated key and its replacement set to different values is a configuration error. I1: documented (below). I2: placeholders = route parameters only (allowlist, internal `_*` and secret-looking names dropped). I3: a settings POST with missing fields is a validation error, not a 500. I5: `.` / `..` segments refused in `web_ui.path_prefix`. I6: the `seo_kit` area nav is empty (null) for users the access checker refuses. I10: `.github/SECURITY.md` lists 1.19.x. I11: an origin with a trailing slash matches its own URLs |
+| Residuals | I4 the deprecated `routes_admin.yaml` import still registers the 1.x paths and, imported after the loader, replaces the `path_prefix` routes by name (still gated; removed in 2.0 — see UPGRADING). I7 `allow_unauthenticated` works in any non-`prod` environment with `kernel.debug` (by design; do not run debug on a public host). I8 the sitemap has no 50 000 URL / 50 MB split and no application cache (every hit iterates the providers; roadmap). I9 `web_ui.api_csrf_protection: false` relies on the JSON content type (preflight) — keep CORS without credentials on `/_nowo/seo/` |
+| Advisory | None (operator configuration on a deprecated path, pre-existing) |
+
+### Roles that open the admin to every account
+
+`security.access_roles` grants any user with **one** of the listed attributes. `IS_AUTHENTICATED`,
+`IS_AUTHENTICATED_REMEMBERED`, `IS_AUTHENTICATED_FULLY` and `ROLE_USER` are accepted on purpose (small sites where every
+account edits SEO, or a firewall that only admins can log into), but they open the admin UI and the JSON API to **every
+logged-in user**, including remembered sessions. Use a dedicated role (`ROLE_ADMIN`, `ROLE_SEO`) or a custom
+`security.access_checker` otherwise. Anonymous attributes (`PUBLIC_ACCESS`, `IS_AUTHENTICATED_ANONYMOUSLY`) are refused.

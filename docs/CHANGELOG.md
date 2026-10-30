@@ -87,6 +87,19 @@ See [UPGRADING](UPGRADING.md#unreleased).
 
 ### Security
 
+- **Independent SEC-004 review (Appendix BV, Pass good / Low) fixes:**
+  - deprecated `admin.role` and `security.access_roles` refuse `%env()%` placeholders (a runtime `PUBLIC_ACCESS`
+    could pass the build-time check);
+  - a deprecated `admin.*` key and its replacement set to different values is a configuration error (a leftover
+    `admin.api_csrf_protection: false` / `admin.role` no longer silently weakens the migrated value);
+  - title / description placeholders: route parameters only (allowlist; `_*` and secret-looking names dropped), so
+    `{api_key}` / `{_firewall_context}` no longer print request attributes;
+  - a settings POST with missing fields is a validation error instead of a 500;
+  - `web_ui.path_prefix` refuses `.` / `..` segments;
+  - the `seo_kit` area nav returns nothing for users the access checker refuses;
+  - `OriginUrlGuard` accepts its own URLs when the origin has a trailing slash (`DEFAULT_URI` resolved at runtime);
+  - `.github/SECURITY.md` lists 1.19.x; `docs/SECURITY.md` records the grade, residuals and the "every account" roles.
+
 - **Admin access fails closed (REQ-UI-002):** an empty `security.access_roles` is refused while `web_ui.enabled`
   unless `security.access_checker` is set; `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` (also as `admin.role`)
   are refused; without SecurityBundle the container does not compile unless `allow_unauthenticated` is true
@@ -102,7 +115,6 @@ See [UPGRADING](UPGRADING.md#unreleased).
 - **JSON API:** locales that are not enabled and surface keys over 180 characters answer 404 (no 500).
 - **Title placeholders:** request attributes named like nonces, tokens, CSRF values, secrets or passwords are no longer
   offered as `{placeholder}` values.
-- `.github/SECURITY.md` lists 1.18.x; `docs/SECURITY.md` records the 2026-10-28 SEC-004 review and its remediation.
 
 ## [1.18.0] - 2026-10-28
 

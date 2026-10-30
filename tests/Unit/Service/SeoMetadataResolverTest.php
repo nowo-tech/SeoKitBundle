@@ -123,7 +123,7 @@ final class SeoMetadataResolverTest extends TestCase
             'slug_routes'    => [
                 'app_blog_show' => [
                     'slug_parameter' => 'slug',
-                    'title_template' => '{slug} {csp_nonce} {_csrf_token}',
+                    'title_template' => '{slug} {id} {csp_nonce} {_csrf_token} {api_key} {_firewall_context} {reset_token} {_locale}',
                     'path_pattern'   => '/blog/{slug}',
                 ],
             ],
@@ -134,12 +134,35 @@ final class SeoMetadataResolverTest extends TestCase
         $request->attributes->set('slug', 'hello');
         $request->attributes->set('csp_nonce', 'n0nce');
         $request->attributes->set('_csrf_token', 'S3CR3T');
+        $request->attributes->set('api_key', 'APIKEY123');
+        $request->attributes->set('_firewall_context', 'security.firewall.map.context.main');
+        $request->attributes->set('_route_params', ['slug' => 'hello', 'id' => 42, 'reset_token' => 'RST', '_locale' => 'en', 'filters' => ['a']]);
 
         $title = $this->createResolver($config, $request)->resolve()->title;
 
-        $this->assertStringContainsString('hello', $title);
-        $this->assertStringNotContainsString('n0nce', $title);
-        $this->assertStringNotContainsString('S3CR3T', $title);
+        // route parameters only (allowlist): {id} resolves, internal / secret-looking ones and other attributes do not
+        $this->assertStringContainsString('hello 42 ', $title);
+        foreach (['n0nce', 'S3CR3T', 'APIKEY123', 'security.firewall', 'RST', ' en'] as $leak) {
+            $this->assertStringNotContainsString($leak, $title);
+        }
+    }
+
+    public function testMalformedRouteParamsAreIgnored(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => ['title_template' => '{title}'],
+            'pages'          => ['app_page' => ['title' => 'Page {id}']],
+        ];
+
+        $request = Request::create('/page', 'GET');
+        $request->attributes->set('_route', 'app_page');
+        $request->attributes->set('_route_params', 'not-an-array');
+        $request->attributes->set('id', '7');
+
+        $this->assertSame('Page {id}', $this->createResolver($config, $request)->resolve()->title);
     }
 
     public function testResolveAppliesNoindexFromSlugConfig(): void

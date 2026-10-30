@@ -49,9 +49,11 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
 
         $this->withBuilder($builder, function () use ($locales): void {
             $this->addTextField('siteName', [
+                'setter'      => $this->setRequired(...),
                 'constraints' => [new NotBlank(), new Length(max: 120)],
             ]);
             $this->addTextField('titleTemplate', [
+                'setter'      => $this->setRequired(...),
                 'constraints' => [
                     new NotBlank(),
                     new Length(max: 120),
@@ -60,7 +62,9 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
             ]);
             $this->addCheckboxField('indexable', ['required' => false]);
             $this->addChoiceField('defaultRobots', [
-                'choices' => [
+                'setter'      => $this->setRequired(...),
+                'constraints' => [new NotBlank()],
+                'choices'     => [
                     'nowo_seo_kit.robots.index_follow'     => 'index, follow',
                     'nowo_seo_kit.robots.index_nofollow'   => 'index, nofollow',
                     'nowo_seo_kit.robots.noindex_follow'   => 'noindex, follow',
@@ -210,6 +214,25 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
                 ->setParameter('%placeholder%', SeoSiteSettings::TITLE_PLACEHOLDER)
                 ->addViolation();
         }
+    }
+
+    /**
+     * Setter of the required string fields (site name, title template, default robots): a missing or empty value is
+     * left out of the entity (non-nullable strings) and reported by the NotBlank constraint instead of a type error.
+     *
+     * @param FormInterface<mixed> $form
+     */
+    private function setRequired(mixed $settings, mixed $value, FormInterface $form): void
+    {
+        if (!$settings instanceof SeoSiteSettings || !is_string($value)) {
+            return;
+        }
+
+        match ($form->getName()) {
+            'siteName'      => $settings->setSiteName($value),
+            'titleTemplate' => $settings->setTitleTemplate($value),
+            default         => $settings->setDefaultRobots($value),
+        };
     }
 
     /**

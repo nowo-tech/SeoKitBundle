@@ -138,6 +138,10 @@ final class ConfigurationTest extends TestCase
     {
         yield 'path prefix without slash' => [['web_ui' => ['path_prefix' => 'admin/seo']]];
         yield 'path prefix with query' => [['web_ui' => ['path_prefix' => '/admin/seo?x=1']]];
+        yield 'path prefix dot-dot' => [['web_ui' => ['path_prefix' => '/..']]];
+        yield 'path prefix dot' => [['web_ui' => ['path_prefix' => '/.']]];
+        yield 'path prefix inner dot-dot' => [['web_ui' => ['path_prefix' => '/a/../b']]];
+        yield 'path prefix trailing dot' => [['web_ui' => ['path_prefix' => '/a/.']]];
         yield 'empty page template' => [['web_ui' => ['templates' => ['settings' => '']]]];
         yield 'public role' => [['security' => ['access_roles' => ['PUBLIC_ACCESS']]]];
         yield 'anonymous role' => [['security' => ['access_roles' => ['IS_AUTHENTICATED_ANONYMOUSLY']]]];
@@ -156,8 +160,10 @@ final class ConfigurationTest extends TestCase
 
     public function testValidPathPrefixIsKept(): void
     {
-        $config = $this->processor->processConfiguration(new Configuration(), [['web_ui' => ['path_prefix' => '/admin/seo-kit']]]);
+        foreach (['/admin/seo-kit', '/a.b/.well-known-seo', '/a/...'] as $prefix) {
+            $config = $this->processor->processConfiguration(new Configuration(), [['web_ui' => ['path_prefix' => $prefix]]]);
 
-        $this->assertSame('/admin/seo-kit', $config['web_ui']['path_prefix']);
+            $this->assertSame($prefix, $config['web_ui']['path_prefix']);
+        }
     }
 }

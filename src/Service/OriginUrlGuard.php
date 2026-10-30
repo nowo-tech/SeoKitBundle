@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Service;
 
+use function rtrim;
+
 /**
  * Validates that a stored URL stays on the configured site origin (or is site-relative).
  */
@@ -21,11 +23,13 @@ final readonly class OriginUrlGuard
 
     public function belongsToSite(string $url): bool
     {
-        if ($this->origin === null || $this->origin === '') {
+        // The origin may keep a trailing slash when it comes from an env var resolved at runtime (DEFAULT_URI).
+        $origin = $this->origin === null ? '' : rtrim($this->origin, '/');
+        if ($origin === '') {
             return str_starts_with($url, '/');
         }
 
-        return str_starts_with($url, $this->origin . '/') || $url === $this->origin;
+        return str_starts_with($url, $origin . '/') || $url === $origin;
     }
 
     /**

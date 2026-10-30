@@ -232,7 +232,7 @@ deprecated and ignores them).
 | `enabled` | `false` | Register the admin pages and the API (routes, controllers, forms, access checker) |
 | `settings` | `true` | Register the site settings page |
 | `surfaces` | `true` | Register the surfaces list + edit pages |
-| `path_prefix` | `null` | URL prefix of the admin pages: `<prefix>/settings`, `<prefix>/surfaces`, `<prefix>/surfaces/{locale}/edit/{surfaceKey}`. `null` keeps the 1.x paths `/settings/seo` and `/admin/seo/surfaces…` (the 2.0 default will be `/admin/seo`). Must start with `/`, URL path segments only. The API stays under `/_nowo/seo/surfaces`. |
+| `path_prefix` | `null` | URL prefix of the admin pages: `<prefix>/settings`, `<prefix>/surfaces`, `<prefix>/surfaces/{locale}/edit/{surfaceKey}`. `null` keeps the 1.x paths `/settings/seo` and `/admin/seo/surfaces…` (the 2.0 default will be `/admin/seo`). Must start with `/`, URL path segments only, no `.` / `..` segment. Do not also import the deprecated `routes_admin.yaml`: it re-registers the 1.x paths under the same route names. The API stays under `/_nowo/seo/surfaces`. |
 | `layout_template` | `null` | Layout the page scaffolds extend. `null` = the UiKit admin layout (`nowo_ui_kit.layouts.admin`). Set it to **your project layout** (or a one-file bridge) when it renders the UiKit canonical blocks; see [Host layout and CSS stack](#host-layout-and-css-stack). |
 | `templates.settings` | `@NowoSeoKitBundle/admin/settings.html.twig` | Per-page override (extend the bundle page, override a data block — [TEMPLATES.md](TEMPLATES.md#per-page-overrides)) |
 | `templates.surfaces_index` | `@NowoSeoKitBundle/admin/surfaces_index.html.twig` | idem |
@@ -309,7 +309,7 @@ reach the firewall entry point, authenticated users get 403).
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `access_roles` | `['ROLE_ADMIN']` | The user needs **at least one** of these roles (default checker `ConfigurableSeoKitAccessChecker`). `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` / blank entries are rejected. An empty list is refused while `web_ui.enabled` unless `access_checker` is set (the default checker would deny everybody: fail closed). |
+| `access_roles` | `['ROLE_ADMIN']` | The user needs **at least one** of these roles (default checker `ConfigurableSeoKitAccessChecker`). `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` / blank entries and `%env()%` placeholders are rejected. `IS_AUTHENTICATED*` / `ROLE_USER` are accepted but open the admin to **every logged-in user** ([SECURITY.md](SECURITY.md#roles-that-open-the-admin-to-every-account)). An empty list is refused while `web_ui.enabled` unless `access_checker` is set (the default checker would deny everybody: fail closed). |
 | `access_checker` | `null` | Service id implementing `SeoKitAccessCheckerInterface` (teams, voters, …). The interface is aliased to it. |
 | `allow_unauthenticated` | `false` | **DEV / DEMO only.** The admin UI and the API become public (`AllowAllSeoKitAccessChecker`) and SecurityBundle is not required. The container refuses to compile with `true` unless `kernel.debug` is true, and always in the `prod` environment (`WebUiSecurityPass`). Literal boolean only: an `%env()%` placeholder is refused (as for `web_ui.enabled` and `web_ui.api_csrf_protection`). |
 
@@ -340,8 +340,9 @@ security:
 
 ## admin (deprecated)
 
-The 1.x `admin` keys still work (each one maps onto its replacement; a legacy key that is set wins) and trigger a
-deprecation. They are removed in 2.0 — see [UPGRADING.md](UPGRADING.md#unreleased).
+The 1.x `admin` keys still work (each one maps onto its replacement) and trigger a deprecation. A legacy key and its
+replacement set to **different** values is a configuration error; `admin.role` must be a literal role (no
+`%env()%` placeholder). They are removed in 2.0 — see [UPGRADING.md](UPGRADING.md#unreleased).
 
 | Deprecated key | Replacement |
 | --- | --- |
