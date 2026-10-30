@@ -16,9 +16,13 @@ use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
+use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
+use Nowo\SeoKitBundle\Security\AllowAllSeoKitAccessChecker;
+use Nowo\SeoKitBundle\Security\ConfigurableSeoKitAccessChecker;
+use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
 use Nowo\SeoKitBundle\Service\ConfigPageHeadDefaultsProvider;
@@ -29,13 +33,21 @@ use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
+use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
+use Nowo\SeoKitBundle\Ui\SeoKitPages;
+use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\ArrayNode;
+use Symfony\Component\Config\Definition\BaseNode;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Reference;
+
+use function explode;
 
 final class SeoKitExtensionTest extends TestCase
 {
@@ -96,7 +108,7 @@ final class SeoKitExtensionTest extends TestCase
             'enabled'     => true,
             'base_url'    => 'https://nowo.tech',
             'persistence' => ['enabled' => true],
-            'admin'       => [
+            'web_ui'      => [
                 'enabled'     => true,
                 'settings'    => true,
                 'surfaces'    => true,
@@ -124,7 +136,7 @@ final class SeoKitExtensionTest extends TestCase
         $container = new ContainerBuilder();
         (new SeoKitExtension())->load([[
             'persistence' => ['enabled' => true],
-            'admin'       => ['enabled' => true, 'api_csrf_protection' => false],
+            'web_ui'      => ['enabled' => true, 'api_csrf_protection' => false],
         ]], $container);
 
         self::assertFalse($container->getDefinition(SeoSurfaceApiController::class)->getArgument('$csrfProtection'));
@@ -164,7 +176,7 @@ final class SeoKitExtensionTest extends TestCase
         (new SeoKitExtension())->load([[
             'enabled'     => true,
             'persistence' => ['enabled' => true],
-            'admin'       => [
+            'web_ui'      => [
                 'enabled'     => true,
                 'settings'    => false,
                 'surfaces'    => false,
@@ -183,7 +195,7 @@ final class SeoKitExtensionTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         (new SeoKitExtension())->load([[
             'enabled'     => true,
-            'admin'       => ['enabled' => true],
+            'web_ui'      => ['enabled' => true],
             'persistence' => ['enabled' => false],
         ]], new ContainerBuilder());
     }
@@ -307,5 +319,146 @@ final class SeoKitExtensionTest extends TestCase
         $configs = $container->getExtensionConfig('nowo_form_kit');
         self::assertCount(1, $configs);
         self::assertSame('custom', $configs[0]['profiles']['seo_kit']['alias']);
+    }
+
+    public function testPrependedFormKitProfileHasNoFrameworkClasses(): void
+    {
+        $container = new ContainerBuilder();
+        $container->registerExtension(new class extends Extension {
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getAlias(): string
+            {
+                return 'nowo_form_kit';
+            }
+        });
+
+        (new SeoKitExtension())->prepend($container);
+
+        $profile = $container->getExtensionConfig('nowo_form_kit')[0]['profiles']['seo_kit'];
+        self::assertSame(['attr' => [], 'row_attr' => []], $profile['defaults']);
+        self::assertTrue($profile['convention_requires_translation']);
+        self::assertArrayNotHasKey('field_types', $profile);
+    }
+
+    public function testWebUiDefaultsAndRoleCheckerWiring(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'web_ui'      => ['enabled' => true, 'path_prefix' => '/admin/seo', 'layout_template' => 'admin/layout.html.twig'],
+            'security'    => ['access_roles' => ['ROLE_SEO', 'ROLE_ADMIN']],
+        ]], $container);
+
+        $webUi = $container->getParameter(Configuration::ALIAS . '.web_ui');
+        self::assertIsArray($webUi);
+        self::assertTrue($webUi['enabled']);
+        self::assertSame(SeoKitPages::TEMPLATES, $webUi['templates']);
+        self::assertSame([SeoKitPages::DEFAULT_FORM_THEME], $webUi['form_themes']);
+        self::assertSame(['access_roles' => ['ROLE_SEO', 'ROLE_ADMIN'], 'access_checker' => null, 'allow_unauthenticated' => false], $container->getParameter(Configuration::ALIAS . '.security'));
+
+        self::assertSame(ConfigurableSeoKitAccessChecker::class, (string) $container->getAlias(SeoKitAccessCheckerInterface::class));
+        $checker = $container->getDefinition(ConfigurableSeoKitAccessChecker::class);
+        self::assertSame(['ROLE_SEO', 'ROLE_ADMIN'], $checker->getArgument('$accessRoles'));
+        self::assertSame('security.authorization_checker', (string) $checker->getArgument('$authorizationChecker'));
+
+        $pages = $container->getDefinition(SeoKitPages::class);
+        self::assertSame('admin/layout.html.twig', $pages->getArgument('$layoutTemplate'));
+        self::assertSame(SeoKitPages::TEMPLATES, $pages->getArgument('$templates'));
+        self::assertSame([AreaNavProviderInterface::TAG => [[]]], $container->getDefinition(SeoKitAreaNav::class)->getTags());
+        self::assertSame('/admin/seo', $container->getDefinition(SeoAdminRouteLoader::class)->getArgument('$pathPrefix'));
+        self::assertTrue($container->hasDefinition(SeoSurfaceLocaleFilterType::class));
+        self::assertSame(['en', 'es', 'fr', 'de', 'it', 'pt', 'nl'], $container->getDefinition(SeoSurfaceApiController::class)->getArgument('$locales'));
+    }
+
+    public function testCustomAccessCheckerAndAllowUnauthenticated(): void
+    {
+        $custom = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'web_ui'      => ['enabled' => true],
+            'security'    => ['access_roles' => [], 'access_checker' => 'app.seo_access'],
+        ]], $custom);
+        self::assertSame('app.seo_access', (string) $custom->getAlias(SeoKitAccessCheckerInterface::class));
+        self::assertFalse($custom->hasDefinition(ConfigurableSeoKitAccessChecker::class));
+
+        $demo = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'web_ui'      => ['enabled' => true],
+            'security'    => ['access_roles' => [], 'allow_unauthenticated' => true],
+        ]], $demo);
+        self::assertSame(AllowAllSeoKitAccessChecker::class, (string) $demo->getAlias(SeoKitAccessCheckerInterface::class));
+    }
+
+    public function testEmptyAccessRolesWithoutCheckerFailClosed(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('security.access_roles is empty');
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'web_ui'      => ['enabled' => true],
+            'security'    => ['access_roles' => []],
+        ]], new ContainerBuilder());
+    }
+
+    public function testEmptyAccessRolesAreAcceptedWhileTheWebUiIsDisabled(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([['security' => ['access_roles' => []]]], $container);
+
+        self::assertFalse($container->hasAlias(SeoKitAccessCheckerInterface::class));
+    }
+
+    public function testLegacyAdminKeysMapOntoWebUiAndSecurity(): void
+    {
+        [$webUi, $security] = SeoKitExtension::resolveWebUi((new Processor())->processConfiguration(new Configuration(), [[
+            'admin' => [
+                'enabled'                 => true,
+                'settings'                => false,
+                'surfaces'                => true,
+                'role'                    => 'ROLE_SEO',
+                'settings_template'       => 'a.html.twig',
+                'surfaces_index_template' => 'b.html.twig',
+                'surfaces_form_template'  => 'c.html.twig',
+                'api_enabled'             => false,
+                'api_csrf_protection'     => false,
+            ],
+        ]]));
+
+        self::assertTrue($webUi['enabled']);
+        self::assertFalse($webUi['settings']);
+        self::assertTrue($webUi['surfaces']);
+        self::assertFalse($webUi['api_enabled']);
+        self::assertFalse($webUi['api_csrf_protection']);
+        self::assertSame(['settings' => 'a.html.twig', 'surfaces_index' => 'b.html.twig', 'surfaces_form' => 'c.html.twig'], $webUi['templates']);
+        self::assertSame(['ROLE_SEO'], $security['access_roles']);
+    }
+
+    public function testLegacyAdminKeysAreDeprecated(): void
+    {
+        $tree = (new Configuration())->getConfigTreeBuilder()->buildTree();
+        self::assertInstanceOf(ArrayNode::class, $tree);
+        $admin = $tree->getChildren()['admin'];
+        self::assertInstanceOf(ArrayNode::class, $admin);
+        foreach ($admin->getChildren() as $name => $node) {
+            self::assertInstanceOf(BaseNode::class, $node);
+            self::assertTrue($node->isDeprecated(), $name);
+            self::assertStringContainsString('UPGRADING', $node->getDeprecation($name, 'nowo_seo_kit.admin')['message']);
+        }
+        $role = $admin->getChildren()['role'];
+        self::assertInstanceOf(BaseNode::class, $role);
+        self::assertSame('nowo_seo_kit.security.access_roles', explode('"', $role->getDeprecation('role', 'nowo_seo_kit.admin')['message'])[3]);
+    }
+
+    public function testLegacyPublicRoleIsRefused(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('would open the admin UI to everybody');
+        SeoKitExtension::resolveWebUi((new Processor())->processConfiguration(new Configuration(), [[
+            'admin' => ['enabled' => true, 'role' => 'PUBLIC_ACCESS'],
+        ]]));
     }
 }

@@ -6,6 +6,7 @@ namespace Nowo\SeoKitBundle\Form;
 
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Model\SeoSiteConfig;
+use Nowo\SeoKitBundle\Service\OriginUrlGuard;
 use Override;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
@@ -32,6 +33,14 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
 {
     /** @var list<string> */
     private const LOCALISED_FIELDS = ['defaultTitle', 'homeTitle', 'defaultDescription', 'organisationDescription'];
+
+    /** Translation key segment of each localised field (`nowo_seo_site.<segment>.label`, parameter %locale%). */
+    private const LOCALISED_LABELS = [
+        'defaultTitle'            => 'default_title',
+        'homeTitle'               => 'home_title',
+        'defaultDescription'      => 'default_description',
+        'organisationDescription' => 'organisation_description',
+    ];
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -60,14 +69,14 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
             ]);
             $this->addTextField('defaultOpenGraphImage', [
                 'required'    => false,
-                'constraints' => [new Length(max: 500)],
+                'constraints' => [new Length(max: 500), new Callback($this->validateImageUrl(...))],
             ]);
             $this->addTextField('twitterSite', [
                 'required'    => false,
                 'constraints' => [new Length(max: 64)],
             ]);
             $this->addTextField('organisationLegalName', ['required' => false, 'constraints' => [new Length(max: 180)]]);
-            $this->addTextField('organisationLogo', ['required' => false, 'constraints' => [new Length(max: 500)]]);
+            $this->addTextField('organisationLogo', ['required' => false, 'constraints' => [new Length(max: 500), new Callback($this->validateImageUrl(...))]]);
             $this->addEmailField('contactEmail', ['required' => false, 'constraints' => [new Email(), new Length(max: 180)]]);
             $this->addTextField('contactPhone', ['required' => false, 'constraints' => [new Length(max: 40)]]);
             $this->addTextField('streetAddress', ['required' => false, 'constraints' => [new Length(max: 180)]]);
@@ -86,14 +95,19 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
             foreach ($locales as $locale) {
                 foreach (self::LOCALISED_FIELDS as $field) {
                     $isLong = in_array($field, ['defaultDescription', 'organisationDescription'], true);
+                    // One label per field for every locale (`nowo_seo_site.<field>.label` with %locale%).
+                    $label = [
+                        'label'                        => 'nowo_seo_site.' . self::LOCALISED_LABELS[$field] . '.label',
+                        'label_translation_parameters' => ['%locale%' => $locale],
+                    ];
                     if ($isLong) {
-                        $this->addTextareaField($field . '_' . $locale, [
+                        $this->addTextareaField($field . '_' . $locale, $label + [
                             'mapped'      => false,
                             'required'    => false,
                             'constraints' => [new Length(max: 320)],
                         ]);
                     } else {
-                        $this->addTextField($field . '_' . $locale, [
+                        $this->addTextField($field . '_' . $locale, $label + [
                             'mapped'      => false,
                             'required'    => false,
                             'constraints' => [new Length(max: 255)],
@@ -194,6 +208,19 @@ final class SeoSiteSettingsType extends AbstractSeoFormType
             $context->buildViolation('nowo_seo_kit.title_template.missing_placeholder')
                 ->setTranslationDomain('NowoSeoKitBundle')
                 ->setParameter('%placeholder%', SeoSiteSettings::TITLE_PLACEHOLDER)
+                ->addViolation();
+        }
+    }
+
+    /**
+     * Default Open Graph image / organisation logo: a site path or an https URL (no javascript:, data:, http:,
+     * protocol-relative or control-character tricks).
+     */
+    private function validateImageUrl(mixed $value, ExecutionContextInterface $context): void
+    {
+        if (!(new OriginUrlGuard())->isSafeOpenGraphImage(is_string($value) ? $value : null)) {
+            $context->buildViolation('nowo_seo_kit.site_settings.image_url.invalid')
+                ->setTranslationDomain('NowoSeoKitBundle')
                 ->addViolation();
         }
     }

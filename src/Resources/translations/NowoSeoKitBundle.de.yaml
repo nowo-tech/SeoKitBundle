@@ -12,6 +12,7 @@ nowo_seo_kit:
         save: 'Speichern'
         edit: 'Bearbeiten'
         back: 'Zurück'
+        area_nav: 'SEO-Verwaltung'
         settings:
             title: 'SEO-Einstellungen'
             intro: 'Websiteweite Standardwerte, die jede Seite erbt, sowie die Organisation hinter dem Knowledge Graph.'
@@ -25,11 +26,27 @@ nowo_seo_kit:
             site_noindex: 'Die gesamte Website ist noindex; Warnungen vom Typ published_but_noindex werden unterdrückt.'
             empty: 'Für diese Sprache sind keine Audit-Objekte registriert.'
             edit_title: 'SEO bearbeiten — %surface%'
+            edit_intro: 'Sprache %locale%. Leere Felder übernehmen die Website-Standards.'
+            empty_title: 'Keine Oberflächen'
+            caption: 'Oberflächen (%locale%)'
+            locale: 'Sprache'
+            override: 'Angepasst'
+            no_problems: 'OK'
             column:
                 surface: 'Seite'
                 path: 'Pfad'
                 title: 'Titel'
                 problems: 'Probleme'
+                actions: 'Aktionen'
+            problem:
+                missing_title: 'Titel fehlt'
+                long_title: 'Titel zu lang'
+                missing_description: 'Beschreibung fehlt'
+                long_description: 'Beschreibung zu lang'
+                short_description: 'Beschreibung zu kurz'
+                published_but_noindex: 'Veröffentlicht, aber noindex'
+                duplicate_title: 'Doppelter Titel'
+                duplicate_description: 'Doppelte Beschreibung'
     flash:
         settings_saved: 'SEO-Einstellungen gespeichert.'
         surface_saved: 'Seiten-SEO gespeichert.'
@@ -42,6 +59,9 @@ nowo_seo_kit:
         missing_placeholder: 'Die Titelvorlage muss %placeholder% enthalten.'
     social_profiles:
         invalid: '„%url%“ muss eine absolute http(s)-URL sein.'
+    site_settings:
+        image_url:
+            invalid: 'Verwenden Sie einen Website-Pfad (/bild.png) oder eine https-URL.'
     surface:
         robots:
             inherit: 'Erben'
@@ -98,22 +118,14 @@ nowo_seo_site:
         label: 'Google-Website-Verifizierung'
     bing_site_verification:
         label: 'Bing-Website-Verifizierung'
-    default_title_en:
-        label: 'Standardtitel (en)'
-    home_title_en:
-        label: 'Titel der Startseite (en)'
-    default_description_en:
-        label: 'Standardbeschreibung (en)'
-    organisation_description_en:
-        label: 'Beschreibung der Organisation (en)'
-    default_title_es:
-        label: 'Standardtitel (es)'
-    home_title_es:
-        label: 'Titel der Startseite (es)'
-    default_description_es:
-        label: 'Standardbeschreibung (es)'
-    organisation_description_es:
-        label: 'Beschreibung der Organisation (es)'
+    default_title:
+        label: 'Standardtitel (%locale%)'
+    home_title:
+        label: 'Titel der Startseite (%locale%)'
+    default_description:
+        label: 'Standardbeschreibung (%locale%)'
+    organisation_description:
+        label: 'Beschreibung der Organisation (%locale%)'
 
 nowo_seo_surface:
     meta_title:

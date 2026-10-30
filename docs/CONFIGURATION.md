@@ -17,7 +17,11 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 - [page_head](#page_head)
 - [persistence](#persistence)
 - [doctrine](#doctrine)
-- [admin](#admin)
+- [web_ui](#web_ui)
+  - [Host layout and CSS stack](#host-layout-and-css-stack)
+- [security](#security)
+  - [Host access_control](#host-access_control)
+- [admin (deprecated)](#admin-deprecated)
 - [Web servers](#web-servers)
 
 ## Resolution order
@@ -40,7 +44,7 @@ Later layers override earlier ones:
 | `indexable` | `true` | When false (or a `SiteIndexabilityProviderInterface` returns false), robots disallow `/` and sitemap is empty/404. Page meta robots is forced to `noindex,nofollow` (overriding any `robots` set by defaults, pages, slugs or providers) unless it already contains `noindex`. |
 | `default_locale` | `en` | Fallback locale |
 | `locales` | `en, es, fr, de, it, pt, nl` | Locales for hreflang and sitemap |
-| `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests). Also switches on `AbsoluteUrlBuilder` and the PageHead pipeline (see [page_head](#page_head)); set it whenever `persistence` / `admin` are enabled (see [persistence](#persistence)). |
+| `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests). Also switches on `AbsoluteUrlBuilder` and the PageHead pipeline (see [page_head](#page_head)); set it whenever `persistence` / `web_ui` are enabled (see [persistence](#persistence)). |
 
 ## Host extension points
 
@@ -214,19 +218,142 @@ Changing the prefix renames the tables: generate a Doctrine migration (`doctrine
 
 Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
 
-## admin
+## web_ui
 
-Requires `persistence.enabled: true` (and, in practice, `base_url` — see [persistence](#persistence)). Import routes with `type: nowo_seo_kit_admin`; only that loader honours the `enabled` / `settings` / `surfaces` / `api_enabled` toggles below. The legacy `@NowoSeoKitBundle/Resources/config/routes_admin.yaml` file is deprecated and ignores them.
+Admin UI (site settings, surfaces list + edit) and the JSON pencil API, on the **UiKit page contract** (REQ-UI-001 /
+REQ-UI-003). Requires `persistence.enabled: true` (and, in practice, `base_url` — see [persistence](#persistence)),
+`nowo-tech/ui-kit-bundle` and `nowo-tech/form-kit-bundle` (both required by the package; register their bundles), and
+Symfony Security unless `security.allow_unauthenticated` is true. Import the routes with `type: nowo_seo_kit_admin`;
+only that loader honours the toggles below (the legacy `@NowoSeoKitBundle/Resources/config/routes_admin.yaml` file is
+deprecated and ignores them).
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `enabled` | `false` | Master switch for admin + API loaders |
-| `settings` | `true` | Register `/settings/seo` |
-| `surfaces` | `true` | Register `/admin/seo/surfaces` |
-| `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. `POST` only accepts a JSON object with `Content-Type: application/json` (415 otherwise). |
+| `enabled` | `false` | Register the admin pages and the API (routes, controllers, forms, access checker) |
+| `settings` | `true` | Register the site settings page |
+| `surfaces` | `true` | Register the surfaces list + edit pages |
+| `path_prefix` | `null` | URL prefix of the admin pages: `<prefix>/settings`, `<prefix>/surfaces`, `<prefix>/surfaces/{locale}/edit/{surfaceKey}`. `null` keeps the 1.x paths `/settings/seo` and `/admin/seo/surfaces…` (the 2.0 default will be `/admin/seo`). Must start with `/`, URL path segments only. The API stays under `/_nowo/seo/surfaces`. |
+| `layout_template` | `null` | Layout the page scaffolds extend. `null` = the UiKit admin layout (`nowo_ui_kit.layouts.admin`). Set it to **your project layout** (or a one-file bridge) when it renders the UiKit canonical blocks; see [Host layout and CSS stack](#host-layout-and-css-stack). |
+| `templates.settings` | `@NowoSeoKitBundle/admin/settings.html.twig` | Per-page override (extend the bundle page, override a data block — [TEMPLATES.md](TEMPLATES.md#per-page-overrides)) |
+| `templates.surfaces_index` | `@NowoSeoKitBundle/admin/surfaces_index.html.twig` | idem |
+| `templates.surfaces_form` | `@NowoSeoKitBundle/admin/surfaces_form.html.twig` | idem |
+| `form_themes` | `['@NowoUiKit/form/nowo_ui_layout.html.twig']` | Form themes applied to the admin forms (the UiKit form layout reads the theme slots, so it follows `nowo_ui_kit.css_framework`) |
+| `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. `POST` only accepts a JSON object with `Content-Type: application/json` (415 otherwise). Locales that are not enabled and keys longer than 180 characters answer 404. |
 | `api_csrf_protection` | `true` | `POST` also requires an `X-CSRF-Token` header (token id `nowo_seo_kit_surface_api`, returned as `csrf_token` by `GET`); missing/invalid token or no CSRF manager → 403. Set `false` only behind a Bearer / API-token firewall without session cookies. |
-| `role` | `ROLE_ADMIN` | Access control |
-| `settings_template` / `surfaces_*_template` | kit defaults | Override with host Twig paths |
+
+The container refuses to compile with `web_ui.enabled` when form CSRF is off or missing (`CsrfProtectionPass`) and,
+unless `security.allow_unauthenticated` is true, without SecurityBundle (`WebUiSecurityPass`).
+
+### Host layout and CSS stack
+
+The pages extend the UiKit scaffolds (`@NowoUiKit/page/form.html.twig`, `@NowoUiKit/page/list.html.twig`); chrome,
+CSS framework, icons, row-action display and design tokens come from **UiKit**, configured once for every Nowo bundle:
+
+```yaml
+# config/packages/nowo_ui_kit.yaml — once per application
+nowo_ui_kit:
+    css_framework: bootstrap5     # bootstrap (= bootstrap5) | bootstrap4 | tailwind | foundation | tabler | custom | none
+    icon_set: bootstrap-icons
+    row_actions_display: icon     # icon | text | icon_text
+    layouts:
+        admin: 'admin/layout.html.twig'   # your layout or a one-file bridge (default @NowoUiKit/layout/admin.html.twig)
+```
+
+| Host stack | `nowo_ui_kit.css_framework` | Notes |
+| --- | --- | --- |
+| Bootstrap 5 (or Tabler) | `bootstrap5` / `tabler` | Theme slots add Bootstrap classes (`btn btn-primary`, `table`, `form-control`); load Bootstrap in your layout |
+| Tailwind | `tailwind` | Theme slots add Tailwind utilities; include the UiKit templates in your Tailwind `content` globs |
+| Foundation | `foundation` | Foundation classes through the slots |
+| Own styles | `custom` | Only the semantic `nowo-ui-*` classes; style them (or remap the `--nowo-ui-*` tokens) in your CSS |
+
+Use `nowo_seo_kit.web_ui.layout_template` only when the SEO pages need a different layout than the rest of your
+admin. A layout must render the UiKit canonical blocks (`nowo_ui_document_title`, `nowo_ui_head`, `nowo_ui_styles`,
+`nowo_ui_page_header`, `nowo_ui_flashes`, `nowo_ui_content`, `nowo_ui_modals`, `nowo_ui_scripts`); a project layout
+with other block names takes a one-file bridge:
+
+```twig
+{# templates/admin/seo_bridge.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}{% block nowo_ui_document_title %}{% endblock %}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/nowo-ui.css', 'nowo_ui_kit') }}">
+    {% block nowo_ui_head %}{% endblock %}
+    {% block nowo_ui_styles %}{% endblock %}
+{% endblock %}
+
+{% block body %}
+    {% block nowo_ui_page_header %}{% endblock %}
+    {% block nowo_ui_flashes %}{{ include(nowo_ui_partial('flashes')) }}{% endblock %}
+    {% block nowo_ui_content %}{% endblock %}
+    {% block nowo_ui_modals %}{% endblock %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% block nowo_ui_scripts %}{{ include(nowo_ui_partial('scripts')) }}{% endblock %}
+{% endblock %}
+```
+
+The bundle ships no CSS and no JavaScript of its own: the stylesheet and the runtimes (`nowo-ui-tabs.js` for the
+locale tabs, …) come from the UiKit asset package `nowo_ui_kit` (`assets:install`). The pages have no modals and no
+delete action (an empty override form clears the stored row), so no confirm dialog is involved.
+
+## security
+
+Access to the admin pages and the JSON API (REQ-UI-002). Every action goes through
+`Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface`; a refusal is an `AccessDeniedException` (anonymous users
+reach the firewall entry point, authenticated users get 403).
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `access_roles` | `['ROLE_ADMIN']` | The user needs **at least one** of these roles (default checker `ConfigurableSeoKitAccessChecker`). `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` / blank entries are rejected. An empty list is refused while `web_ui.enabled` unless `access_checker` is set (the default checker would deny everybody: fail closed). |
+| `access_checker` | `null` | Service id implementing `SeoKitAccessCheckerInterface` (teams, voters, …). The interface is aliased to it. |
+| `allow_unauthenticated` | `false` | **DEV / DEMO only.** The admin UI and the API become public (`AllowAllSeoKitAccessChecker`) and SecurityBundle is not required. Never in production. |
+
+```yaml
+nowo_seo_kit:
+    persistence:
+        enabled: true
+    web_ui:
+        enabled: true
+        path_prefix: /admin/seo
+    security:
+        access_roles: [ROLE_ADMIN, ROLE_SEO]
+        # access_checker: App\Security\SeoAccessChecker
+        allow_unauthenticated: false
+```
+
+### Host access_control
+
+Keep the firewall in front of the admin paths too (defense in depth):
+
+```yaml
+# config/packages/security.yaml (host application)
+security:
+    access_control:
+        - { path: ^/admin/seo, roles: ROLE_ADMIN }       # web_ui.path_prefix (1.x paths: ^/settings/seo and ^/admin/seo/surfaces)
+        - { path: ^/_nowo/seo/, roles: ROLE_ADMIN }      # JSON pencil API
+```
+
+## admin (deprecated)
+
+The 1.x `admin` keys still work (each one maps onto its replacement; a legacy key that is set wins) and trigger a
+deprecation. They are removed in 2.0 — see [UPGRADING.md](UPGRADING.md#unreleased).
+
+| Deprecated key | Replacement |
+| --- | --- |
+| `admin.enabled` | `web_ui.enabled` |
+| `admin.settings` | `web_ui.settings` |
+| `admin.surfaces` | `web_ui.surfaces` |
+| `admin.role` (scalar) | `security.access_roles` (list; `PUBLIC_ACCESS` is refused) |
+| `admin.settings_template` | `web_ui.templates.settings` |
+| `admin.surfaces_index_template` | `web_ui.templates.surfaces_index` |
+| `admin.surfaces_form_template` | `web_ui.templates.surfaces_form` |
+| `admin.api_enabled` | `web_ui.api_enabled` |
+| `admin.api_csrf_protection` | `web_ui.api_csrf_protection` |
 
 ## Web servers
 

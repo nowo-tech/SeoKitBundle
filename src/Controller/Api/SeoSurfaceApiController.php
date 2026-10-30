@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Controller\Api;
 
+use Nowo\SeoKitBundle\Controller\Admin\SeoKitAdminAccessTrait;
+use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
 use Nowo\SeoKitBundle\Form\SeoSurfaceType;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
+use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,34 +18,46 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
+use function array_map;
+use function in_array;
 use function is_array;
 use function is_string;
+use function mb_strlen;
+use function strtolower;
 
 /**
  * JSON API for editor pencils: load/save one surface override without a full admin page.
  *
- * Writes require the admin role, a JSON body and (unless `admin.api_csrf_protection` is false) a CSRF token in the
+ * Every action requires the admin access checker (REQ-UI-002); unknown locales and over-long surface keys answer 404.
+ * Writes require a JSON body and (unless `admin.api_csrf_protection` is false) a CSRF token in the
  * `X-CSRF-Token` header; `GET` returns that token as `csrf_token`. CSRF is fail-closed: without a token manager every
  * `POST` is refused (REQ-SEC-005).
  */
 final class SeoSurfaceApiController extends AbstractController
 {
+    use SeoKitAdminAccessTrait;
+
     public const CSRF_TOKEN_ID = 'nowo_seo_kit_surface_api';
     public const CSRF_HEADER   = 'X-CSRF-Token';
 
+    /**
+     * @param list<string> $locales enabled locales (`nowo_seo_kit.locales`)
+     */
     public function __construct(
         private readonly SeoSurfaceRepository $surfaces,
-        private readonly string $role = 'ROLE_ADMIN',
+        SeoKitAccessCheckerInterface $accessChecker,
         private readonly ?CsrfTokenManagerInterface $csrfTokenManager = null,
         private readonly bool $csrfProtection = true,
+        private readonly array $locales = ['en'],
     ) {
+        $this->accessChecker = $accessChecker;
     }
 
     #[Route('/_nowo/seo/surfaces/{surfaceKey}/{locale}', name: 'nowo_seo_kit_api_surface_get', requirements: ['surfaceKey' => '.+', 'locale' => '[a-z]{2}'], methods: ['GET'])]
     public function get(string $surfaceKey, string $locale): JsonResponse
     {
-        $this->denyAccessUnlessGranted($this->role);
-        $surfaceKey = rawurldecode($surfaceKey);
+        $this->denyUnlessAdmin();
+        $surfaceKey = $this->surfaceKey($surfaceKey, $locale);
         $surface    = $this->surfaces->findOneByKeyAndLocale($surfaceKey, $locale);
 
         return $this->json([
@@ -60,7 +75,8 @@ final class SeoSurfaceApiController extends AbstractController
     #[Route('/_nowo/seo/surfaces/{surfaceKey}/{locale}', name: 'nowo_seo_kit_api_surface_post', requirements: ['surfaceKey' => '.+', 'locale' => '[a-z]{2}'], methods: ['POST'])]
     public function post(string $surfaceKey, string $locale, Request $request): JsonResponse
     {
-        $this->denyAccessUnlessGranted($this->role);
+        $this->denyUnlessAdmin();
+        $surfaceKey = $this->surfaceKey($surfaceKey, $locale);
 
         // JSON only: a cross-site HTML form cannot send application/json without a CORS preflight.
         if ($request->getContentTypeFormat() !== 'json') {
@@ -77,8 +93,7 @@ final class SeoSurfaceApiController extends AbstractController
             return $this->json(['ok' => false, 'errors' => ['Request body must be a JSON object.']], Response::HTTP_BAD_REQUEST);
         }
 
-        $surfaceKey = rawurldecode($surfaceKey);
-        $surface    = $this->surfaces->findOneByKeyAndLocale($surfaceKey, $locale) ?? (new SeoSurface())
+        $surface = $this->surfaces->findOneByKeyAndLocale($surfaceKey, $locale) ?? (new SeoSurface())
             ->setSurfaceKey($surfaceKey)
             ->setLocale($locale);
 
@@ -113,6 +128,22 @@ final class SeoSurfaceApiController extends AbstractController
         $this->surfaces->save($surface);
 
         return $this->json(['ok' => true, 'cleared' => false, 'id' => $surface->getId()]);
+    }
+
+    /**
+     * Decoded surface key; 404 for a locale that is not enabled or a key longer than the column.
+     */
+    private function surfaceKey(string $surfaceKey, string $locale): string
+    {
+        $surfaceKey = rawurldecode($surfaceKey);
+        if (!in_array(strtolower($locale), array_map(strtolower(...), $this->locales), true)) {
+            throw $this->createNotFoundException('Locale is not enabled.');
+        }
+        if (mb_strlen($surfaceKey) > SeoSurfaceController::MAX_SURFACE_KEY_LENGTH) {
+            throw $this->createNotFoundException('Surface key is too long.');
+        }
+
+        return $surfaceKey;
     }
 
     private function isCsrfHeaderValid(Request $request): bool

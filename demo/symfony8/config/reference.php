@@ -953,6 +953,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         tokens_dark?: array<string, mixed>,
  *         confirm_message_in_header?: bool|Param, // Confirm dialogs and the full-page confirm render the message inside the header, under the title (hosts whose dialog header is title + message). View\Confirm::messageInHeader wins when set. // Default: false
  *         popover_menus?: bool|Param, // 2.4: menu / kebab / row-action menus render their panel as a native [popover] (browser top layer: never clipped by table scrollers or cards; nowo-ui-popover.js places it). The partial option `popover` wins. // Default: false
+ *         form_errors_after_widget?: bool|Param, // 2.10: the UiKit form theme (form/nowo_ui_layout.html.twig) prints a field's errors after its widget (and before the help), instead of Symfony's order (label, errors, widget, help). // Default: false
  *         bundles?: array<string, array{ // Default: []
  *             framework_defaults?: bool|Param, // Override of theme.framework_defaults for this bundle (unset = inherit).
  *             classes?: array<string, mixed>,
@@ -972,6 +973,35 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             attributes?: array<string, array<string, mixed>>,
  *             header_actions_in_filters?: bool|Param, // list only: render the page-header actions at the end of the filter row instead of the page header (ListPage::headerActionsInFilters wins when set; unset = false).
  *         }>,
+ *     },
+ *     error_pages?: array{ // Kit error pages (2.6): templates/bundles/TwigBundle/Exception/error.html.twig = {% extends '@NowoUiKit/error/status.html.twig' %}.
+ *         layout_template?: scalar|Param|null, // Document the status template extends: the kit layout, or a host template extending it (own <head> assets, brand, chat dock…). // Default: "@NowoUiKit/error/layout.html.twig"
+ *         translation_domain?: scalar|Param|null, // Domain of the page texts (e.g. messages). Keys missing there fall back to UiKit's own NowoUiKitBundle error.* texts. // Default: "NowoUiKitBundle"
+ *         translation_prefix?: scalar|Param|null, // Key prefix: <prefix>.<code>.title|lead|hint|image_alt, <prefix>.generic.*, <prefix>.home|retry|back|retry_after|auto_retry|skip_to_content. // Default: "error"
+ *         home_path?: scalar|Param|null, // Href of the "Back to home" button. // Default: "/"
+ *         illustrations?: array<string, Param|string|array{ // Default: []
+ *             path?: scalar|Param|null,
+ *             width?: int|Param, // Default: null
+ *             height?: int|Param, // Default: null
+ *             webp?: bool|Param|null, // Default: null
+ *             extension?: scalar|Param|null, // Default: null
+ *         }>,
+ *         illustration_width?: int|Param, // Default intrinsic width of the illustrations. // Default: 1024
+ *         illustration_height?: int|Param, // Default intrinsic height of the illustrations. // Default: 683
+ *         webp?: bool|Param, // Illustrations ship a .webp next to the fallback image (<source type="image/webp">). // Default: true
+ *         retry_statuses?: list<int|Param>,
+ *         back_link_statuses?: list<int|Param>,
+ *         auto_retry_seconds?: int|Param, // A 5xx on GET reloads itself after this many seconds (REQ-ERROR-001 item 10; 0 = never). Never on POST. // Default: 600
+ *         theme_storage?: scalar|Param|null, // localStorage key of the theme (data-nowo-ui-theme-storage on <html> and the toggle), e.g. the host's beacon-theme. // Default: "nowo-ui-theme"
+ *         theme_toggle?: bool|Param, // Render the light / dark toggle in the top controls. // Default: true
+ *         html_attributes?: array<string, mixed>,
+ *     },
+ *     shell?: array{ // Signed-in app shell (2.6, @NowoUiKit/shell/_open|_close|_shell|_burger.html.twig; Twig global nowo_ui_kit_shell).
+ *         kit_styles?: bool|Param, // Add the kit shell classes (nowo-ui-shell, nowo-ui-header, nowo-ui-aside…) painted by nowo-ui.css and driven by nowo-ui-shell.js. false: only the app_* slot classes (host shell CSS / JS). // Default: true
+ *         sidebar_cookie?: scalar|Param|null, // Cookie holding the desktop aside mode (e.g. beacon_sidebar), read server-side so the first paint is already collapsed / rail; null = expanded unless the template passes collapsed. // Default: null
+ *         sidebar_hidden_value?: scalar|Param|null, // Cookie value of the hidden aside. // Default: "collapsed"
+ *         sidebar_rail_value?: scalar|Param|null, // Cookie value of the icons-only rail. // Default: "rail"
+ *         sidebar_storage?: scalar|Param|null, // localStorage key of the aside mode (data-nowo-ui-sidebar-storage on the shell root; kit_styles + rail only). // Default: null
  *     },
  * }
  * @psalm-type NowoSeoKitConfig = array{
@@ -1151,16 +1181,36 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     doctrine?: array{ // Doctrine options for the bundle-owned entities (persistence.enabled).
  *         table_prefix?: scalar|Param|null, // Prepended to every SeoKit table and named unique constraint (REQ-ORM-002), e.g. "app_" yields app_nowo_seo_surface. Empty = unchanged. // Default: ""
  *     },
- *     admin?: array{ // Optional admin UI + JSON API for site settings and surface overrides (requires persistence.enabled).
- *         enabled?: bool|Param, // Default: false
- *         settings?: bool|Param, // Register /settings/seo site settings controller. // Default: true
- *         surfaces?: bool|Param, // Register /admin/seo/surfaces list + edit. // Default: true
- *         role?: scalar|Param|null, // Default: "ROLE_ADMIN"
- *         settings_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/settings.html.twig"
- *         surfaces_index_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_index.html.twig"
- *         surfaces_form_template?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_form.html.twig"
- *         api_enabled?: bool|Param, // Register JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}. // Default: true
+ *     web_ui?: array{ // Optional admin UI + JSON API for site settings and surface overrides (requires persistence.enabled). UiKit page contract (REQ-UI-001 / REQ-UI-003).
+ *         enabled?: bool|Param, // Register the admin pages and the JSON API (routes from the nowo_seo_kit_admin loader). // Default: false
+ *         settings?: bool|Param, // Register the site settings page. // Default: true
+ *         surfaces?: bool|Param, // Register the surfaces list + edit pages. // Default: true
+ *         path_prefix?: scalar|Param|null, // URL prefix of the admin pages: <prefix>/settings, <prefix>/surfaces. Null (default) keeps the 1.x paths /settings/seo and /admin/seo/surfaces. The JSON API stays under /_nowo/seo/surfaces. // Default: null
+ *         layout_template?: scalar|Param|null, // Layout the page scaffolds extend. Null (default) = the UiKit admin layout (nowo_ui_kit.layouts.admin). A host layout must render the UiKit canonical blocks (nowo_ui_content, …). // Default: null
+ *         templates?: array{ // Per-page template overrides: a host template that extends the bundle page and overrides a data block (see docs/TEMPLATES.md).
+ *             settings?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/settings.html.twig"
+ *             surfaces_index?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_index.html.twig"
+ *             surfaces_form?: scalar|Param|null, // Default: "@NowoSeoKitBundle/admin/surfaces_form.html.twig"
+ *         },
+ *         form_themes?: list<scalar|Param|null>,
+ *         api_enabled?: bool|Param, // Register the JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}. // Default: true
  *         api_csrf_protection?: bool|Param, // Require a CSRF token (X-CSRF-Token header, from the GET response csrf_token) on JSON API writes. Disable only behind a Bearer/API-token firewall without session cookies. // Default: true
+ *     },
+ *     security?: array{ // Access to the admin UI and the JSON API (REQ-UI-002). Production: keep allow_unauthenticated false and add access_control for the admin paths.
+ *         access_roles?: list<scalar|Param|null>,
+ *         access_checker?: scalar|Param|null, // Service id implementing Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface. Null (default) = role checker over access_roles. // Default: null
+ *         allow_unauthenticated?: bool|Param, // DEV / DEMO only: the admin UI and the JSON API become public (no SecurityBundle needed). Never in production. // Default: false
+ *     },
+ *     admin?: array{ // Deprecated since 1.19: use web_ui.* and security.* (mapped for 1.x, removed in 2.0).
+ *         enabled?: bool|Param|null, // Deprecated: The "nowo_seo_kit.admin.enabled.enabled" option is deprecated; use "nowo_seo_kit.web_ui.enabled" instead (see docs/UPGRADING.md). // Default: null
+ *         settings?: bool|Param|null, // Deprecated: The "nowo_seo_kit.admin.settings.settings" option is deprecated; use "nowo_seo_kit.web_ui.settings" instead (see docs/UPGRADING.md). // Default: null
+ *         surfaces?: bool|Param|null, // Deprecated: The "nowo_seo_kit.admin.surfaces.surfaces" option is deprecated; use "nowo_seo_kit.web_ui.surfaces" instead (see docs/UPGRADING.md). // Default: null
+ *         role?: scalar|Param|null, // Deprecated: The "nowo_seo_kit.admin.role.role" option is deprecated; use "nowo_seo_kit.security.access_roles" instead (see docs/UPGRADING.md). // Default: null
+ *         settings_template?: scalar|Param|null, // Deprecated: The "nowo_seo_kit.admin.settings_template.settings_template" option is deprecated; use "nowo_seo_kit.web_ui.templates.settings" instead (see docs/UPGRADING.md). // Default: null
+ *         surfaces_index_template?: scalar|Param|null, // Deprecated: The "nowo_seo_kit.admin.surfaces_index_template.surfaces_index_template" option is deprecated; use "nowo_seo_kit.web_ui.templates.surfaces_index" instead (see docs/UPGRADING.md). // Default: null
+ *         surfaces_form_template?: scalar|Param|null, // Deprecated: The "nowo_seo_kit.admin.surfaces_form_template.surfaces_form_template" option is deprecated; use "nowo_seo_kit.web_ui.templates.surfaces_form" instead (see docs/UPGRADING.md). // Default: null
+ *         api_enabled?: bool|Param|null, // Deprecated: The "nowo_seo_kit.admin.api_enabled.api_enabled" option is deprecated; use "nowo_seo_kit.web_ui.api_enabled" instead (see docs/UPGRADING.md). // Default: null
+ *         api_csrf_protection?: bool|Param|null, // Deprecated: The "nowo_seo_kit.admin.api_csrf_protection.api_csrf_protection" option is deprecated; use "nowo_seo_kit.web_ui.api_csrf_protection" instead (see docs/UPGRADING.md). // Default: null
  *     },
  * }
  * @psalm-type WebProfilerConfig = array{

@@ -32,6 +32,7 @@ Symfony Flex registers the bundles automatically. Manual registration:
 ```php
 // config/bundles.php
 Nowo\FormKitBundle\NowoFormKitBundle::class => ['all' => true],
+Nowo\UiKitBundle\NowoUiKitBundle::class => ['all' => true], // admin UI (page scaffolds, assets)
 Nowo\SeoKitBundle\SeoKitBundle::class => ['all' => true],
 ```
 
@@ -46,6 +47,17 @@ nowo_seo_kit:
 ```
 
 This exposes `/sitemap.xml` and `/robots.txt` and can register static pages from configuration.
+
+Optional admin UI (`web_ui.enabled: true`, needs `persistence.enabled` and SecurityBundle):
+
+```yaml
+nowo_seo_kit_admin:
+    resource: .
+    type: nowo_seo_kit_admin
+```
+
+When you enable it, also add `access_control` for the admin paths and `^/_nowo/seo/` and keep
+`security.allow_unauthenticated: false` — see [CONFIGURATION.md — security](CONFIGURATION.md#security).
 
 ## Twig
 

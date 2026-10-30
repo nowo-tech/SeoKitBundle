@@ -3,6 +3,9 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+  - [Configuration: `admin` → `web_ui` + `security`](#configuration-admin--web_ui--security)
+  - [Template contract](#template-contract)
+  - [Security changes](#security-changes)
 - [To 1.18.0](#to-1180)
 - [To 1.17.0](#to-1170)
 - [To 1.16.1](#to-1161)
@@ -78,6 +81,78 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+From **1.18.x**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle nowo-tech/ui-kit-bundle
+```
+
+Nothing changes while the admin UI stays off (`web_ui.enabled` / `admin.enabled` false, the default).
+
+### Configuration: `admin` → `web_ui` + `security`
+
+The `admin` keys still work and are mapped (with a deprecation); move to the new names before 2.0:
+
+```yaml
+# Before (1.x)
+nowo_seo_kit:
+    admin:
+        enabled: true
+        role: ROLE_ADMIN
+        settings_template: 'admin/seo/settings.html.twig'
+
+# After
+nowo_seo_kit:
+    web_ui:
+        enabled: true
+        # path_prefix: /admin/seo        # optional: /admin/seo/settings, /admin/seo/surfaces (null keeps /settings/seo, /admin/seo/surfaces)
+        templates:
+            settings: 'admin/seo/settings.html.twig'
+    security:
+        access_roles: [ROLE_ADMIN]
+        # access_checker: App\Security\SeoAccessChecker
+```
+
+| 1.x key | Replacement |
+| --- | --- |
+| `admin.enabled` / `settings` / `surfaces` / `api_enabled` / `api_csrf_protection` | `web_ui.<same key>` |
+| `admin.role` | `security.access_roles` (a list) |
+| `admin.settings_template`, `admin.surfaces_index_template`, `admin.surfaces_form_template` | `web_ui.templates.settings`, `.surfaces_index`, `.surfaces_form` |
+
+- The admin UI now needs **SecurityBundle** (the container does not compile without it) unless
+  `security.allow_unauthenticated: true` (demo only), and an empty role list needs a custom `security.access_checker`.
+- `admin.role: PUBLIC_ACCESS` (or an empty role) is refused: use `allow_unauthenticated` for a demo.
+- Add `access_control` for the admin paths and `^/_nowo/seo/` (see
+  [CONFIGURATION.md — Host access_control](CONFIGURATION.md#host-access_control)).
+
+### Template contract
+
+- `admin/settings.html.twig`, `admin/surfaces_index.html.twig` and `admin/surfaces_form.html.twig` are no longer
+  standalone `<!DOCTYPE html>` pages: they extend the UiKit form / list scaffolds and receive a `page` view model (the
+  1.x variables are still passed). They render inside `nowo_ui_kit.layouts.admin` (or `web_ui.layout_template`): set
+  it to your admin layout or a one-file bridge — [CONFIGURATION.md — Host layout and CSS stack](CONFIGURATION.md#host-layout-and-css-stack).
+- **Overrides of these templates** (`templates/bundles/NowoSeoKitBundle/admin/…` or `admin.*_template`) keep working
+  but freeze the 1.x markup. Recommended: delete them and theme UiKit once; when a page really needs a change, use
+  `web_ui.templates.<page>` with a template that extends `@!NowoSeoKitBundle/admin/<page>.html.twig` and overrides a
+  data block (`nowo_ui_form_body`, `nowo_ui_list_row`, …) — see [TEMPLATES.md](TEMPLATES.md).
+- `admin/_flashes.html.twig` is removed (flashes come from the UiKit `flashes` partial of the layout). Remove an
+  override of it.
+- Data blocks, view-model fields and page ids are part of the contract from now on: renames will be listed here.
+- Labels of the localised settings fields: `nowo_seo_site.default_title.label`, `home_title`, `default_description`,
+  `organisation_description` with `%locale%` replace `nowo_seo_site.<field>_en|_es.label`; move app translation
+  overrides of the old keys.
+- The seeded FormKit profile `seo_kit` no longer adds `form-control` / `form-select` / `mb-3` classes (the UiKit form
+  theme does, per `nowo_ui_kit.css_framework`). A host that renders `SeoSurfaceType` / `SeoSiteSettingsType` in its own
+  Bootstrap pages can define `nowo_form_kit.profiles.seo_kit` itself (the bundle then seeds nothing).
+
+### Security changes
+
+- Image URLs of the site settings (default Open Graph image, organisation logo) must be a site path or an https URL;
+  stored values are only re-validated on the next save.
+- Canonical / image URLs with inner control characters or whitespace are rejected.
+- Title / description templates no longer receive request attributes named like nonces, tokens, CSRF values, secrets
+  or passwords (`{csp_nonce}` stays as literal text).
 
 ## To 1.18.0
 

@@ -6,6 +6,7 @@ namespace Nowo\SeoKitBundle;
 
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\TwigPathsPass;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\WebUiSecurityPass;
 use Nowo\SeoKitBundle\DependencyInjection\SeoKitExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
@@ -20,6 +21,7 @@ final class SeoKitBundle extends Bundle
     {
         parent::build($container);
         $container->addCompilerPass(new CsrfProtectionPass());
+        $container->addCompilerPass(new WebUiSecurityPass());
         $container->addCompilerPass(new TwigPathsPass());
     }
 

@@ -10,6 +10,10 @@ use Nowo\FormKitBundle\Form\FormTypeMap;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceType;
 use Nowo\SeoKitBundle\Service\OriginUrlGuard;
+use Symfony\Component\Translation\Loader\YamlFileLoader;
+use Symfony\Component\Translation\Translator;
+
+use function dirname;
 
 /**
  * Builds FormKit merger / types for SEO admin unit tests.
@@ -19,10 +23,12 @@ final class FormKitTestSupport
     public static function merger(string $defaultProfile = 'seo_kit'): FormOptionsMerger
     {
         $seoKit = [
-            'translation_domain' => 'NowoSeoKitBundle',
-            'defaults'           => [
-                'attr'     => ['class' => 'form-control'],
-                'row_attr' => ['class' => 'mb-3'],
+            'translation_domain'              => 'NowoSeoKitBundle',
+            'convention_requires_translation' => true,
+            // Same as the profile the extension prepends: no framework classes (REQ-UI-003).
+            'defaults' => [
+                'attr'     => [],
+                'row_attr' => [],
             ],
             'field_types' => [],
         ];
@@ -34,7 +40,23 @@ final class FormKitTestSupport
             ],
             $defaultProfile,
             new ConstraintDefinitionFactory(),
+            null,
+            null,
+            self::translator(),
         );
+    }
+
+    /**
+     * English bundle catalogue: the convention help / placeholder keys apply only when translated, as in the seeded
+     * profile (convention_requires_translation).
+     */
+    public static function translator(): Translator
+    {
+        $translator = new Translator('en');
+        $translator->addLoader('yaml', new YamlFileLoader());
+        $translator->addResource('yaml', dirname(__DIR__, 2) . '/src/Resources/translations/NowoSeoKitBundle.en.yaml', 'en', 'NowoSeoKitBundle');
+
+        return $translator;
     }
 
     public static function typeMap(): FormTypeMap

@@ -41,6 +41,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Admin UI on the UiKit page contract with the standard `web_ui` / `security` configuration, plus security hardening.
+See [UPGRADING](UPGRADING.md#unreleased).
+
+### Added
+
+- **Admin UI on the UiKit page contract (REQ-UI-001, REQ-UI-003).** The settings page and the surface form extend the
+  UiKit form scaffold, the surfaces list the UiKit list scaffold; `Ui\SeoKitPages` builds the view models
+  (`FormPage`, `ListPage`, header tabs, `Column`, row action `edit`, `EmptyState`), so layout, CSS stack
+  (`nowo_ui_kit.css_framework`: bootstrap5 / tailwind / foundation / custom), icons, row-action display and tokens come
+  from UiKit — no page to copy. Locale switch of the surfaces list = a GET filter form
+  (`Form\SeoSurfaceLocaleFilterType`); audit problems render as translated badges.
+- **`web_ui` configuration:** `enabled`, `settings`, `surfaces`, `path_prefix` (null keeps the 1.x paths; e.g.
+  `/admin/seo` → `/admin/seo/settings`, `/admin/seo/surfaces…`), `layout_template` (null = UiKit admin layout),
+  `templates.{settings,surfaces_index,surfaces_form}`, `form_themes` (default the UiKit form layout), `api_enabled`,
+  `api_csrf_protection`.
+- **`security` configuration (REQ-UI-002):** `access_roles` (default `[ROLE_ADMIN]`, any role grants),
+  `access_checker` (host service implementing `Security\SeoKitAccessCheckerInterface`), `allow_unauthenticated`
+  (demo only). Every admin and API action goes through the checker.
+- **Area navigation** `seo_kit` (`Ui\SeoKitAreaNav`, UiKit area-nav registry: `nowo_ui_area_nav('seo_kit')`), also
+  rendered as page-header tabs.
+- UiKit `PageContractTest` (strict missing-message rule) and a functional kernel test (Security + Doctrine SQLite +
+  UiKit: anonymous 401, no role 403, admin 200 under `path_prefix`). `docs/TEMPLATES.md` documents pages, view models
+  and data blocks.
+
+### Changed
+
+- `nowo-tech/ui-kit-bundle` `^2.17`; `symfony/security-csrf` and `symfony/security-core` are runtime requirements.
+- The seeded FormKit profile `seo_kit` has no Bootstrap classes any more (the UiKit form theme applies the theme slots)
+  and sets `convention_requires_translation`: auto help / placeholder keys only when translated.
+- The localised settings fields share one label per field with `%locale%` (`nowo_seo_site.default_title.label`, …):
+  every enabled locale gets a translated label (1.x only had `_en` / `_es` keys and showed raw keys for others).
+- Admin controllers take `SeoKitAccessCheckerInterface` + `SeoKitPages` instead of `$role` / template strings.
+- Surfaces list edit links encode the surface key once (1.x links, encoded twice, still work).
+
+### Deprecated
+
+- The `admin.*` keys (mapped onto `web_ui.*` / `security.*`; removed in 2.0): `admin.enabled`, `admin.settings`,
+  `admin.surfaces`, `admin.role`, `admin.settings_template`, `admin.surfaces_index_template`,
+  `admin.surfaces_form_template`, `admin.api_enabled`, `admin.api_csrf_protection`.
+
+### Removed
+
+- `admin/_flashes.html.twig` (UiKit `flashes` partial of the layout) and the standalone `<!DOCTYPE html>` admin shells.
+
+### Security
+
+- **Admin access fails closed (REQ-UI-002):** an empty `security.access_roles` is refused while `web_ui.enabled`
+  unless `security.access_checker` is set; `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` (also as `admin.role`)
+  are refused; without SecurityBundle the container does not compile unless `allow_unauthenticated` is true
+  (`WebUiSecurityPass`).
+- **URL hardening:** canonical overrides and image URLs with inner control characters or whitespace (`/\t/evil`) are
+  rejected; the default Open Graph image and the organisation logo of the site settings must be a site path or an
+  https URL.
+- **JSON API:** locales that are not enabled and surface keys over 180 characters answer 404 (no 500).
+- **Title placeholders:** request attributes named like nonces, tokens, CSRF values, secrets or passwords are no longer
+  offered as `{placeholder}` values.
+- `.github/SECURITY.md` lists 1.18.x; `docs/SECURITY.md` records the 2026-10-28 SEC-004 review and its remediation.
+
 ## [1.18.0] - 2026-10-28
 
 Security: admin CSRF fails closed and the recipe sets base_url from DEFAULT_URI. See [UPGRADING](UPGRADING.md#to-1180).

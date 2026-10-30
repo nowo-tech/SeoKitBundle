@@ -84,7 +84,27 @@ Enable with `nowo_seo_kit.persistence.enabled: true` (requires Doctrine ORM). Se
 
 ## Optional SEO admin
 
-Requires persistence. Enable `nowo_seo_kit.admin.enabled: true`, import routes with `type: nowo_seo_kit_admin`, then use `/settings/seo`, `/admin/seo/surfaces`, and optionally `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. See [CONFIGURATION.md — admin](CONFIGURATION.md#admin) and [UPGRADING.md — To 1.7.0](UPGRADING.md#to-170). The per-locale wording of `/settings/seo` renders as one tab per enabled locale (FormKit `locale_tabs`, UiKit renderer); see [TEMPLATES.md](TEMPLATES.md).
+Requires persistence and Symfony Security. Enable `nowo_seo_kit.web_ui.enabled: true` (optionally `web_ui.path_prefix: /admin/seo`), import routes with `type: nowo_seo_kit_admin`, then use the settings page (`/settings/seo`), the surfaces pages (`/admin/seo/surfaces`) and optionally `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. See [CONFIGURATION.md — web_ui](CONFIGURATION.md#web_ui) and [CONFIGURATION.md — security](CONFIGURATION.md#security). The per-locale wording of the settings page renders as one tab per enabled locale (FormKit `locale_tabs`, UiKit renderer); see [TEMPLATES.md](TEMPLATES.md).
+
+```yaml
+# config/routes/nowo_seo_kit.yaml
+nowo_seo_kit_admin:
+    resource: .
+    type: nowo_seo_kit_admin
+```
+
+The pages are on the **UiKit page contract** (REQ-UI-003): they extend the UiKit form / list scaffolds, so the host
+integrates them by configuring UiKit once (`nowo_ui_kit.layouts.admin` = your project layout or a one-file bridge,
+`nowo_ui_kit.css_framework` = `bootstrap5` / `tailwind` / `foundation` / `custom`, `row_actions_display`, theme
+tokens) — **no page template to copy**. Stylesheets and scripts stack through the layout's `nowo_ui_styles` /
+`nowo_ui_scripts` blocks (UiKit asset package `nowo_ui_kit`); the bundle adds no asset of its own. See
+[CONFIGURATION.md — Host layout and CSS stack](CONFIGURATION.md#host-layout-and-css-stack) for the bridge and the
+framework table, and [TEMPLATES.md](TEMPLATES.md) for the pages, view models and data blocks.
+
+A host menu (DashboardMenu) mounts the admin navigation with `nowo_ui_area_nav('seo_kit')` (SEO settings | Page SEO);
+the pages also show it as header tabs. The surfaces list has one row action (Edit, `edit` kind through the UiKit
+`row_actions` partial, so `row_actions_display: icon | text | icon_text` applies); there is no delete action and no
+modal (an empty override form clears the stored row).
 
 Admin forms are built with **[FormKit](https://github.com/nowo-tech/FormKitBundle)** (`AbstractSeoFormType`, profile `seo_kit`). Register `Nowo\FormKitBundle\NowoFormKitBundle` (Flex recipe) so labels resolve from `NowoSeoKitBundle` translations.
 
@@ -151,9 +171,15 @@ Logical name: `@NowoSeoKitBundle/seo/head.html.twig` (used by `nowo_seo_head()` 
 
 **Overridable templates**
 
-| Subpath | Purpose |
-| --- | --- |
-| `seo/head.html.twig` | HTML head tags rendered by `nowo_seo_head()` (title, meta, Open Graph, Twitter, JSON-LD, alternates) |
+| Subpath | Purpose | Upgrade-safe alternative |
+| --- | --- | --- |
+| `seo/head.html.twig` | HTML head tags rendered by `nowo_seo_head()` (title, meta, Open Graph, Twitter, JSON-LD, alternates) | `nowo_seo_kit.templates.head` |
+| `admin/settings.html.twig` | Site settings page (UiKit form scaffold) | `nowo_seo_kit.web_ui.templates.settings` (extend `@!NowoSeoKitBundle/admin/settings.html.twig`, override a data block) |
+| `admin/surfaces_index.html.twig` | Surfaces list (UiKit list scaffold) | `nowo_seo_kit.web_ui.templates.surfaces_index` |
+| `admin/surfaces_form.html.twig` | Surface override form (UiKit form scaffold) | `nowo_seo_kit.web_ui.templates.surfaces_form` |
+
+For the admin pages prefer theming UiKit once (`nowo_ui_kit.theme`, scaffolds under
+`templates/bundles/NowoUiKitBundle/page/`) over any SeoKit override: see [TEMPLATES.md](TEMPLATES.md).
 
 ## Translations
 

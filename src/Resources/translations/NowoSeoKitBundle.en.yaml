@@ -12,6 +12,7 @@ nowo_seo_kit:
         save: 'Save'
         edit: 'Edit'
         back: 'Back'
+        area_nav: 'SEO admin'
         settings:
             title: 'SEO settings'
             intro: 'Site-wide defaults every page inherits, plus the organisation behind the knowledge graph.'
@@ -25,11 +26,27 @@ nowo_seo_kit:
             site_noindex: 'The whole site is noindex; published_but_noindex warnings are suppressed.'
             empty: 'No audit subjects registered for this locale.'
             edit_title: 'Edit SEO — %surface%'
+            edit_intro: 'Locale %locale%. Empty fields inherit the site defaults.'
+            empty_title: 'No surfaces'
+            caption: 'Surfaces (%locale%)'
+            locale: 'Locale'
+            override: 'Override'
+            no_problems: 'OK'
             column:
                 surface: 'Surface'
                 path: 'Path'
                 title: 'Title'
                 problems: 'Problems'
+                actions: 'Actions'
+            problem:
+                missing_title: 'Missing title'
+                long_title: 'Title too long'
+                missing_description: 'Missing description'
+                long_description: 'Description too long'
+                short_description: 'Description too short'
+                published_but_noindex: 'Published but noindex'
+                duplicate_title: 'Duplicate title'
+                duplicate_description: 'Duplicate description'
     flash:
         settings_saved: 'SEO settings saved.'
         surface_saved: 'Surface SEO saved.'
@@ -42,6 +59,9 @@ nowo_seo_kit:
         missing_placeholder: 'The title template must include %placeholder%.'
     social_profiles:
         invalid: '"%url%" must be an absolute http(s) URL.'
+    site_settings:
+        image_url:
+            invalid: 'Use a site path (/image.png) or an https URL.'
     surface:
         robots:
             inherit: 'Inherit'
@@ -98,22 +118,14 @@ nowo_seo_site:
         label: 'Google site verification'
     bing_site_verification:
         label: 'Bing site verification'
-    default_title_en:
-        label: 'Default title (en)'
-    home_title_en:
-        label: 'Home title (en)'
-    default_description_en:
-        label: 'Default description (en)'
-    organisation_description_en:
-        label: 'Organisation description (en)'
-    default_title_es:
-        label: 'Default title (es)'
-    home_title_es:
-        label: 'Home title (es)'
-    default_description_es:
-        label: 'Default description (es)'
-    organisation_description_es:
-        label: 'Organisation description (es)'
+    default_title:
+        label: 'Default title (%locale%)'
+    home_title:
+        label: 'Home title (%locale%)'
+    default_description:
+        label: 'Default description (%locale%)'
+    organisation_description:
+        label: 'Organisation description (%locale%)'
 
 nowo_seo_surface:
     meta_title:

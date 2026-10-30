@@ -9,13 +9,17 @@ use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
 use Nowo\SeoKitBundle\Model\SeoSiteConfig;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
+use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditRules;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
 use Nowo\SeoKitBundle\Tests\Support\FormKitTestSupport;
+use Nowo\SeoKitBundle\Ui\SeoKitPages;
+use Nowo\UiKitBundle\View\ListPage;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -24,6 +28,7 @@ use Symfony\Component\Form\Extension\HttpFoundation\HttpFoundationExtension;
 use Symfony\Component\Form\Extension\Validator\ValidatorExtension;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\Forms;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,12 +37,16 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Validator\Validation;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
+use Twig\TwigFunction;
+
+use function str_repeat;
 
 use const JSON_THROW_ON_ERROR;
 
@@ -55,7 +64,7 @@ final class SeoAdminControllersTest extends TestCase
         $config = $this->createMock(SeoSiteConfigProviderInterface::class);
         $config->expects(self::once())->method('refresh');
 
-        $controller = new SeoSiteSettingsController($repo, $config, ['es', 'en'], 'en');
+        $controller = new SeoSiteSettingsController($repo, $config, $this->checker(), new SeoKitPages(), ['es', 'en'], 'en');
         $controller->setContainer($this->container());
 
         $getRequest = new Request();
@@ -104,7 +113,7 @@ final class SeoAdminControllersTest extends TestCase
         $config = $this->createMock(SeoSiteConfigProviderInterface::class);
         $config->method('get')->willReturn($this->siteConfig());
 
-        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $config, ['en'], 'en');
+        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), $config, ['en'], 'en');
         $controller->setContainer($this->container());
 
         $indexReq = new Request(['locale' => 'en']);
@@ -137,7 +146,7 @@ final class SeoAdminControllersTest extends TestCase
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->expects(self::never())->method('findOneByKeyAndLocale');
 
-        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), null, ['en'], 'en');
+        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), null, ['en'], 'en');
         $controller->setContainer($this->container());
 
         $this->expectException(NotFoundHttpException::class);
@@ -153,7 +162,7 @@ final class SeoAdminControllersTest extends TestCase
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
         $repo->expects(self::once())->method('save')->with(self::callback(static fn (SeoSurface $saved): bool => $saved->getSurfaceKey() === 'page:home' && $saved->getLocale() === 'en' && $saved->getMetaTitle() === 'Home'));
 
-        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), null, ['en'], 'en');
+        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), null, ['en'], 'en');
         $controller->setContainer($this->container());
 
         $post = Request::create('/', 'POST', [
@@ -183,7 +192,7 @@ final class SeoAdminControllersTest extends TestCase
         $repo->expects(self::never())->method('save');
         $repo->expects(self::never())->method('remove');
 
-        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), null, ['es', 'en'], 'en');
+        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), null, ['es', 'en'], 'en');
         $controller->setContainer($this->container());
 
         $get = Request::create('/admin/seo/surfaces/en/edit/page:home', 'GET');
@@ -199,7 +208,7 @@ final class SeoAdminControllersTest extends TestCase
         $repo->expects(self::never())->method('findOneByKeyAndLocale');
         $repo->expects(self::never())->method('save');
 
-        $controller = new SeoSurfaceApiController($repo);
+        $controller = new SeoSurfaceApiController($repo, $this->checker());
         $controller->setContainer($this->container());
 
         // Cross-site HTML form POST (no CSRF token possible): must be refused.
@@ -261,7 +270,7 @@ final class SeoAdminControllersTest extends TestCase
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->expects(self::never())->method('save');
 
-        $controller = new SeoSurfaceApiController($repo);
+        $controller = new SeoSurfaceApiController($repo, $this->checker());
         $controller->setContainer($this->container());
 
         $request = Request::create('/', 'POST', [], [], [], ['HTTP_X_CSRF_TOKEN' => 'tok', 'CONTENT_TYPE' => 'application/json'], json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR));
@@ -275,7 +284,7 @@ final class SeoAdminControllersTest extends TestCase
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
         $repo->expects(self::once())->method('save');
 
-        $controller = new SeoSurfaceApiController($repo, 'ROLE_ADMIN', null, false);
+        $controller = new SeoSurfaceApiController($repo, $this->checker(), null, false);
         $controller->setContainer($this->container());
 
         $request = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR));
@@ -340,7 +349,98 @@ final class SeoAdminControllersTest extends TestCase
         self::assertTrue($cleared['cleared']);
     }
 
+    public function testEveryActionDeniesWhenTheAccessCheckerRefuses(): void
+    {
+        $denied = $this->checker(false);
+        $repo   = $this->createMock(SeoSiteSettingsRepository::class);
+        $repo->expects(self::never())->method('getOrCreate');
+        $surfaces = $this->createMock(SeoSurfaceRepository::class);
+        $surfaces->expects(self::never())->method('findOneByKeyAndLocale');
+
+        $settings = new SeoSiteSettingsController($repo, $this->createMock(SeoSiteConfigProviderInterface::class), $denied);
+        $surface  = new SeoSurfaceController($surfaces, new SeoAuditor(new SeoAuditRules()), $denied);
+        $api      = new SeoSurfaceApiController($surfaces, $denied);
+        foreach ([$settings, $surface, $api] as $controller) {
+            $controller->setContainer($this->container());
+        }
+
+        $calls = [
+            static fn (): Response => $settings->edit(new Request()),
+            static fn (): Response => $surface->index(new Request()),
+            static fn (): Response => $surface->edit('en', 'page:home', new Request()),
+            static fn (): JsonResponse => $api->get('page:home', 'en'),
+            static fn (): JsonResponse => $api->post('page:home', 'en', new Request()),
+        ];
+        foreach ($calls as $i => $call) {
+            try {
+                $call();
+                self::fail('Action ' . $i . ' did not deny access.');
+            } catch (AccessDeniedException $e) {
+                self::assertSame('NowoSeoKitBundle admin access denied.', $e->getMessage());
+            }
+        }
+    }
+
+    public function testSurfaceEditAndApiRejectOverlongKeysAndDisabledLocales(): void
+    {
+        $repo = $this->createMock(SeoSurfaceRepository::class);
+        $repo->expects(self::never())->method('findOneByKeyAndLocale');
+
+        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), null, ['en'], 'en');
+        $controller->setContainer($this->container());
+        $api = new SeoSurfaceApiController($repo, $this->checker(), null, true, ['en']);
+        $api->setContainer($this->container());
+
+        $long  = str_repeat('k', SeoSurfaceController::MAX_SURFACE_KEY_LENGTH + 1);
+        $calls = [
+            static fn (): Response => $controller->edit('en', $long, new Request()),
+            static fn (): JsonResponse => $api->get($long, 'en'),
+            static fn (): JsonResponse => $api->get('page:home', 'fr'),
+            static fn (): JsonResponse => $api->post('page:home', 'fr', new Request()),
+        ];
+        foreach ($calls as $i => $call) {
+            try {
+                $call();
+                self::fail('Call ' . $i . ' was not rejected.');
+            } catch (NotFoundHttpException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+    }
+
+    public function testSurfacesIndexPassesTheListPageAndLocaleFilter(): void
+    {
+        $repo = $this->createMock(SeoSurfaceRepository::class);
+
+        $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(templates: ['surfaces_index' => 'custom/index.html.twig']), null, ['en', 'es'], 'es');
+        $controller->setContainer($this->container());
+
+        $request = new Request(['locale' => 'en']);
+        $this->requestStack()->push($request);
+        self::assertSame('custom-index', (string) $controller->index($request)->getContent());
+        self::assertInstanceOf(ListPage::class, $this->lastContext['page'] ?? null);
+        self::assertSame('en', $this->lastContext['locale'] ?? null);
+        self::assertSame(['es', 'en'], $this->lastContext['locales'] ?? null);
+    }
+
     private ?RequestStack $requestStack = null;
+
+    /** @var array<string, mixed> */
+    private array $lastContext = [];
+
+    private function checker(bool $grant = true): SeoKitAccessCheckerInterface
+    {
+        return new class($grant) implements SeoKitAccessCheckerInterface {
+            public function __construct(private readonly bool $grant)
+            {
+            }
+
+            public function canAccess(): bool
+            {
+                return $this->grant;
+            }
+        };
+    }
 
     /**
      * API controller whose CSRF manager accepts the token value "tok" only.
@@ -353,7 +453,7 @@ final class SeoAdminControllersTest extends TestCase
             static fn (CsrfToken $token): bool => $token->getId() === SeoSurfaceApiController::CSRF_TOKEN_ID && $token->getValue() === 'tok',
         );
 
-        $controller = new SeoSurfaceApiController($repo, 'ROLE_ADMIN', $manager);
+        $controller = new SeoSurfaceApiController($repo, $this->checker(), $manager);
         $controller->setContainer($this->container(csrf: $formCsrf));
 
         return $controller;
@@ -376,7 +476,13 @@ final class SeoAdminControllersTest extends TestCase
             '@NowoSeoKitBundle/admin/settings.html.twig'       => 'settings-ok',
             '@NowoSeoKitBundle/admin/surfaces_index.html.twig' => 'surfaces-index',
             '@NowoSeoKitBundle/admin/surfaces_form.html.twig'  => 'surfaces-form',
+            'custom/index.html.twig'                           => '{{ capture() }}custom-index',
         ]));
+        $twig->addFunction(new TwigFunction('capture', function (array $context): string {
+            $this->lastContext = $context;
+
+            return '';
+        }, ['needs_context' => true]));
 
         $services = [
             'security.authorization_checker' => $auth,
@@ -406,6 +512,7 @@ final class SeoAdminControllersTest extends TestCase
             ->addExtension(new ValidatorExtension($validator))
             ->addType(FormKitTestSupport::siteSettingsType())
             ->addType(FormKitTestSupport::surfaceType())
+            ->addType(new SeoSurfaceLocaleFilterType())
             ->getFormFactory();
     }
 

@@ -1,24 +1,9 @@
-<!DOCTYPE html>
-<html lang="{{ locale|default('en') }}">
-<head>
-    <meta charset="utf-8">
-    <title>{{ 'nowo_seo_kit.admin.surfaces.edit_title'|trans({'%surface%': surface_key}, 'NowoSeoKitBundle') }}</title>
-</head>
-<body>
-<main>
-    <h1>{{ 'nowo_seo_kit.admin.surfaces.edit_title'|trans({'%surface%': surface_key}, 'NowoSeoKitBundle') }}</h1>
-    {{ include('@NowoSeoKitBundle/admin/_flashes.html.twig') }}
-    <p>{{ locale|upper }}</p>
-
-    {{ form_start(form) }}
-        {% for child in form %}
-            {% if not child.rendered %}
-                {{ form_row(child) }}
-            {% endif %}
-        {% endfor %}
-        <button type="submit">{{ 'nowo_seo_kit.admin.save'|trans({}, 'NowoSeoKitBundle') }}</button>
-        <a href="{{ path('nowo_seo_kit_admin_surfaces', {locale: locale}) }}">{{ 'nowo_seo_kit.admin.back'|trans({}, 'NowoSeoKitBundle') }}</a>
-    {{ form_end(form) }}
-</main>
-</body>
-</html>
+{#
+  Surface SEO override form (REQ-UI-003): UiKit form scaffold.
+  View model: page (View\FormPage, SeoKitPages::surfaceFormPage()): header nowo_seo_kit.admin.surfaces.edit_title
+  (surface key) / .edit_intro (locale), back link and cancel = the surfaces list of the locale; form = SeoSurfaceType;
+  submit nowo_seo_kit.admin.save; formThemes = web_ui.form_themes.
+  Extra variables (kept for web_ui.templates overrides): form, surface, surface_key, locale, locales.
+  Data blocks: nowo_ui_form_body (the scaffold default: REQ-TWIG-003 child loop), nowo_ui_form_aside (empty).
+#}
+{% extends '@NowoUiKit/page/form.html.twig' %}

@@ -100,6 +100,44 @@ final class SeoAdminFormsTest extends TestCase
         self::assertTrue($form->get('socialProfilesText')->getErrors()->count() > 0);
     }
 
+    public function testSiteSettingsRejectsUnsafeImageUrls(): void
+    {
+        $form = $this->factory()->create(SeoSiteSettingsType::class, new SeoSiteSettings(), [
+            'enabled_locales' => ['en'],
+            'default_locale'  => 'en',
+        ]);
+
+        $form->submit([
+            'siteName'                   => 'Nowo',
+            'titleTemplate'              => '%title% · ' . SeoSiteSettings::TITLE_PLACEHOLDER,
+            'defaultRobots'              => 'index, follow',
+            'defaultOpenGraphImage'      => 'javascript:alert(1)',
+            'organisationLogo'           => 'http://cdn.example/logo.png',
+            'defaultTitle_en'            => '',
+            'homeTitle_en'               => '',
+            'defaultDescription_en'      => '',
+            'organisationDescription_en' => '',
+        ]);
+
+        self::assertFalse($form->isValid());
+        self::assertSame('nowo_seo_kit.site_settings.image_url.invalid', $form->get('defaultOpenGraphImage')->getErrors()[0]->getMessageTemplate());
+        self::assertCount(1, $form->get('organisationLogo')->getErrors());
+
+        $ok = $this->factory()->create(SeoSiteSettingsType::class, new SeoSiteSettings(), [
+            'enabled_locales' => ['en'],
+            'default_locale'  => 'en',
+        ]);
+        $ok->submit([
+            'siteName'              => 'Nowo',
+            'titleTemplate'         => '%title% · ' . SeoSiteSettings::TITLE_PLACEHOLDER,
+            'defaultRobots'         => 'index, follow',
+            'defaultOpenGraphImage' => '/og.png',
+            'organisationLogo'      => 'https://cdn.example/logo.png',
+        ]);
+        self::assertCount(0, $ok->get('defaultOpenGraphImage')->getErrors());
+        self::assertCount(0, $ok->get('organisationLogo')->getErrors());
+    }
+
     public function testSiteSettingsAcceptsExplicitNoSocialProfiles(): void
     {
         $settings = new SeoSiteSettings();
