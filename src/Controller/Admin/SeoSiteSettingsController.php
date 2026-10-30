@@ -6,7 +6,9 @@ namespace Nowo\SeoKitBundle\Controller\Admin;
 
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
+use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
+use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,27 +17,30 @@ use Symfony\Component\Routing\Attribute\Route;
 use function in_array;
 
 /**
- * Site-wide SEO settings admin (identity, robots, organisation, per-locale wording).
+ * Site-wide SEO settings admin (identity, robots, organisation, per-locale wording) on the UiKit form scaffold.
  */
 final class SeoSiteSettingsController extends AbstractController
 {
+    use SeoKitAdminAccessTrait;
+
     /**
      * @param list<string> $locales
      */
     public function __construct(
         private readonly SeoSiteSettingsRepository $repository,
         private readonly SeoSiteConfigProviderInterface $configProvider,
+        SeoKitAccessCheckerInterface $accessChecker,
+        private readonly SeoKitPages $pages = new SeoKitPages(),
         private readonly array $locales = ['en'],
         private readonly string $defaultLocale = 'en',
-        private readonly string $role = 'ROLE_ADMIN',
-        private readonly string $template = '@NowoSeoKitBundle/admin/settings.html.twig',
     ) {
+        $this->accessChecker = $accessChecker;
     }
 
     #[Route('/settings/seo', name: 'nowo_seo_kit_admin_settings', methods: ['GET', 'POST'])]
     public function edit(Request $request): Response
     {
-        $this->denyAccessUnlessGranted($this->role);
+        $this->denyUnlessAdmin();
 
         $settings = $this->repository->getOrCreate();
         $locales  = $this->orderedLocales();
@@ -54,8 +59,11 @@ final class SeoSiteSettingsController extends AbstractController
             return $this->redirectToRoute('nowo_seo_kit_admin_settings');
         }
 
-        return $this->render($this->template, [
-            'form'            => $form,
+        $view = $form->createView();
+
+        return $this->render($this->pages->template('settings'), [
+            'page'            => $this->pages->settingsPage($view, $this->container->get('router')),
+            'form'            => $view,
             'settings'        => $settings,
             'enabled_locales' => $locales,
             'default_locale'  => $this->defaultLocale,

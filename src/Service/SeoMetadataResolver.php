@@ -22,6 +22,7 @@ use function is_scalar;
 use function is_string;
 use function parse_str;
 use function parse_url;
+use function preg_match;
 use function str_replace;
 use function strlen;
 use function strtolower;
@@ -33,6 +34,9 @@ use const PHP_URL_QUERY;
  */
 final readonly class SeoMetadataResolver
 {
+    /** Request attributes never offered as placeholders (case-insensitive). */
+    private const SECRET_ATTRIBUTE_PATTERN = '/nonce|token|csrf|secret|password/i';
+
     /**
      * @param array<string, mixed> $config
      * @param iterable<SeoDefaultsProviderInterface> $defaultsProviders
@@ -360,13 +364,16 @@ final readonly class SeoMetadataResolver
     }
 
     /**
+     * Scalar request attributes as title / description placeholders, without secrets that a template could leak into
+     * the page head (CSP nonces, CSRF / auth tokens, passwords).
+     *
      * @return array<string, string>
      */
     private function scalarAttributes(Request $request): array
     {
         $out = [];
         foreach ($request->attributes->all() as $key => $value) {
-            if (is_scalar($value)) {
+            if (is_scalar($value) && preg_match(self::SECRET_ATTRIBUTE_PATTERN, (string) $key) !== 1) {
                 $out[(string) $key] = (string) $value;
             }
         }

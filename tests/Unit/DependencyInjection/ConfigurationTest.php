@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Tests\Unit\DependencyInjection;
 
 use Nowo\SeoKitBundle\DependencyInjection\Configuration;
+use Nowo\SeoKitBundle\Ui\SeoKitPages;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
@@ -107,5 +109,55 @@ final class ConfigurationTest extends TestCase
         $this->assertArrayHasKey('hello-world', $config['slugs']['app_blog_show']);
         $this->assertArrayNotHasKey('hello_world', $config['slugs']['app_blog_show']);
         $this->assertSame('hola-mundo', $config['slugs']['app_blog_show']['hello-world']['locales']['es']['slug']);
+    }
+
+    public function testWebUiAndSecurityDefaults(): void
+    {
+        $config = $this->processor->processConfiguration(new Configuration(), [[]]);
+
+        $this->assertSame([
+            'enabled'             => false,
+            'settings'            => true,
+            'surfaces'            => true,
+            'path_prefix'         => null,
+            'layout_template'     => null,
+            'templates'           => SeoKitPages::TEMPLATES,
+            'form_themes'         => [SeoKitPages::DEFAULT_FORM_THEME],
+            'api_enabled'         => true,
+            'api_csrf_protection' => true,
+        ], $config['web_ui']);
+        $this->assertSame(['access_roles' => ['ROLE_ADMIN'], 'access_checker' => null, 'allow_unauthenticated' => false], $config['security']);
+        $this->assertNull($config['admin']['enabled']);
+        $this->assertNull($config['admin']['role']);
+    }
+
+    /**
+     * @return iterable<string, array{0: array<string, mixed>}>
+     */
+    public static function invalidWebUiConfigs(): iterable
+    {
+        yield 'path prefix without slash' => [['web_ui' => ['path_prefix' => 'admin/seo']]];
+        yield 'path prefix with query' => [['web_ui' => ['path_prefix' => '/admin/seo?x=1']]];
+        yield 'empty page template' => [['web_ui' => ['templates' => ['settings' => '']]]];
+        yield 'public role' => [['security' => ['access_roles' => ['PUBLIC_ACCESS']]]];
+        yield 'anonymous role' => [['security' => ['access_roles' => ['IS_AUTHENTICATED_ANONYMOUSLY']]]];
+        yield 'blank role' => [['security' => ['access_roles' => [' ']]]];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    #[DataProvider('invalidWebUiConfigs')]
+    public function testInvalidWebUiAndSecurityValuesAreRejected(array $config): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->processor->processConfiguration(new Configuration(), [$config]);
+    }
+
+    public function testValidPathPrefixIsKept(): void
+    {
+        $config = $this->processor->processConfiguration(new Configuration(), [['web_ui' => ['path_prefix' => '/admin/seo-kit']]]);
+
+        $this->assertSame('/admin/seo-kit', $config['web_ui']['path_prefix']);
     }
 }

@@ -18,10 +18,10 @@ final class CsrfProtectionPassTest extends TestCase
         $container = new ContainerBuilder();
         (new CsrfProtectionPass())->process($container);
 
-        $container->setParameter('nowo_seo_kit.admin', ['enabled' => false]);
+        $container->setParameter('nowo_seo_kit.web_ui', ['enabled' => false]);
         (new CsrfProtectionPass())->process($container);
 
-        $container->setParameter('nowo_seo_kit.admin', 'not-an-array');
+        $container->setParameter('nowo_seo_kit.web_ui', 'not-an-array');
         (new CsrfProtectionPass())->process($container);
 
         $this->addToAssertionCount(1);
@@ -56,14 +56,14 @@ final class CsrfProtectionPassTest extends TestCase
         $container->setParameter('form.type_extension.csrf.enabled', false);
 
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('admin.enabled');
+        $this->expectExceptionMessage('web_ui.enabled');
         (new CsrfProtectionPass())->process($container);
     }
 
     private function adminContainer(): ContainerBuilder
     {
         $container = new ContainerBuilder();
-        $container->setParameter('nowo_seo_kit.admin', ['enabled' => true]);
+        $container->setParameter('nowo_seo_kit.web_ui', ['enabled' => true]);
 
         return $container;
     }

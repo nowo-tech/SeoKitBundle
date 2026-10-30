@@ -15,18 +15,18 @@ use function is_array;
  *
  * The settings and surface forms (`SeoSurfaceType`, site settings) rely on Symfony form CSRF. A host that disables
  * `framework.form.csrf_protection` (or has no CSRF token manager) would accept cross-site posts, so the container
- * refuses to compile instead while `admin.enabled` is true.
+ * refuses to compile instead while `web_ui.enabled` (1.x: `admin.enabled`) is true.
  */
 final class CsrfProtectionPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasParameter('nowo_seo_kit.admin')) {
+        if (!$container->hasParameter('nowo_seo_kit.web_ui')) {
             return;
         }
 
-        $admin = $container->getParameter('nowo_seo_kit.admin');
-        if (!is_array($admin) || ($admin['enabled'] ?? false) !== true) {
+        $webUi = $container->getParameter('nowo_seo_kit.web_ui');
+        if (!is_array($webUi) || ($webUi['enabled'] ?? false) !== true) {
             return;
         }
 
@@ -38,7 +38,7 @@ final class CsrfProtectionPass implements CompilerPassInterface
             || !$container->hasDefinition('form.type_extension.csrf')
             || $formCsrfDisabled
         ) {
-            throw new LogicException('NowoSeoKitBundle: the admin UI (admin.enabled) requires CSRF protection. Enable framework.csrf_protection and framework.form.csrf_protection (composer require symfony/security-csrf), or set admin.enabled: false.');
+            throw new LogicException('NowoSeoKitBundle: the admin UI (web_ui.enabled) requires CSRF protection. Enable framework.csrf_protection and framework.form.csrf_protection (composer require symfony/security-csrf), or set web_ui.enabled: false.');
         }
     }
 }

@@ -12,6 +12,7 @@ nowo_seo_kit:
         save: 'Enregistrer'
         edit: 'Modifier'
         back: 'Retour'
+        area_nav: 'Administration SEO'
         settings:
             title: 'Paramètres SEO'
             intro: 'Valeurs par défaut du site héritées par chaque page, ainsi que l’organisation derrière le graphe de connaissances.'
@@ -25,11 +26,27 @@ nowo_seo_kit:
             site_noindex: 'L’ensemble du site est en noindex ; les avertissements published_but_noindex sont masqués.'
             empty: 'Aucun élément d’audit enregistré pour cette langue.'
             edit_title: 'Modifier le SEO — %surface%'
+            edit_intro: 'Langue %locale%. Les champs vides héritent des valeurs du site.'
+            empty_title: 'Aucune surface'
+            caption: 'Surfaces (%locale%)'
+            locale: 'Langue'
+            override: 'Personnalisé'
+            no_problems: 'OK'
             column:
                 surface: 'Page'
                 path: 'Chemin'
                 title: 'Titre'
                 problems: 'Problèmes'
+                actions: 'Actions'
+            problem:
+                missing_title: 'Titre manquant'
+                long_title: 'Titre trop long'
+                missing_description: 'Description manquante'
+                long_description: 'Description trop longue'
+                short_description: 'Description trop courte'
+                published_but_noindex: 'Publié mais noindex'
+                duplicate_title: 'Titre en double'
+                duplicate_description: 'Description en double'
     flash:
         settings_saved: 'Paramètres SEO enregistrés.'
         surface_saved: 'SEO de la page enregistré.'
@@ -42,6 +59,9 @@ nowo_seo_kit:
         missing_placeholder: 'Le modèle de titre doit contenir %placeholder%.'
     social_profiles:
         invalid: '« %url% » doit être une URL http(s) absolue.'
+    site_settings:
+        image_url:
+            invalid: 'Utilisez un chemin du site (/image.png) ou une URL https.'
     surface:
         robots:
             inherit: 'Hériter'
@@ -98,22 +118,14 @@ nowo_seo_site:
         label: 'Vérification du site Google'
     bing_site_verification:
         label: 'Vérification du site Bing'
-    default_title_en:
-        label: 'Titre par défaut (en)'
-    home_title_en:
-        label: 'Titre de l’accueil (en)'
-    default_description_en:
-        label: 'Description par défaut (en)'
-    organisation_description_en:
-        label: 'Description de l’organisation (en)'
-    default_title_es:
-        label: 'Titre par défaut (es)'
-    home_title_es:
-        label: 'Titre de l’accueil (es)'
-    default_description_es:
-        label: 'Description par défaut (es)'
-    organisation_description_es:
-        label: 'Description de l’organisation (es)'
+    default_title:
+        label: 'Titre par défaut (%locale%)'
+    home_title:
+        label: 'Titre de l’accueil (%locale%)'
+    default_description:
+        label: 'Description par défaut (%locale%)'
+    organisation_description:
+        label: 'Description de l’organisation (%locale%)'
 
 nowo_seo_surface:
     meta_title:

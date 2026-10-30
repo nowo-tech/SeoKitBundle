@@ -113,6 +113,35 @@ final class SeoMetadataResolverTest extends TestCase
         $this->assertStringContainsString('/blog/hello', (string) $metadata->canonical);
     }
 
+    public function testSecretRequestAttributesAreNotPlaceholders(): void
+    {
+        $config = [
+            'enabled'        => true,
+            'default_locale' => 'en',
+            'locales'        => ['en'],
+            'defaults'       => ['title_template' => '{title}'],
+            'slug_routes'    => [
+                'app_blog_show' => [
+                    'slug_parameter' => 'slug',
+                    'title_template' => '{slug} {csp_nonce} {_csrf_token}',
+                    'path_pattern'   => '/blog/{slug}',
+                ],
+            ],
+        ];
+
+        $request = Request::create('/blog/hello', 'GET');
+        $request->attributes->set('_route', 'app_blog_show');
+        $request->attributes->set('slug', 'hello');
+        $request->attributes->set('csp_nonce', 'n0nce');
+        $request->attributes->set('_csrf_token', 'S3CR3T');
+
+        $title = $this->createResolver($config, $request)->resolve()->title;
+
+        $this->assertStringContainsString('hello', $title);
+        $this->assertStringNotContainsString('n0nce', $title);
+        $this->assertStringNotContainsString('S3CR3T', $title);
+    }
+
     public function testResolveAppliesNoindexFromSlugConfig(): void
     {
         $config = [

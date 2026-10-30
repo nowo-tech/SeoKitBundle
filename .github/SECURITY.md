@@ -8,8 +8,8 @@ Security fixes land on the latest minor; upgrade within the 1.x line to receive 
 
 | Version  | Supported          |
 | -------- | ------------------ |
-| 1.17.x   | :white_check_mark: |
-| < 1.17   | :x:                |
+| 1.18.x   | :white_check_mark: |
+| < 1.18   | :x:                |
 
 ## Reporting a Vulnerability
 

@@ -36,7 +36,7 @@ This bundle is **FrankenPHP worker mode friendly**.
 - ✅ **Host providers** — defaults, indexability, sitemap URLs, and extra robots groups
 - ✅ **Optional Doctrine site settings** — `persistence.enabled` + `SeoSiteConfig` snapshot
 - ✅ **Audit CLI** — `nowo:seo:audit` with tagged subject providers
-- ✅ **Optional SEO admin + pencil API** — site settings, surface overrides, FormKit forms, `OriginUrlGuard`
+- ✅ **Optional SEO admin + pencil API** — site settings, surface overrides on the UiKit page contract (host layout + CSS stack from UiKit), `security.access_roles` / custom access checker, FormKit forms, `OriginUrlGuard`
 - ✅ **Surface helpers** — `SeoSurfaceKeys` + `SeoSurfaceManager` for CMS/blog pencils
 - ✅ **AbsoluteUrlBuilder** — origin + path normalisation from `base_url`
 - ✅ **PHP 8 attribute** — `#[Seo]` on controllers

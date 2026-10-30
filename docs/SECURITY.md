@@ -4,6 +4,7 @@
 
 - [Reporting vulnerabilities](#reporting-vulnerabilities)
 - [Attack surface and threat model](#attack-surface-and-threat-model)
+- [Admin UI access (REQ-UI-002)](#admin-ui-access-req-ui-002)
 - [CSRF on session mutations (REQ-SEC-005)](#csrf-on-session-mutations-req-sec-005)
 - [Logging](#logging)
 - [Integrator guidance](#integrator-guidance)
@@ -23,18 +24,34 @@ See [.github/SECURITY.md](../.github/SECURITY.md) for supported versions.
 |---------|----------|------------|
 | `GET /sitemap.xml`, `GET /robots.txt` (bundle route loader) | Public, unauthenticated | Read-only; URLs built from config and tagged providers only, never from request input; absolute URLs use `base_url`; without it they follow the request `Host` header (`OriginUrlGuard` only validates canonical overrides), so set `base_url` (the recipe uses `%env(default::DEFAULT_URI)%`) or `framework.trusted_hosts` before the public sitemap (cached `public, max-age=3600`) goes behind a shared cache. |
 | Twig `nowo_seo_head()` / `nowo_seo_metadata()` | Every page that renders them | Values are escaped by Twig; JSON-LD is encoded with `<` / `>` escaped so it cannot break out of `<script>`. |
-| Admin UI `/settings/seo`, `/admin/seo/surfaces` (`admin.enabled`, off by default) | Session-authenticated | `admin.role` (default `ROLE_ADMIN`) on every action; Symfony Forms with CSRF; canonical overrides restricted to the site origin. |
-| JSON pencil API `GET/POST /_nowo/seo/surfaces/{key}/{locale}` (`admin.api_enabled`) | Session-authenticated | `admin.role`; `POST` requires `Content-Type: application/json` **and** an `X-CSRF-Token` header (see below); payload goes through the same validated `SeoSurfaceType`. |
+| Admin UI `/settings/seo`, `/admin/seo/surfaces` or `<web_ui.path_prefix>/settings`, `/surfaces` (`web_ui.enabled`, off by default) | Session-authenticated | `SeoKitAccessCheckerInterface` on every action (default: any of `security.access_roles`, default `ROLE_ADMIN`); Symfony Forms with CSRF; canonical overrides restricted to the site origin; image URLs limited to site paths / https; no control characters in URLs. |
+| JSON pencil API `GET/POST /_nowo/seo/surfaces/{key}/{locale}` (`web_ui.api_enabled`) | Session-authenticated | Same access checker; locales that are not enabled and keys over 180 characters answer 404; `POST` requires `Content-Type: application/json` **and** an `X-CSRF-Token` header (see below); payload goes through the same validated `SeoSurfaceType`. |
 | `nowo:seo:audit` console command | Operators only | Read-only report over tagged audit subjects. |
 | Doctrine entities (`persistence.enabled`, off by default) | Database | Bundle-owned tables (optionally prefixed with `doctrine.table_prefix`); no raw SQL. |
 
-Threats considered: SEO spam / open redirect through canonical overrides (blocked by the origin guard), stored XSS through SEO fields (Twig escaping + JSON-LD encoding), cross-site request forgery against the admin UI and the JSON API (Form CSRF + header token; the container refuses to compile with `admin.enabled` and form CSRF disabled — `CsrfProtectionPass`), host-header poisoning of absolute URLs (set `base_url` in production). Out of scope: authentication itself (the host firewall) and the content of host-provided providers.
+Threats considered: SEO spam / open redirect through canonical overrides (blocked by the origin guard), stored XSS through SEO fields (Twig escaping + JSON-LD encoding), cross-site request forgery against the admin UI and the JSON API (Form CSRF + header token; the container refuses to compile with `web_ui.enabled` and form CSRF disabled — `CsrfProtectionPass`), an admin UI left open by configuration (empty role list or `PUBLIC_ACCESS` refused; no SecurityBundle → compile error — `WebUiSecurityPass`), secrets leaking into the head (request attributes named like nonces / tokens / passwords are not title placeholders), host-header poisoning of absolute URLs (set `base_url` in production). Out of scope: authentication itself (the host firewall) and the content of host-provided providers.
+
+## Admin UI access (REQ-UI-002)
+
+- Two layers: the host firewall (`access_control` on the admin paths and `^/_nowo/seo/`, see
+  [CONFIGURATION.md — Host access_control](CONFIGURATION.md#host-access_control)) and the bundle access checker on
+  every admin and API action.
+- `security.access_roles` (default `[ROLE_ADMIN]`): the default checker grants a user with **any** listed role and
+  denies everybody when the list is empty (fail closed); an empty list is refused at container build time unless
+  `security.access_checker` names a host service. `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` are rejected.
+- `security.access_checker`: host service implementing `SeoKitAccessCheckerInterface` (teams, voters, …).
+- **`security.allow_unauthenticated: true` is a footgun:** it makes the admin UI and the JSON API public (no login,
+  no role) and drops the SecurityBundle requirement. The container refuses to compile with it unless `kernel.debug`
+  is true, and always in the `prod` environment (`WebUiSecurityPass`); it must be a literal boolean (an `%env()%`
+  placeholder is refused, so a deployment variable cannot switch it on).
+- With `web_ui.enabled` and `allow_unauthenticated: false` the container does not compile without SecurityBundle
+  (`WebUiSecurityPass`).
 
 ## CSRF on session mutations (REQ-SEC-005)
 
-- Admin forms (`SeoSiteSettingsType`, `SeoSurfaceType`) keep Symfony Form CSRF enabled.
+- Admin forms (`SeoSiteSettingsType`, `SeoSurfaceType`) keep Symfony Form CSRF enabled; the container refuses to compile while `web_ui.enabled` without `security.csrf.token_manager`, the form CSRF extension, or with `framework.form.csrf_protection: false` (`CsrfProtectionPass`).
 - The JSON API `POST` requires a token in the `X-CSRF-Token` header (token id `nowo_seo_kit_surface_api`); `GET` on the same URL returns it as `csrf_token`. Validation is fail-closed: without a CSRF token manager (`symfony/security-csrf` + `framework.csrf_protection`) every `POST` is refused with 403.
-- `admin.api_csrf_protection: false` disables the header check. Use it only when the API sits behind a Bearer / API-token firewall without session cookies, and document it in the host.
+- `web_ui.api_csrf_protection: false` (literal boolean) disables the header check; it stays allowed outside debug because it is meant for production Bearer / API-token firewalls, and `POST` still requires `Content-Type: application/json`. Use it only when the API sits behind a Bearer / API-token firewall without session cookies, and document it in the host.
 
 ## Logging
 
@@ -71,7 +88,7 @@ Before tagging a release, confirm:
 | **Dependencies** | `composer audit` run; issues triaged. |
 | **Logging** | Logs do not print secrets, tokens, or session identifiers unnecessarily. |
 | **Cryptography** | If used: keys from secure config; never hardcoded. |
-| **Permissions / exposure** | Routes and admin features documented; roles configured for production. |
+| **Permissions / exposure** | Routes and admin features documented; `security.access_roles` configured, `allow_unauthenticated` false, host `access_control` on the admin paths. |
 | **Limits / DoS** | Sitemap/robots generation stays bounded; no unbounded crawl of untrusted URLs. |
 | **CSRF** | Admin forms keep CSRF; JSON API writes require `X-CSRF-Token` (REQ-SEC-005). |
 | **AI security audit** | Grade recorded in org `BUNDLES_SECURITY_ANALYSIS.md` when applicable (REQ-SEC-004); re-audit after changes to the admin UI or JSON API. |
@@ -83,10 +100,11 @@ Record confirmation in the release PR or tag notes.
 
 | Field | Value |
 |-------|--------|
-| Date | 2026-07-29 |
-| Method | Cursor / Nowo campaign static AI security review |
-| Grade | **Pass (good)** |
+| Date | 2026-10-28 (supersedes 2026-07-29, Pass good) |
+| Method | Claude Code static security review of `main` `ba8f407` (v1.17.0 + 3); org record `BUNDLES_SECURITY_ANALYSIS.md` Appendix AR |
+| Grade | **Pass (conditional)** |
 | Overall risk | **Low** |
 | Open Critical / High / Medium | None |
-| Residual | JSON-LD may use Twig `|raw` for structured data; no UGC in SEO config by default — keep overrides trusted |
-| Notes | Docs/checklist alignment; no auth surface beyond host routes |
+| Findings | L1 absolute URLs from the request `Host` without `base_url`; L2 admin forms fail open when the host disables form CSRF; L3 stale supported versions; Info I1–I7 |
+| Remediation | 1.18.0: L1 (recipe `base_url: '%env(default::DEFAULT_URI)%'`, threat-model note), L2 (`CsrfProtectionPass`). Unreleased: L3 (`.github/SECURITY.md` 1.18.x), I1 (control characters in canonical / image URLs), I2 (image URL fields of the site settings), I3 (API locale / key length), I4 (secret-looking request attributes are not placeholders), I5 (single-encoded edit links), I6 (`security.access_roles` fail closed); I7 (sitemap chunking) stays on the roadmap |
+| Next | Independent re-audit of the admin UI rework (UiKit page contract, access checker) before the next release grade is recorded |

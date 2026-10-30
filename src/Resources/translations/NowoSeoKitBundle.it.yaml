@@ -12,6 +12,7 @@ nowo_seo_kit:
         save: 'Salva'
         edit: 'Modifica'
         back: 'Indietro'
+        area_nav: 'Amministrazione SEO'
         settings:
             title: 'Impostazioni SEO'
             intro: 'Valori predefiniti del sito ereditati da ogni pagina, più l’organizzazione dietro il knowledge graph.'
@@ -25,11 +26,27 @@ nowo_seo_kit:
             site_noindex: 'L’intero sito è noindex; gli avvisi published_but_noindex vengono soppressi.'
             empty: 'Nessun elemento di audit registrato per questa lingua.'
             edit_title: 'Modifica SEO — %surface%'
+            edit_intro: 'Lingua %locale%. I campi vuoti ereditano i valori del sito.'
+            empty_title: 'Nessuna superficie'
+            caption: 'Superfici (%locale%)'
+            locale: 'Lingua'
+            override: 'Personalizzato'
+            no_problems: 'OK'
             column:
                 surface: 'Pagina'
                 path: 'Percorso'
                 title: 'Titolo'
                 problems: 'Problemi'
+                actions: 'Azioni'
+            problem:
+                missing_title: 'Titolo mancante'
+                long_title: 'Titolo troppo lungo'
+                missing_description: 'Descrizione mancante'
+                long_description: 'Descrizione troppo lunga'
+                short_description: 'Descrizione troppo corta'
+                published_but_noindex: 'Pubblicato ma noindex'
+                duplicate_title: 'Titolo duplicato'
+                duplicate_description: 'Descrizione duplicata'
     flash:
         settings_saved: 'Impostazioni SEO salvate.'
         surface_saved: 'SEO della pagina salvato.'
@@ -42,6 +59,9 @@ nowo_seo_kit:
         missing_placeholder: 'Il modello del titolo deve includere %placeholder%.'
     social_profiles:
         invalid: '"%url%" deve essere un URL http(s) assoluto.'
+    site_settings:
+        image_url:
+            invalid: 'Usa un percorso del sito (/immagine.png) o un URL https.'
     surface:
         robots:
             inherit: 'Eredita'
@@ -98,22 +118,14 @@ nowo_seo_site:
         label: 'Verifica del sito Google'
     bing_site_verification:
         label: 'Verifica del sito Bing'
-    default_title_en:
-        label: 'Titolo predefinito (en)'
-    home_title_en:
-        label: 'Titolo della home (en)'
-    default_description_en:
-        label: 'Descrizione predefinita (en)'
-    organisation_description_en:
-        label: 'Descrizione dell’organizzazione (en)'
-    default_title_es:
-        label: 'Titolo predefinito (es)'
-    home_title_es:
-        label: 'Titolo della home (es)'
-    default_description_es:
-        label: 'Descrizione predefinita (es)'
-    organisation_description_es:
-        label: 'Descrizione dell’organizzazione (es)'
+    default_title:
+        label: 'Titolo predefinito (%locale%)'
+    home_title:
+        label: 'Titolo della home (%locale%)'
+    default_description:
+        label: 'Descrizione predefinita (%locale%)'
+    organisation_description:
+        label: 'Descrizione dell’organizzazione (%locale%)'
 
 nowo_seo_surface:
     meta_title:

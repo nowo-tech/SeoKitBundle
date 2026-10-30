@@ -1,49 +1,37 @@
-<!DOCTYPE html>
-<html lang="{{ locale|default('en') }}">
-<head>
-    <meta charset="utf-8">
-    <title>{{ 'nowo_seo_kit.admin.surfaces.title'|trans({}, 'NowoSeoKitBundle') }}</title>
-</head>
-<body>
-<main>
-    <h1>{{ 'nowo_seo_kit.admin.surfaces.title'|trans({}, 'NowoSeoKitBundle') }}</h1>
-    {{ include('@NowoSeoKitBundle/admin/_flashes.html.twig') }}
-    <p>{{ 'nowo_seo_kit.admin.surfaces.intro'|trans({}, 'NowoSeoKitBundle') }}</p>
+{#
+  Surfaces SEO list (REQ-UI-003): UiKit list scaffold.
+  View model: page (View\ListPage, SeoKitPages::surfacesPage()): header nowo_seo_kit.admin.surfaces.title / .intro,
+  admin navigation as header tabs; filters = the GET locale switcher (SeoSurfaceLocaleFilterType, `?locale=`); one
+  row per audit subject: id, surface, path, title, problems (audit codes), has_override; row action Edit (GET);
+  EmptyState nowo_seo_kit.admin.surfaces.empty_title / .empty; caption = the locale.
+  Extra variables (kept for web_ui.templates overrides): locale, locales, rows (list<SeoAuditRow>), site_indexable.
+  Data blocks: nowo_ui_list_row (cells: problems as badges with translated labels), nowo_ui_content prepends the
+  site-wide noindex notice (flash_info slot).
+#}
+{% extends '@NowoUiKit/page/list.html.twig' %}
 
-    <nav>
-        {% for candidate in locales %}
-            <a href="{{ path('nowo_seo_kit_admin_surfaces', {locale: candidate}) }}"{% if candidate == locale %} aria-current="page"{% endif %}>{{ candidate|upper }}</a>
-        {% endfor %}
-    </nav>
-
+{% block nowo_ui_content %}
     {% if not site_indexable %}
-        <p role="status"><strong>{{ 'nowo_seo_kit.admin.surfaces.site_noindex'|trans({}, 'NowoSeoKitBundle') }}</strong></p>
+        <div class="{{ nowo_ui_class('flash_info', page.bundle) }}" role="status" data-testid="seo-kit-surfaces-site-noindex">{{ 'nowo_seo_kit.admin.surfaces.site_noindex'|trans({}, 'NowoSeoKitBundle') }}</div>
     {% endif %}
+    {{ parent() }}
+{% endblock %}
 
-    <table>
-        <thead>
-            <tr>
-                <th>{{ 'nowo_seo_kit.admin.surfaces.column.surface'|trans({}, 'NowoSeoKitBundle') }}</th>
-                <th>{{ 'nowo_seo_kit.admin.surfaces.column.path'|trans({}, 'NowoSeoKitBundle') }}</th>
-                <th>{{ 'nowo_seo_kit.admin.surfaces.column.title'|trans({}, 'NowoSeoKitBundle') }}</th>
-                <th>{{ 'nowo_seo_kit.admin.surfaces.column.problems'|trans({}, 'NowoSeoKitBundle') }}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                <tr>
-                    <td>{{ row.surfaceKey }}</td>
-                    <td>{{ row.path }}</td>
-                    <td>{{ row.title }}</td>
-                    <td>{{ row.problems()|join(', ') }}</td>
-                    <td><a href="{{ path('nowo_seo_kit_admin_surfaces_edit', {locale: locale, surfaceKey: row.surfaceKey|url_encode}) }}">{{ 'nowo_seo_kit.admin.edit'|trans({}, 'NowoSeoKitBundle') }}</a></td>
-                </tr>
-            {% else %}
-                <tr><td colspan="5">{{ 'nowo_seo_kit.admin.surfaces.empty'|trans({}, 'NowoSeoKitBundle') }}</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</main>
-</body>
-</html>
+{% block nowo_ui_list_row %}
+    {%- set _b = page.bundle -%}
+    <td class="{{ nowo_ui_class('table_cell', _b) }}" data-label="{{ 'nowo_seo_kit.admin.surfaces.column.surface'|trans({}, 'NowoSeoKitBundle') }}" data-required="1">
+        <code class="{{ nowo_ui_class('code', _b) }}">{{ row.surface }}</code>
+        {% if row.has_override %}
+            <span class="{{ nowo_ui_class('badge_info', _b) }}">{{ 'nowo_seo_kit.admin.surfaces.override'|trans({}, 'NowoSeoKitBundle') }}</span>
+        {% endif %}
+    </td>
+    <td class="{{ nowo_ui_class('table_cell', _b) }}" data-label="{{ 'nowo_seo_kit.admin.surfaces.column.path'|trans({}, 'NowoSeoKitBundle') }}" data-nowo-ui-priority="2"><code class="{{ nowo_ui_class('code', _b) }}">{{ row.path }}</code></td>
+    <td class="{{ nowo_ui_class('table_cell', _b) }}{{ row.title is same as('') ? ' ' ~ nowo_ui_class('table_cell_muted', _b) }}" data-label="{{ 'nowo_seo_kit.admin.surfaces.column.title'|trans({}, 'NowoSeoKitBundle') }}">{{ row.title is same as('') ? '—' : row.title }}</td>
+    <td class="{{ nowo_ui_class('table_cell', _b) }}" data-label="{{ 'nowo_seo_kit.admin.surfaces.column.problems'|trans({}, 'NowoSeoKitBundle') }}">
+        {% for problem in row.problems %}
+            <span class="{{ nowo_ui_class(problem == 'published_but_noindex' ? 'badge_danger' : 'badge_warning', _b) }}" data-testid="seo-kit-problem-{{ problem }}">{{ ('nowo_seo_kit.admin.surfaces.problem.' ~ problem)|trans({}, 'NowoSeoKitBundle') }}</span>
+        {% else %}
+            <span class="{{ nowo_ui_class('badge_success', _b) }}">{{ 'nowo_seo_kit.admin.surfaces.no_problems'|trans({}, 'NowoSeoKitBundle') }}</span>
+        {% endfor %}
+    </td>
+{% endblock %}

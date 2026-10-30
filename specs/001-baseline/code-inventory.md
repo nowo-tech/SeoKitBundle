@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/seo-kit-bundle`  
-**Last audited**: 2026-10-22 (REQ wave 2: table prefix listener, closed-set enums)
+**Last audited**: 2026-10-30 (admin UI on the UiKit page contract, access checker, CSRF / security compile passes)
 
 Every production artifact under `src/` is listed below.
 
@@ -16,10 +16,13 @@ Every production artifact under `src/` is listed below.
 | `Controller/SeoKitController.php` | Sitemap / robots endpoints | FR-SEO-005 |
 | `Controller/Admin/SeoSiteSettingsController.php` | Optional SEO admin settings | FR-SEO-001 |
 | `Controller/Admin/SeoSurfaceController.php` | Optional surface CRUD | FR-SEO-001 |
+| `Controller/Admin/SeoKitAdminAccessTrait.php` | Single access gate of the admin and API actions (REQ-UI-002) | FR-SEO-001 |
 | `Controller/Api/SeoSurfaceApiController.php` | Pencil JSON API | FR-SEO-001 |
 | `DependencyInjection/Configuration.php` | Config tree (`robots.groups`, PageHead, persistence, admin) | FR-SEO-001, FR-SEO-008, FR-SEO-010 |
 | `DependencyInjection/SeoKitExtension.php` | DI extension | FR-SEO-001 |
 | `DependencyInjection/Compiler/TwigPathsPass.php` | Twig namespace paths | FR-SEO-006 |
+| `DependencyInjection/Compiler/CsrfProtectionPass.php` | Fail closed without form CSRF while `web_ui.enabled` (REQ-SEC-005) | FR-SEO-001 |
+| `DependencyInjection/Compiler/WebUiSecurityPass.php` | Fail closed without SecurityBundle while `web_ui.enabled` (REQ-UI-002) | FR-SEO-001 |
 | `Doctrine/TablePrefixListener.php` | Optional `doctrine.table_prefix` (REQ-ORM-002) | FR-SEO-001 |
 | `Entity/SeoSiteSettings.php` | Optional Doctrine site settings | FR-SEO-001 |
 | `Entity/SeoSiteSettingsTranslation.php` | Site settings i18n | FR-I18N-001 |
@@ -27,9 +30,16 @@ Every production artifact under `src/` is listed below.
 | `Enum/SitemapChangeFreq.php` | `sitemap_changefreq` value set | FR-SEO-005 |
 | `Enum/TwitterCard.php` | `defaults.twitter.card` value set | FR-SEO-002 |
 | `EventSubscriber/SeoRuntimeClearSubscriber.php` | Request-scoped runtime reset | FR-SEO-002 |
+| `EventSubscriber/XRobotsTagSubscriber.php` | Optional `X-Robots-Tag` response header | FR-SEO-002 |
 | `Form/AbstractSeoFormType.php` | FormKit admin forms | FR-SEO-001 |
 | `Form/SeoSiteSettingsType.php` | Site settings form (social profiles `none` sentinel) | FR-SEO-001, FR-SEO-011 |
 | `Form/SeoSurfaceType.php` | Surface form | FR-SEO-001 |
+| `Form/SeoSurfaceLocaleFilterType.php` | GET locale switcher of the surfaces list | FR-SEO-001 |
+| `Security/SeoKitAccessCheckerInterface.php` | Admin access checker contract (REQ-UI-002) | FR-SEO-001 |
+| `Security/ConfigurableSeoKitAccessChecker.php` | Default role checker over `security.access_roles` | FR-SEO-001 |
+| `Security/AllowAllSeoKitAccessChecker.php` | Demo-only checker (`security.allow_unauthenticated`) | FR-SEO-001 |
+| `Ui/SeoKitPages.php` | UiKit view models of the admin pages (REQ-UI-003) | FR-SEO-001 |
+| `Ui/SeoKitAreaNav.php` | Admin area navigation (`seo_kit`) for the UiKit registry | FR-SEO-001 |
 | `Model/SeoMetadata.php` | Resolved metadata DTO | FR-SEO-002 |
 | `Model/SeoSiteConfig.php` | Persistence snapshot (`NO_SOCIAL_PROFILES`, `socialProfileUrls()`, `hasNoSocialProfiles()`) | FR-SEO-001, FR-SEO-011 |
 | `Model/HreflangSet.php` | Hreflang DTO | FR-SEO-004 |
@@ -100,10 +110,9 @@ Every production artifact under `src/` is listed below.
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
 | `Resources/views/seo/head.html.twig` | Default head partial (hex-escaped JSON-LD fallbacks) | FR-SEO-006, FR-SEO-012 |
-| `Resources/views/admin/settings.html.twig` | Admin site settings | FR-SEO-001 |
-| `Resources/views/admin/surfaces_index.html.twig` | Surface list | FR-SEO-001 |
-| `Resources/views/admin/surfaces_form.html.twig` | Surface form | FR-SEO-001 |
-| `Resources/views/admin/_flashes.html.twig` | Admin flash messages partial (translated, `role="status"`) | FR-SEO-001, FR-I18N-001 |
+| `Resources/views/admin/settings.html.twig` | Admin site settings (UiKit form scaffold) | FR-SEO-001 |
+| `Resources/views/admin/surfaces_index.html.twig` | Surface list (UiKit list scaffold) | FR-SEO-001 |
+| `Resources/views/admin/surfaces_form.html.twig` | Surface form (UiKit form scaffold) | FR-SEO-001 |
 
 ## Translations (`src/Resources/translations/`)
 
@@ -121,10 +130,10 @@ Every production artifact under `src/` is listed below.
 
 | Category | Files | Mapped |
 | --- | ---: | ---: |
-| PHP classes | 76 | 76 |
+| PHP classes | 86 | 86 |
 | Symfony config | 3 | 3 |
-| Twig views | 5 | 5 |
+| Twig views | 4 | 4 |
 | Translations | 7 | 7 |
-| **Total production sources** | **91** | **91** |
+| **Total production sources** | **100** | **100** |
 
-Audit command (production count): `git ls-files src | wc -l` → **91** (2026-10-22).
+Audit command (production count): `git ls-files src | wc -l` → **100** (2026-10-30).

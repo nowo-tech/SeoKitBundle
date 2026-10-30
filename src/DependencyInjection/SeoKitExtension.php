@@ -15,10 +15,14 @@ use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
+use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Routing\SeoAdminRouteLoader;
+use Nowo\SeoKitBundle\Security\AllowAllSeoKitAccessChecker;
+use Nowo\SeoKitBundle\Security\ConfigurableSeoKitAccessChecker;
+use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Service\AbsoluteUrlBuilder;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditSubjectProviderInterface;
 use Nowo\SeoKitBundle\Service\ConfigPageHeadDefaultsProvider;
@@ -38,6 +42,9 @@ use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoPencilCatalogFactory;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
+use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
+use Nowo\SeoKitBundle\Ui\SeoKitPages;
+use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -48,8 +55,12 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 
 use function array_key_exists;
+use function in_array;
 use function is_array;
+use function is_bool;
 use function is_string;
+use function sprintf;
+use function trim;
 
 /**
  * Loads and exposes nowo_seo_kit configuration.
@@ -58,7 +69,10 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $config = $this->processConfiguration(new Configuration(), $configs);
+        $config             = $this->processConfiguration(new Configuration(), $configs);
+        [$webUi, $security] = self::resolveWebUi($config);
+        $config['web_ui']   = $webUi;
+        $config['security'] = $security;
 
         $container->setParameter(Configuration::ALIAS . '.config', $config);
         $container->setParameter(Configuration::ALIAS . '.enabled', $config['enabled']);
@@ -66,7 +80,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $container->setParameter(Configuration::ALIAS . '.templates', $config['templates']);
         $container->setParameter(Configuration::ALIAS . '.locales', $config['locales']);
         $container->setParameter(Configuration::ALIAS . '.persistence', $config['persistence']);
-        $container->setParameter(Configuration::ALIAS . '.admin', $config['admin']);
+        $container->setParameter(Configuration::ALIAS . '.web_ui', $webUi);
+        $container->setParameter(Configuration::ALIAS . '.security', $security);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
@@ -106,10 +121,11 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $adminLoader = new Definition(SeoAdminRouteLoader::class);
         $adminLoader->setAutowired(true);
         $adminLoader->setAutoconfigured(true);
-        $adminLoader->setArgument('$adminEnabled', ($config['admin']['enabled'] ?? false) === true);
-        $adminLoader->setArgument('$settingsEnabled', ($config['admin']['settings'] ?? true) === true);
-        $adminLoader->setArgument('$surfacesEnabled', ($config['admin']['surfaces'] ?? true) === true);
-        $adminLoader->setArgument('$apiEnabled', ($config['admin']['api_enabled'] ?? true) === true);
+        $adminLoader->setArgument('$adminEnabled', $webUi['enabled']);
+        $adminLoader->setArgument('$settingsEnabled', $webUi['settings']);
+        $adminLoader->setArgument('$surfacesEnabled', $webUi['surfaces']);
+        $adminLoader->setArgument('$apiEnabled', $webUi['api_enabled']);
+        $adminLoader->setArgument('$pathPrefix', $webUi['path_prefix']);
         $adminLoader->addTag('routing.loader');
         $container->setDefinition(SeoAdminRouteLoader::class, $adminLoader);
 
@@ -126,11 +142,11 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             $this->registerAudit($container, $config);
         }
 
-        if (($config['admin']['enabled'] ?? false) === true) {
+        if ($webUi['enabled']) {
             if (($config['persistence']['enabled'] ?? false) !== true) {
-                throw new InvalidArgumentException('nowo_seo_kit.admin.enabled requires nowo_seo_kit.persistence.enabled.');
+                throw new InvalidArgumentException('nowo_seo_kit.web_ui.enabled requires nowo_seo_kit.persistence.enabled.');
             }
-            $this->registerAdmin($container, $config);
+            $this->registerAdmin($container, $config, $webUi, $security);
         }
     }
 
@@ -193,18 +209,13 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
                 'seo_kit' => [
                     'alias'              => 'seo_kit',
                     'translation_domain' => 'NowoSeoKitBundle',
-                    'defaults'           => [
-                        'attr'     => ['class' => 'form-control'],
-                        'row_attr' => ['class' => 'mb-3'],
-                    ],
-                    'field_types' => [
-                        'checkbox' => [
-                            'attr'     => ['class' => 'form-check-input'],
-                            'row_attr' => ['class' => 'form-check mb-3'],
-                        ],
-                        'choice' => [
-                            'attr' => ['class' => 'form-select'],
-                        ],
+                    // Auto help / placeholder keys only when the catalogue has them (no raw keys in the pages).
+                    'convention_requires_translation' => true,
+                    // REQ-UI-003: no framework classes in the bundle forms; the UiKit form theme of
+                    // web_ui.form_themes applies the theme slots (input, check, form_row, ...).
+                    'defaults' => [
+                        'attr'     => [],
+                        'row_attr' => [],
                     ],
                 ],
             ],
@@ -342,14 +353,82 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     }
 
     /**
-     * @param array<string, mixed> $config
+     * Resolves `web_ui` / `security`, mapping the deprecated 1.x `admin` keys (a legacy key that is set wins), and
+     * enforces the fail-closed access contract (REQ-UI-002): an empty role list needs a custom checker or
+     * `allow_unauthenticated`.
+     *
+     * @param array<string, mixed> $config processed configuration
+     *
+     * @return array{0: array{enabled: bool, settings: bool, surfaces: bool, path_prefix: string|null, layout_template: string|null, templates: array<string, string>, form_themes: list<string>, api_enabled: bool, api_csrf_protection: bool}, 1: array{access_roles: list<string>, access_checker: string|null, allow_unauthenticated: bool}}
      */
-    private function registerAdmin(ContainerBuilder $container, array $config): void
+    public static function resolveWebUi(array $config): array
     {
-        $admin         = $config['admin'] ?? [];
+        /** @var array{enabled: bool, settings: bool, surfaces: bool, path_prefix: string|null, layout_template: string|null, templates: array<string, string>, form_themes: list<string>, api_enabled: bool, api_csrf_protection: bool} $webUi */
+        $webUi = $config['web_ui'];
+        /** @var array{access_roles: list<string>, access_checker: string|null, allow_unauthenticated: bool} $security */
+        $security = $config['security'];
+        /** @var array<string, bool|string|null> $legacy */
+        $legacy = $config['admin'] ?? [];
+
+        foreach (['enabled', 'settings', 'surfaces', 'api_enabled', 'api_csrf_protection'] as $key) {
+            if (is_bool($legacy[$key] ?? null)) {
+                $webUi[$key] = $legacy[$key];
+            }
+        }
+        // Security switches must be literal booleans: an %env()% placeholder is a (truthy) string at this point.
+        /** @var array<string, mixed> $switches */
+        $switches = ['web_ui.enabled' => $config['web_ui']['enabled'] ?? null, 'web_ui.api_csrf_protection' => $config['web_ui']['api_csrf_protection'] ?? null, 'security.allow_unauthenticated' => $config['security']['allow_unauthenticated'] ?? null];
+        foreach ($switches as $key => $value) {
+            if (!is_bool($value)) {
+                throw new InvalidArgumentException(sprintf('nowo_seo_kit.%s must be a literal boolean (no %%env()%% placeholder).', $key));
+            }
+        }
+        foreach (['settings_template' => 'settings', 'surfaces_index_template' => 'surfaces_index', 'surfaces_form_template' => 'surfaces_form'] as $key => $page) {
+            if (is_string($legacy[$key] ?? null) && $legacy[$key] !== '') {
+                $webUi['templates'][$page] = $legacy[$key];
+            }
+        }
+        if (is_string($legacy['role'] ?? null)) {
+            $role = trim($legacy['role']);
+            if ($role === '' || in_array($role, Configuration::PUBLIC_ATTRIBUTES, true)) {
+                throw new InvalidArgumentException(sprintf('nowo_seo_kit.admin.role "%s" would open the admin UI to everybody; set nowo_seo_kit.security.access_roles (or allow_unauthenticated for a demo).', $legacy['role']));
+            }
+            $security['access_roles'] = [$role];
+        }
+
+        $checker = $security['access_checker'];
+        if ($webUi['enabled'] && $security['access_roles'] === [] && ($checker === null || $checker === '') && !$security['allow_unauthenticated']) {
+            throw new InvalidArgumentException('nowo_seo_kit.security.access_roles is empty: set at least one role, a custom security.access_checker, or security.allow_unauthenticated (demo only).');
+        }
+
+        return [$webUi, $security];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array{enabled: bool, settings: bool, surfaces: bool, path_prefix: string|null, layout_template: string|null, templates: array<string, string>, form_themes: list<string>, api_enabled: bool, api_csrf_protection: bool} $webUi
+     * @param array{access_roles: list<string>, access_checker: string|null, allow_unauthenticated: bool} $security
+     */
+    private function registerAdmin(ContainerBuilder $container, array $config, array $webUi, array $security): void
+    {
         $locales       = $config['locales'] ?? ['en'];
         $defaultLocale = $config['default_locale'] ?? 'en';
-        $role          = $admin['role'] ?? 'ROLE_ADMIN';
+
+        $this->registerAccessChecker($container, $security);
+
+        $areaNav = new Definition(SeoKitAreaNav::class);
+        $areaNav->setArgument('$urlGenerator', new Reference('router'));
+        $areaNav->setArgument('$settings', $webUi['settings']);
+        $areaNav->setArgument('$surfaces', $webUi['surfaces']);
+        $areaNav->addTag(AreaNavProviderInterface::TAG);
+        $container->setDefinition(SeoKitAreaNav::class, $areaNav);
+
+        $pages = new Definition(SeoKitPages::class);
+        $pages->setArgument('$layoutTemplate', $webUi['layout_template']);
+        $pages->setArgument('$templates', $webUi['templates']);
+        $pages->setArgument('$formThemes', $webUi['form_themes']);
+        $pages->setArgument('$areaNav', new Reference(SeoKitAreaNav::class));
+        $container->setDefinition(SeoKitPages::class, $pages);
 
         $settingsForm = new Definition(SeoSiteSettingsType::class);
         $settingsForm->setAutowired(true);
@@ -364,41 +443,81 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $surfaceForm->addTag('form.type');
         $container->setDefinition(SeoSurfaceType::class, $surfaceForm);
 
-        if (($admin['settings'] ?? true) === true) {
+        $filterForm = new Definition(SeoSurfaceLocaleFilterType::class);
+        $filterForm->addTag('form.type');
+        $container->setDefinition(SeoSurfaceLocaleFilterType::class, $filterForm);
+
+        if ($webUi['settings']) {
             $settings = new Definition(SeoSiteSettingsController::class);
             $settings->setAutowired(true);
-            $settings->setAutoconfigured(true);
+            $this->tagAsBundleController($settings);
+            $settings->setArgument('$pages', new Reference(SeoKitPages::class));
             $settings->setArgument('$locales', $locales);
             $settings->setArgument('$defaultLocale', $defaultLocale);
-            $settings->setArgument('$role', $role);
-            $settings->setArgument('$template', $admin['settings_template'] ?? '@NowoSeoKitBundle/admin/settings.html.twig');
-            $settings->addTag('controller.service_arguments');
             $container->setDefinition(SeoSiteSettingsController::class, $settings);
         }
 
-        if (($admin['surfaces'] ?? true) === true) {
+        if ($webUi['surfaces']) {
             $surfaces = new Definition(SeoSurfaceController::class);
             $surfaces->setAutowired(true);
-            $surfaces->setAutoconfigured(true);
+            $this->tagAsBundleController($surfaces);
+            $surfaces->setArgument('$pages', new Reference(SeoKitPages::class));
             $surfaces->setArgument('$locales', $locales);
             $surfaces->setArgument('$defaultLocale', $defaultLocale);
-            $surfaces->setArgument('$role', $role);
-            $surfaces->setArgument('$indexTemplate', $admin['surfaces_index_template'] ?? '@NowoSeoKitBundle/admin/surfaces_index.html.twig');
-            $surfaces->setArgument('$formTemplate', $admin['surfaces_form_template'] ?? '@NowoSeoKitBundle/admin/surfaces_form.html.twig');
-            $surfaces->addTag('controller.service_arguments');
             $container->setDefinition(SeoSurfaceController::class, $surfaces);
         }
 
-        if (($admin['api_enabled'] ?? true) === true) {
+        if ($webUi['api_enabled']) {
             $api = new Definition(SeoSurfaceApiController::class);
             $api->setAutowired(true);
-            $api->setAutoconfigured(true);
-            $api->setArgument('$role', $role);
+            $this->tagAsBundleController($api);
             $api->setArgument('$csrfTokenManager', new Reference('security.csrf.token_manager', ContainerInterface::NULL_ON_INVALID_REFERENCE));
-            $api->setArgument('$csrfProtection', ($admin['api_csrf_protection'] ?? true) === true);
-            $api->addTag('controller.service_arguments');
+            $api->setArgument('$csrfProtection', $webUi['api_csrf_protection']);
+            $api->setArgument('$locales', $locales);
             $container->setDefinition(SeoSurfaceApiController::class, $api);
         }
+    }
+
+    /**
+     * Admin / API controllers are not autoconfigured: on Symfony >= 7.3 autoconfiguration tags a class carrying
+     * #[Route] with `routing.controller`, and the host's default `routing.controllers` import would then load the
+     * routes without the opt-in `nowo_seo_kit_admin` loader (bypassing `web_ui.path_prefix`, duplicating names). The
+     * tags autoconfiguration would add for an AbstractController are set explicitly instead.
+     */
+    private function tagAsBundleController(Definition $definition): void
+    {
+        $definition->setAutoconfigured(false);
+        $definition->addTag('controller.service_arguments');
+        $definition->addTag('container.service_subscriber');
+    }
+
+    /**
+     * REQ-UI-002: `allow_unauthenticated` → allow-all (demo only); `access_checker` → alias to the host service;
+     * otherwise the role checker over `access_roles`.
+     *
+     * @param array{access_roles: list<string>, access_checker: string|null, allow_unauthenticated: bool} $security
+     */
+    private function registerAccessChecker(ContainerBuilder $container, array $security): void
+    {
+        if ($security['allow_unauthenticated']) {
+            $container->setDefinition(AllowAllSeoKitAccessChecker::class, new Definition(AllowAllSeoKitAccessChecker::class));
+            $container->setAlias(SeoKitAccessCheckerInterface::class, AllowAllSeoKitAccessChecker::class);
+
+            return;
+        }
+
+        $checker = $security['access_checker'];
+        if (is_string($checker) && $checker !== '') {
+            $container->setAlias(SeoKitAccessCheckerInterface::class, $checker);
+
+            return;
+        }
+
+        $default = new Definition(ConfigurableSeoKitAccessChecker::class);
+        $default->setArgument('$authorizationChecker', new Reference('security.authorization_checker'));
+        $default->setArgument('$accessRoles', $security['access_roles']);
+        $container->setDefinition(ConfigurableSeoKitAccessChecker::class, $default);
+        $container->setAlias(SeoKitAccessCheckerInterface::class, ConfigurableSeoKitAccessChecker::class);
     }
 
     public function getAlias(): string

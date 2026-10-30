@@ -12,6 +12,7 @@ nowo_seo_kit:
         save: 'Guardar'
         edit: 'Editar'
         back: 'Voltar'
+        area_nav: 'Administração SEO'
         settings:
             title: 'Definições de SEO'
             intro: 'Valores predefinidos do site herdados por todas as páginas, mais a organização por detrás do knowledge graph.'
@@ -25,11 +26,27 @@ nowo_seo_kit:
             site_noindex: 'Todo o site está em noindex; os avisos published_but_noindex são suprimidos.'
             empty: 'Não há elementos de auditoria registados para este idioma.'
             edit_title: 'Editar SEO — %surface%'
+            edit_intro: 'Idioma %locale%. Os campos vazios herdam os valores do site.'
+            empty_title: 'Sem superfícies'
+            caption: 'Superfícies (%locale%)'
+            locale: 'Idioma'
+            override: 'Personalizado'
+            no_problems: 'OK'
             column:
                 surface: 'Página'
                 path: 'Caminho'
                 title: 'Título'
                 problems: 'Problemas'
+                actions: 'Ações'
+            problem:
+                missing_title: 'Título em falta'
+                long_title: 'Título demasiado longo'
+                missing_description: 'Descrição em falta'
+                long_description: 'Descrição demasiado longa'
+                short_description: 'Descrição demasiado curta'
+                published_but_noindex: 'Publicado mas noindex'
+                duplicate_title: 'Título duplicado'
+                duplicate_description: 'Descrição duplicada'
     flash:
         settings_saved: 'Definições de SEO guardadas.'
         surface_saved: 'SEO da página guardado.'
@@ -42,6 +59,9 @@ nowo_seo_kit:
         missing_placeholder: 'O modelo de título deve incluir %placeholder%.'
     social_profiles:
         invalid: '"%url%" deve ser um URL http(s) absoluto.'
+    site_settings:
+        image_url:
+            invalid: 'Use um caminho do site (/imagem.png) ou um URL https.'
     surface:
         robots:
             inherit: 'Herdar'
@@ -98,22 +118,14 @@ nowo_seo_site:
         label: 'Verificação do site Google'
     bing_site_verification:
         label: 'Verificação do site Bing'
-    default_title_en:
-        label: 'Título predefinido (en)'
-    home_title_en:
-        label: 'Título da página inicial (en)'
-    default_description_en:
-        label: 'Descrição predefinida (en)'
-    organisation_description_en:
-        label: 'Descrição da organização (en)'
-    default_title_es:
-        label: 'Título predefinido (es)'
-    home_title_es:
-        label: 'Título da página inicial (es)'
-    default_description_es:
-        label: 'Descrição predefinida (es)'
-    organisation_description_es:
-        label: 'Descrição da organização (es)'
+    default_title:
+        label: 'Título predefinido (%locale%)'
+    home_title:
+        label: 'Título da página inicial (%locale%)'
+    default_description:
+        label: 'Descrição predefinida (%locale%)'
+    organisation_description:
+        label: 'Descrição da organização (%locale%)'
 
 nowo_seo_surface:
     meta_title:

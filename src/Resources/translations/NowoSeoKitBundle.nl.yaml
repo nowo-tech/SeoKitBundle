@@ -12,6 +12,7 @@ nowo_seo_kit:
         save: 'Opslaan'
         edit: 'Bewerken'
         back: 'Terug'
+        area_nav: 'SEO-beheer'
         settings:
             title: 'SEO-instellingen'
             intro: 'Standaardwaarden voor de hele site die elke pagina overneemt, plus de organisatie achter de knowledge graph.'
@@ -25,11 +26,27 @@ nowo_seo_kit:
             site_noindex: 'De hele site staat op noindex; waarschuwingen published_but_noindex worden onderdrukt.'
             empty: 'Geen auditonderwerpen geregistreerd voor deze taal.'
             edit_title: 'SEO bewerken — %surface%'
+            edit_intro: 'Taal %locale%. Lege velden nemen de standaardwaarden van de site over.'
+            empty_title: 'Geen oppervlakken'
+            caption: 'Oppervlakken (%locale%)'
+            locale: 'Taal'
+            override: 'Aangepast'
+            no_problems: 'OK'
             column:
                 surface: 'Pagina'
                 path: 'Pad'
                 title: 'Titel'
                 problems: 'Problemen'
+                actions: 'Acties'
+            problem:
+                missing_title: 'Titel ontbreekt'
+                long_title: 'Titel te lang'
+                missing_description: 'Beschrijving ontbreekt'
+                long_description: 'Beschrijving te lang'
+                short_description: 'Beschrijving te kort'
+                published_but_noindex: 'Gepubliceerd maar noindex'
+                duplicate_title: 'Dubbele titel'
+                duplicate_description: 'Dubbele beschrijving'
     flash:
         settings_saved: 'SEO-instellingen opgeslagen.'
         surface_saved: 'Pagina-SEO opgeslagen.'
@@ -42,6 +59,9 @@ nowo_seo_kit:
         missing_placeholder: 'Het titelsjabloon moet %placeholder% bevatten.'
     social_profiles:
         invalid: '"%url%" moet een absolute http(s)-URL zijn.'
+    site_settings:
+        image_url:
+            invalid: 'Gebruik een sitepad (/afbeelding.png) of een https-URL.'
     surface:
         robots:
             inherit: 'Overnemen'
@@ -98,22 +118,14 @@ nowo_seo_site:
         label: 'Google-siteverificatie'
     bing_site_verification:
         label: 'Bing-siteverificatie'
-    default_title_en:
-        label: 'Standaardtitel (en)'
-    home_title_en:
-        label: 'Titel startpagina (en)'
-    default_description_en:
-        label: 'Standaardbeschrijving (en)'
-    organisation_description_en:
-        label: 'Beschrijving van de organisatie (en)'
-    default_title_es:
-        label: 'Standaardtitel (es)'
-    home_title_es:
-        label: 'Titel startpagina (es)'
-    default_description_es:
-        label: 'Standaardbeschrijving (es)'
-    organisation_description_es:
-        label: 'Beschrijving van de organisatie (es)'
+    default_title:
+        label: 'Standaardtitel (%locale%)'
+    home_title:
+        label: 'Titel startpagina (%locale%)'
+    default_description:
+        label: 'Standaardbeschrijving (%locale%)'
+    organisation_description:
+        label: 'Beschrijving van de organisatie (%locale%)'
 
 nowo_seo_surface:
     meta_title:

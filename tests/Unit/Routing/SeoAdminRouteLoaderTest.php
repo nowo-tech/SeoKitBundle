@@ -62,17 +62,36 @@ final class SeoAdminRouteLoaderTest extends TestCase
         $loader->load('.', 'nowo_seo_kit_admin');
     }
 
+    public function testPathPrefixMovesTheAdminPagesButNotTheApi(): void
+    {
+        $collection = $this->resolvedLoader(true, true, true, true, '/admin/seo/')->load('.', 'nowo_seo_kit_admin');
+
+        self::assertSame('/admin/seo/settings', $collection->get('nowo_seo_kit_admin_settings')?->getPath());
+        self::assertSame('/admin/seo/surfaces', $collection->get('nowo_seo_kit_admin_surfaces')?->getPath());
+        self::assertSame('/admin/seo/surfaces/{locale}/edit/{surfaceKey}', $collection->get('nowo_seo_kit_admin_surfaces_edit')?->getPath());
+        self::assertSame('/_nowo/seo/surfaces/{surfaceKey}/{locale}', $collection->get('nowo_seo_kit_api_surface_get')?->getPath());
+    }
+
+    public function testWithoutPathPrefixTheLegacyPathsStay(): void
+    {
+        $collection = $this->resolvedLoader(true, true, true, false, '')->load('.', 'nowo_seo_kit_admin');
+
+        self::assertSame(SeoAdminRouteLoader::LEGACY_SETTINGS_PATH, $collection->get('nowo_seo_kit_admin_settings')?->getPath());
+        self::assertSame(SeoAdminRouteLoader::LEGACY_SURFACES_PATH, $collection->get('nowo_seo_kit_admin_surfaces')?->getPath());
+    }
+
     private function resolvedLoader(
         bool $admin,
         bool $settings,
         bool $surfaces,
         bool $api,
+        ?string $pathPrefix = null,
     ): SeoAdminRouteLoader {
         $locator     = new FileLocator();
         $classLoader = new AttributeRouteControllerLoader();
         $fileLoader  = new AttributeFileLoader($locator, $classLoader);
         $dirLoader   = new AttributeDirectoryLoader($locator, $classLoader);
-        $loader      = new SeoAdminRouteLoader($admin, $settings, $surfaces, $api);
+        $loader      = new SeoAdminRouteLoader($admin, $settings, $surfaces, $api, $pathPrefix);
         $loader->setResolver(new LoaderResolver([$loader, $fileLoader, $dirLoader]));
 
         return $loader;

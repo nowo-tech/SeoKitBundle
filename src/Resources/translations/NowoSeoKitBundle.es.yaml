@@ -12,6 +12,7 @@ nowo_seo_kit:
         save: 'Guardar'
         edit: 'Editar'
         back: 'Volver'
+        area_nav: 'Administración SEO'
         settings:
             title: 'Ajustes SEO'
             intro: 'Valores por defecto del sitio y la organización del grafo de conocimiento.'
@@ -25,11 +26,27 @@ nowo_seo_kit:
             site_noindex: 'Todo el sitio está en noindex; se omiten avisos published_but_noindex.'
             empty: 'No hay sujetos de auditoría para este idioma.'
             edit_title: 'Editar SEO — %surface%'
+            edit_intro: 'Idioma %locale%. Los campos vacíos heredan los valores del sitio.'
+            empty_title: 'Sin superficies'
+            caption: 'Superficies (%locale%)'
+            locale: 'Idioma'
+            override: 'Personalizado'
+            no_problems: 'OK'
             column:
                 surface: 'Superficie'
                 path: 'Ruta'
                 title: 'Título'
                 problems: 'Problemas'
+                actions: 'Acciones'
+            problem:
+                missing_title: 'Falta el título'
+                long_title: 'Título demasiado largo'
+                missing_description: 'Falta la descripción'
+                long_description: 'Descripción demasiado larga'
+                short_description: 'Descripción demasiado corta'
+                published_but_noindex: 'Publicado pero noindex'
+                duplicate_title: 'Título duplicado'
+                duplicate_description: 'Descripción duplicada'
     flash:
         settings_saved: 'Ajustes SEO guardados.'
         surface_saved: 'SEO de superficie guardado.'
@@ -42,6 +59,9 @@ nowo_seo_kit:
         missing_placeholder: 'La plantilla del título debe incluir %placeholder%.'
     social_profiles:
         invalid: '"%url%" debe ser una URL http(s) absoluta.'
+    site_settings:
+        image_url:
+            invalid: 'Usa una ruta del sitio (/imagen.png) o una URL https.'
     surface:
         robots:
             inherit: 'Heredar'
@@ -98,22 +118,14 @@ nowo_seo_site:
         label: 'Verificación Google'
     bing_site_verification:
         label: 'Verificación Bing'
-    default_title_en:
-        label: 'Título por defecto (en)'
-    home_title_en:
-        label: 'Título home (en)'
-    default_description_en:
-        label: 'Descripción por defecto (en)'
-    organisation_description_en:
-        label: 'Descripción organización (en)'
-    default_title_es:
-        label: 'Título por defecto (es)'
-    home_title_es:
-        label: 'Título home (es)'
-    default_description_es:
-        label: 'Descripción por defecto (es)'
-    organisation_description_es:
-        label: 'Descripción organización (es)'
+    default_title:
+        label: 'Título por defecto (%locale%)'
+    home_title:
+        label: 'Título home (%locale%)'
+    default_description:
+        label: 'Descripción por defecto (%locale%)'
+    organisation_description:
+        label: 'Descripción organización (%locale%)'
 
 nowo_seo_surface:
     meta_title:

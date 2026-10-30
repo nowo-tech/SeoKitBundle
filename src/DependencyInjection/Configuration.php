@@ -6,13 +6,17 @@ namespace Nowo\SeoKitBundle\DependencyInjection;
 
 use Nowo\SeoKitBundle\Enum\SitemapChangeFreq;
 use Nowo\SeoKitBundle\Enum\TwitterCard;
+use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
+use function in_array;
 use function is_string;
 use function preg_match;
+use function sprintf;
+use function trim;
 
 /**
  * Hierarchical SEO configuration.
@@ -27,6 +31,9 @@ use function preg_match;
 final class Configuration implements ConfigurationInterface
 {
     public const ALIAS = 'nowo_seo_kit';
+
+    /** Security attributes that grant anonymous users: refused in security.access_roles. */
+    public const PUBLIC_ATTRIBUTES = ['PUBLIC_ACCESS', 'IS_AUTHENTICATED_ANONYMOUSLY'];
 
     public function getConfigTreeBuilder(): TreeBuilder
     {
@@ -68,7 +75,9 @@ final class Configuration implements ConfigurationInterface
         $this->addPageHeadNode($root);
         $this->addPersistenceNode($root);
         $this->addDoctrineNode($root);
-        $this->addAdminNode($root);
+        $this->addWebUiNode($root);
+        $this->addSecurityNode($root);
+        $this->addLegacyAdminNode($root);
 
         return $treeBuilder;
     }
@@ -134,34 +143,53 @@ final class Configuration implements ConfigurationInterface
             ->end();
     }
 
-    private function addAdminNode(ArrayNodeDefinition $root): void
+    private function addWebUiNode(ArrayNodeDefinition $root): void
     {
         $root->children()
-            ->arrayNode('admin')
-            ->info('Optional admin UI + JSON API for site settings and surface overrides (requires persistence.enabled).')
+            ->arrayNode('web_ui')
+            ->info('Optional admin UI + JSON API for site settings and surface overrides (requires persistence.enabled). UiKit page contract (REQ-UI-001 / REQ-UI-003).')
             ->addDefaultsIfNotSet()
             ->children()
-                ->booleanNode('enabled')->defaultFalse()->end()
+                ->booleanNode('enabled')
+                    ->info('Register the admin pages and the JSON API (routes from the nowo_seo_kit_admin loader).')
+                    ->defaultFalse()
+                ->end()
                 ->booleanNode('settings')
-                    ->info('Register /settings/seo site settings controller.')
+                    ->info('Register the site settings page.')
                     ->defaultTrue()
                 ->end()
                 ->booleanNode('surfaces')
-                    ->info('Register /admin/seo/surfaces list + edit.')
+                    ->info('Register the surfaces list + edit pages.')
                     ->defaultTrue()
                 ->end()
-                ->scalarNode('role')->defaultValue('ROLE_ADMIN')->end()
-                ->scalarNode('settings_template')
-                    ->defaultValue('@NowoSeoKitBundle/admin/settings.html.twig')
+                ->scalarNode('path_prefix')
+                    ->info('URL prefix of the admin pages: <prefix>/settings, <prefix>/surfaces. Null (default) keeps the 1.x paths /settings/seo and /admin/seo/surfaces. The JSON API stays under /_nowo/seo/surfaces.')
+                    ->defaultNull()
+                    ->validate()
+                        ->ifTrue(static fn (mixed $value): bool => $value !== null && (!is_string($value) || preg_match('#^(/[A-Za-z0-9._~-]+)+$#', $value) !== 1))
+                        ->thenInvalid('nowo_seo_kit.web_ui.path_prefix must be null or start with "/" and contain URL path segments only, got %s.')
+                    ->end()
                 ->end()
-                ->scalarNode('surfaces_index_template')
-                    ->defaultValue('@NowoSeoKitBundle/admin/surfaces_index.html.twig')
+                ->scalarNode('layout_template')
+                    ->info('Layout the page scaffolds extend. Null (default) = the UiKit admin layout (nowo_ui_kit.layouts.admin). A host layout must render the UiKit canonical blocks (nowo_ui_content, …).')
+                    ->defaultNull()
                 ->end()
-                ->scalarNode('surfaces_form_template')
-                    ->defaultValue('@NowoSeoKitBundle/admin/surfaces_form.html.twig')
+                ->arrayNode('templates')
+                    ->info('Per-page template overrides: a host template that extends the bundle page and overrides a data block (see docs/TEMPLATES.md).')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('settings')->defaultValue(SeoKitPages::TEMPLATES['settings'])->cannotBeEmpty()->end()
+                        ->scalarNode('surfaces_index')->defaultValue(SeoKitPages::TEMPLATES['surfaces_index'])->cannotBeEmpty()->end()
+                        ->scalarNode('surfaces_form')->defaultValue(SeoKitPages::TEMPLATES['surfaces_form'])->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('form_themes')
+                    ->info('Form themes applied to the admin forms (default: the UiKit form layout; the CSS stack comes from nowo_ui_kit.css_framework).')
+                    ->scalarPrototype()->cannotBeEmpty()->end()
+                    ->defaultValue([SeoKitPages::DEFAULT_FORM_THEME])
                 ->end()
                 ->booleanNode('api_enabled')
-                    ->info('Register JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}.')
+                    ->info('Register the JSON pencil API under /_nowo/seo/surfaces/{key}/{locale}.')
                     ->defaultTrue()
                 ->end()
                 ->booleanNode('api_csrf_protection')
@@ -169,6 +197,67 @@ final class Configuration implements ConfigurationInterface
                     ->defaultTrue()
                 ->end()
             ->end();
+    }
+
+    private function addSecurityNode(ArrayNodeDefinition $root): void
+    {
+        $root->children()
+            ->arrayNode('security')
+            ->info('Access to the admin UI and the JSON API (REQ-UI-002). Production: keep allow_unauthenticated false and add access_control for the admin paths.')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->arrayNode('access_roles')
+                    ->info('The user needs at least one of these roles (default checker). An empty list is refused unless access_checker is set.')
+                    ->scalarPrototype()
+                        ->validate()
+                            ->ifTrue(static fn (mixed $value): bool => !is_string($value) || trim($value) === '' || in_array($value, self::PUBLIC_ATTRIBUTES, true))
+                            ->thenInvalid('nowo_seo_kit.security.access_roles entries must be non-empty role names (not PUBLIC_ACCESS / IS_AUTHENTICATED_ANONYMOUSLY; use allow_unauthenticated for a demo), got %s.')
+                        ->end()
+                    ->end()
+                    ->defaultValue(['ROLE_ADMIN'])
+                ->end()
+                ->scalarNode('access_checker')
+                    ->info('Service id implementing Nowo\\SeoKitBundle\\Security\\SeoKitAccessCheckerInterface. Null (default) = role checker over access_roles.')
+                    ->defaultNull()
+                ->end()
+                ->booleanNode('allow_unauthenticated')
+                    ->info('DEV / DEMO only: the admin UI and the JSON API become public (no SecurityBundle needed). Never in production.')
+                    ->defaultFalse()
+                ->end()
+            ->end();
+    }
+
+    /**
+     * 1.x `admin` node (deprecated since 1.19, removed in 2.0): every key maps onto `web_ui.*` / `security.*` in
+     * {@see SeoKitExtension::resolveWebUi()}; a legacy key that is set wins over the new default.
+     */
+    private function addLegacyAdminNode(ArrayNodeDefinition $root): void
+    {
+        $message = 'The "%%path%%.%%node%%" option is deprecated; use "%s" instead (see docs/UPGRADING.md).';
+        $map     = [
+            'enabled'                 => 'nowo_seo_kit.web_ui.enabled',
+            'settings'                => 'nowo_seo_kit.web_ui.settings',
+            'surfaces'                => 'nowo_seo_kit.web_ui.surfaces',
+            'role'                    => 'nowo_seo_kit.security.access_roles',
+            'settings_template'       => 'nowo_seo_kit.web_ui.templates.settings',
+            'surfaces_index_template' => 'nowo_seo_kit.web_ui.templates.surfaces_index',
+            'surfaces_form_template'  => 'nowo_seo_kit.web_ui.templates.surfaces_form',
+            'api_enabled'             => 'nowo_seo_kit.web_ui.api_enabled',
+            'api_csrf_protection'     => 'nowo_seo_kit.web_ui.api_csrf_protection',
+        ];
+
+        $children = $root->children()
+            ->arrayNode('admin')
+            ->info('Deprecated since 1.19: use web_ui.* and security.* (mapped for 1.x, removed in 2.0).')
+            ->addDefaultsIfNotSet()
+            ->children();
+
+        foreach ($map as $key => $replacement) {
+            $node = in_array($key, ['enabled', 'settings', 'surfaces', 'api_enabled', 'api_csrf_protection'], true)
+                ? $children->booleanNode($key)
+                : $children->scalarNode($key);
+            $node->defaultNull()->setDeprecated('nowo-tech/seo-kit-bundle', '1.19', sprintf($message, $replacement))->end();
+        }
     }
 
     private function addDefaultsNode(ArrayNodeDefinition $root): void
