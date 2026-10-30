@@ -31,6 +31,15 @@ final class SeoKitAdminTestKernel extends Kernel
 
     public const DIR = '/nowo-seo-kit-admin-integration';
 
+    /**
+     * @param bool $hostControllersOnly routing = only the host's `routing.controllers` resource (Symfony >= 7.3 default
+     *                                  `config/routes.yaml`), without importing the bundle admin loader
+     */
+    public function __construct(string $environment, bool $debug, private readonly bool $hostControllersOnly = false)
+    {
+        parent::__construct($environment, $debug);
+    }
+
     public function registerBundles(): iterable
     {
         return [
@@ -52,7 +61,7 @@ final class SeoKitAdminTestKernel extends Kernel
 
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . self::DIR . '/cache/' . $this->environment;
+        return sys_get_temp_dir() . self::DIR . '/cache/' . $this->environment . ($this->hostControllersOnly ? '-host-controllers' : '');
     }
 
     public function getLogDir(): string
@@ -102,6 +111,12 @@ final class SeoKitAdminTestKernel extends Kernel
 
     protected function configureRoutes(RoutingConfigurator $routes): void
     {
+        if ($this->hostControllersOnly) {
+            $routes->import('routing.controllers');
+
+            return;
+        }
+
         $routes->import('.', 'nowo_seo_kit_admin');
     }
 }

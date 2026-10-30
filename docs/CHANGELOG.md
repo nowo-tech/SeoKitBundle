@@ -96,6 +96,9 @@ See [UPGRADING](UPGRADING.md#unreleased).
 - **URL hardening:** canonical overrides and image URLs with inner control characters or whitespace (`/\t/evil`) are
   rejected; the default Open Graph image and the organisation logo of the site settings must be a site path or an
   https URL.
+- **Admin routes only through the opt-in loader:** the admin / API controllers are no longer autoconfigured, so on
+  Symfony >= 7.3 the host's default `routing.controllers` import does not load their `#[Route]`s behind the bundle's
+  back (which bypassed `web_ui.enabled` / `web_ui.path_prefix` and duplicated the route names).
 - **JSON API:** locales that are not enabled and surface keys over 180 characters answer 404 (no 500).
 - **Title placeholders:** request attributes named like nonces, tokens, CSRF values, secrets or passwords are no longer
   offered as `{placeholder}` values.

@@ -125,6 +125,13 @@ final class SeoKitExtensionTest extends TestCase
 
         $api = $container->getDefinition(SeoSurfaceApiController::class);
         self::assertTrue($api->getArgument('$csrfProtection'));
+        foreach ([SeoSiteSettingsController::class, SeoSurfaceController::class, SeoSurfaceApiController::class] as $controller) {
+            $definition = $container->getDefinition($controller);
+            self::assertFalse($definition->isAutoconfigured(), $controller);
+            self::assertTrue($definition->hasTag('controller.service_arguments'), $controller);
+            self::assertTrue($definition->hasTag('container.service_subscriber'), $controller);
+            self::assertFalse($definition->hasTag('routing.controller'), $controller);
+        }
         $manager = $api->getArgument('$csrfTokenManager');
         self::assertInstanceOf(Reference::class, $manager);
         self::assertSame('security.csrf.token_manager', (string) $manager);

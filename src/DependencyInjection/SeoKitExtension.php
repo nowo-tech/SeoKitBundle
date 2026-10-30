@@ -450,35 +450,45 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         if ($webUi['settings']) {
             $settings = new Definition(SeoSiteSettingsController::class);
             $settings->setAutowired(true);
-            $settings->setAutoconfigured(true);
+            $this->tagAsBundleController($settings);
             $settings->setArgument('$pages', new Reference(SeoKitPages::class));
             $settings->setArgument('$locales', $locales);
             $settings->setArgument('$defaultLocale', $defaultLocale);
-            $settings->addTag('controller.service_arguments');
             $container->setDefinition(SeoSiteSettingsController::class, $settings);
         }
 
         if ($webUi['surfaces']) {
             $surfaces = new Definition(SeoSurfaceController::class);
             $surfaces->setAutowired(true);
-            $surfaces->setAutoconfigured(true);
+            $this->tagAsBundleController($surfaces);
             $surfaces->setArgument('$pages', new Reference(SeoKitPages::class));
             $surfaces->setArgument('$locales', $locales);
             $surfaces->setArgument('$defaultLocale', $defaultLocale);
-            $surfaces->addTag('controller.service_arguments');
             $container->setDefinition(SeoSurfaceController::class, $surfaces);
         }
 
         if ($webUi['api_enabled']) {
             $api = new Definition(SeoSurfaceApiController::class);
             $api->setAutowired(true);
-            $api->setAutoconfigured(true);
+            $this->tagAsBundleController($api);
             $api->setArgument('$csrfTokenManager', new Reference('security.csrf.token_manager', ContainerInterface::NULL_ON_INVALID_REFERENCE));
             $api->setArgument('$csrfProtection', $webUi['api_csrf_protection']);
             $api->setArgument('$locales', $locales);
-            $api->addTag('controller.service_arguments');
             $container->setDefinition(SeoSurfaceApiController::class, $api);
         }
+    }
+
+    /**
+     * Admin / API controllers are not autoconfigured: on Symfony >= 7.3 autoconfiguration tags a class carrying
+     * #[Route] with `routing.controller`, and the host's default `routing.controllers` import would then load the
+     * routes without the opt-in `nowo_seo_kit_admin` loader (bypassing `web_ui.path_prefix`, duplicating names). The
+     * tags autoconfiguration would add for an AbstractController are set explicitly instead.
+     */
+    private function tagAsBundleController(Definition $definition): void
+    {
+        $definition->setAutoconfigured(false);
+        $definition->addTag('controller.service_arguments');
+        $definition->addTag('container.service_subscriber');
     }
 
     /**
