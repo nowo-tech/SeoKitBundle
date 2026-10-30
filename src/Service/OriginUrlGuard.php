@@ -29,7 +29,8 @@ final readonly class OriginUrlGuard
     }
 
     /**
-     * Rejects protocol-relative, backslash tricks, and off-origin absolute URLs.
+     * Rejects protocol-relative, backslash tricks, inner control characters / whitespace, and off-origin absolute
+     * URLs.
      */
     public function isSafeCanonical(?string $value): bool
     {
@@ -38,7 +39,7 @@ final readonly class OriginUrlGuard
         }
 
         $url = trim($value);
-        if (str_starts_with($url, '//') || str_contains($url, '\\')) {
+        if ($this->hasUnsafeCharacters($url)) {
             return false;
         }
 
@@ -59,7 +60,7 @@ final readonly class OriginUrlGuard
         }
 
         $url = trim($value);
-        if (str_starts_with($url, '//') || str_contains($url, '\\')) {
+        if ($this->hasUnsafeCharacters($url)) {
             return false;
         }
 
@@ -68,5 +69,14 @@ final readonly class OriginUrlGuard
         }
 
         return preg_match('#^https://#i', $url) === 1;
+    }
+
+    /**
+     * Protocol-relative start, backslash, or any control character / whitespace / DEL inside the URL (browsers strip
+     * tabs and newlines, so "/\t/evil" would become the protocol-relative "//evil").
+     */
+    private function hasUnsafeCharacters(string $url): bool
+    {
+        return str_starts_with($url, '//') || str_contains($url, '\\') || preg_match('/[\x00-\x20\x7F]/', $url) === 1;
     }
 }

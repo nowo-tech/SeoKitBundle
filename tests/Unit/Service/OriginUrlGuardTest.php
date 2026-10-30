@@ -52,4 +52,17 @@ final class OriginUrlGuardTest extends TestCase
         self::assertTrue($guard->belongsToSite('https://nowo.tech/x'));
         self::assertTrue($guard->isSafeCanonical(null));
     }
+
+    public function testInnerControlCharactersAndWhitespaceAreRejected(): void
+    {
+        $guard = new OriginUrlGuard('https://nowo.tech');
+
+        foreach (["/\t/evil.example", "/\n/evil.example", '/a b', "/x\x00y", "/x\x7F", "https://nowo.tech/\r\npath"] as $url) {
+            self::assertFalse($guard->isSafeCanonical($url), $url);
+            self::assertFalse($guard->isSafeOpenGraphImage($url), $url);
+        }
+        // surrounding whitespace is trimmed, not rejected
+        self::assertTrue($guard->isSafeCanonical("  /pricing\n"));
+        self::assertTrue($guard->isSafeOpenGraphImage(' /og.png '));
+    }
 }
