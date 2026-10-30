@@ -41,7 +41,9 @@ Threats considered: SEO spam / open redirect through canonical overrides (blocke
   `security.access_checker` names a host service. `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` are rejected.
 - `security.access_checker`: host service implementing `SeoKitAccessCheckerInterface` (teams, voters, …).
 - **`security.allow_unauthenticated: true` is a footgun:** it makes the admin UI and the JSON API public (no login,
-  no role) and drops the SecurityBundle requirement. Use it only in a local demo; never in production.
+  no role) and drops the SecurityBundle requirement. The container refuses to compile with it unless `kernel.debug`
+  is true, and always in the `prod` environment (`WebUiSecurityPass`); it must be a literal boolean (an `%env()%`
+  placeholder is refused, so a deployment variable cannot switch it on).
 - With `web_ui.enabled` and `allow_unauthenticated: false` the container does not compile without SecurityBundle
   (`WebUiSecurityPass`).
 
@@ -49,7 +51,7 @@ Threats considered: SEO spam / open redirect through canonical overrides (blocke
 
 - Admin forms (`SeoSiteSettingsType`, `SeoSurfaceType`) keep Symfony Form CSRF enabled; the container refuses to compile while `web_ui.enabled` without `security.csrf.token_manager`, the form CSRF extension, or with `framework.form.csrf_protection: false` (`CsrfProtectionPass`).
 - The JSON API `POST` requires a token in the `X-CSRF-Token` header (token id `nowo_seo_kit_surface_api`); `GET` on the same URL returns it as `csrf_token`. Validation is fail-closed: without a CSRF token manager (`symfony/security-csrf` + `framework.csrf_protection`) every `POST` is refused with 403.
-- `web_ui.api_csrf_protection: false` disables the header check. Use it only when the API sits behind a Bearer / API-token firewall without session cookies, and document it in the host.
+- `web_ui.api_csrf_protection: false` (literal boolean) disables the header check; it stays allowed outside debug because it is meant for production Bearer / API-token firewalls, and `POST` still requires `Content-Type: application/json`. Use it only when the API sits behind a Bearer / API-token firewall without session cookies, and document it in the host.
 
 ## Logging
 

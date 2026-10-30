@@ -461,4 +461,15 @@ final class SeoKitExtensionTest extends TestCase
             'admin' => ['enabled' => true, 'role' => 'PUBLIC_ACCESS'],
         ]]));
     }
+
+    public function testSecuritySwitchesMustBeLiteralBooleans(): void
+    {
+        // What the extension sees for `allow_unauthenticated: '%env(bool:SEO_PUBLIC_ADMIN)%'`: a placeholder string.
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('security.allow_unauthenticated must be a literal boolean');
+        SeoKitExtension::resolveWebUi([
+            'web_ui'   => ['enabled' => true, 'settings' => true, 'surfaces' => true, 'path_prefix' => null, 'layout_template' => null, 'templates' => SeoKitPages::TEMPLATES, 'form_themes' => [], 'api_enabled' => true, 'api_csrf_protection' => true],
+            'security' => ['access_roles' => ['ROLE_ADMIN'], 'access_checker' => null, 'allow_unauthenticated' => 'env_0123_bool_SEO_PUBLIC_ADMIN'],
+        ]);
+    }
 }

@@ -13,7 +13,8 @@ use function is_array;
 /**
  * Fails closed when the admin UI would run without Symfony Security (REQ-UI-002): with `web_ui.enabled` and
  * `security.allow_unauthenticated: false` the container refuses to compile unless `security.authorization_checker`
- * exists (SecurityBundle with a firewall).
+ * exists (SecurityBundle with a firewall). `security.allow_unauthenticated: true` (public admin) is refused unless
+ * `kernel.debug` is true and the environment is not `prod`.
  */
 final class WebUiSecurityPass implements CompilerPassInterface
 {
@@ -29,6 +30,12 @@ final class WebUiSecurityPass implements CompilerPassInterface
             return;
         }
         if (is_array($security) && ($security['allow_unauthenticated'] ?? false) === true) {
+            $debug       = $container->hasParameter('kernel.debug') && $container->getParameter('kernel.debug') === true;
+            $environment = $container->hasParameter('kernel.environment') ? $container->getParameter('kernel.environment') : null;
+            if (!$debug || $environment === 'prod') {
+                throw new LogicException('NowoSeoKitBundle: security.allow_unauthenticated: true makes the admin UI and the JSON API public and is only allowed with kernel.debug (dev / demo), never in the prod environment. Set it to false and protect the admin with security.access_roles.');
+            }
+
             return;
         }
 

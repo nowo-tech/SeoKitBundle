@@ -90,7 +90,9 @@ See [UPGRADING](UPGRADING.md#unreleased).
 - **Admin access fails closed (REQ-UI-002):** an empty `security.access_roles` is refused while `web_ui.enabled`
   unless `security.access_checker` is set; `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` (also as `admin.role`)
   are refused; without SecurityBundle the container does not compile unless `allow_unauthenticated` is true
-  (`WebUiSecurityPass`).
+  (`WebUiSecurityPass`). `security.allow_unauthenticated: true` is refused unless `kernel.debug` is true, and always
+  in the `prod` environment; `allow_unauthenticated`, `web_ui.enabled` and `web_ui.api_csrf_protection` must be
+  literal booleans (no `%env()%` placeholder).
 - **URL hardening:** canonical overrides and image URLs with inner control characters or whitespace (`/\t/evil`) are
   rejected; the default Open Graph image and the organisation logo of the site settings must be a site path or an
   https URL.

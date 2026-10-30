@@ -30,12 +30,43 @@ final class WebUiSecurityPassTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    public function testAllowUnauthenticatedNeedsNoSecurityBundle(): void
+    public function testAllowUnauthenticatedInDebugNeedsNoSecurityBundle(): void
     {
         $container = $this->container(['allow_unauthenticated' => true]);
+        $container->setParameter('kernel.debug', true);
+        $container->setParameter('kernel.environment', 'dev');
         (new WebUiSecurityPass())->process($container);
 
         $this->addToAssertionCount(1);
+    }
+
+    public function testAllowUnauthenticatedWithoutDebugIsRefused(): void
+    {
+        $container = $this->container(['allow_unauthenticated' => true]);
+        $container->setParameter('kernel.debug', false);
+        $container->setParameter('kernel.environment', 'staging');
+        $container->register('security.authorization_checker', stdClass::class);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('only allowed with kernel.debug');
+        (new WebUiSecurityPass())->process($container);
+    }
+
+    public function testAllowUnauthenticatedWithoutKernelParametersIsRefused(): void
+    {
+        $this->expectException(LogicException::class);
+        (new WebUiSecurityPass())->process($this->container(['allow_unauthenticated' => true]));
+    }
+
+    public function testAllowUnauthenticatedInProdIsRefusedEvenWithDebug(): void
+    {
+        $container = $this->container(['allow_unauthenticated' => true]);
+        $container->setParameter('kernel.debug', true);
+        $container->setParameter('kernel.environment', 'prod');
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('never in the prod environment');
+        (new WebUiSecurityPass())->process($container);
     }
 
     public function testPassesWithTheAuthorizationChecker(): void

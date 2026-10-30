@@ -239,7 +239,7 @@ deprecated and ignores them).
 | `templates.surfaces_form` | `@NowoSeoKitBundle/admin/surfaces_form.html.twig` | idem |
 | `form_themes` | `['@NowoUiKit/form/nowo_ui_layout.html.twig']` | Form themes applied to the admin forms (the UiKit form layout reads the theme slots, so it follows `nowo_ui_kit.css_framework`) |
 | `api_enabled` | `true` | `GET/POST /_nowo/seo/surfaces/{key}/{locale}`. `POST` only accepts a JSON object with `Content-Type: application/json` (415 otherwise). Locales that are not enabled and keys longer than 180 characters answer 404. |
-| `api_csrf_protection` | `true` | `POST` also requires an `X-CSRF-Token` header (token id `nowo_seo_kit_surface_api`, returned as `csrf_token` by `GET`); missing/invalid token or no CSRF manager → 403. Set `false` only behind a Bearer / API-token firewall without session cookies. |
+| `api_csrf_protection` | `true` | `POST` also requires an `X-CSRF-Token` header (token id `nowo_seo_kit_surface_api`, returned as `csrf_token` by `GET`); missing/invalid token or no CSRF manager → 403. Set `false` only behind a Bearer / API-token firewall without session cookies (a production setup, so it is not tied to `kernel.debug`; `POST` still requires `Content-Type: application/json`, which a cross-site form cannot send without a CORS preflight). Literal boolean only. |
 
 The container refuses to compile with `web_ui.enabled` when form CSRF is off or missing (`CsrfProtectionPass`) and,
 unless `security.allow_unauthenticated` is true, without SecurityBundle (`WebUiSecurityPass`).
@@ -311,7 +311,7 @@ reach the firewall entry point, authenticated users get 403).
 | --- | --- | --- |
 | `access_roles` | `['ROLE_ADMIN']` | The user needs **at least one** of these roles (default checker `ConfigurableSeoKitAccessChecker`). `PUBLIC_ACCESS` / `IS_AUTHENTICATED_ANONYMOUSLY` / blank entries are rejected. An empty list is refused while `web_ui.enabled` unless `access_checker` is set (the default checker would deny everybody: fail closed). |
 | `access_checker` | `null` | Service id implementing `SeoKitAccessCheckerInterface` (teams, voters, …). The interface is aliased to it. |
-| `allow_unauthenticated` | `false` | **DEV / DEMO only.** The admin UI and the API become public (`AllowAllSeoKitAccessChecker`) and SecurityBundle is not required. Never in production. |
+| `allow_unauthenticated` | `false` | **DEV / DEMO only.** The admin UI and the API become public (`AllowAllSeoKitAccessChecker`) and SecurityBundle is not required. The container refuses to compile with `true` unless `kernel.debug` is true, and always in the `prod` environment (`WebUiSecurityPass`). Literal boolean only: an `%env()%` placeholder is refused (as for `web_ui.enabled` and `web_ui.api_csrf_protection`). |
 
 ```yaml
 nowo_seo_kit:

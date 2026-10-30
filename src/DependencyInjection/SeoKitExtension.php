@@ -375,6 +375,14 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
                 $webUi[$key] = $legacy[$key];
             }
         }
+        // Security switches must be literal booleans: an %env()% placeholder is a (truthy) string at this point.
+        /** @var array<string, mixed> $switches */
+        $switches = ['web_ui.enabled' => $config['web_ui']['enabled'] ?? null, 'web_ui.api_csrf_protection' => $config['web_ui']['api_csrf_protection'] ?? null, 'security.allow_unauthenticated' => $config['security']['allow_unauthenticated'] ?? null];
+        foreach ($switches as $key => $value) {
+            if (!is_bool($value)) {
+                throw new InvalidArgumentException(sprintf('nowo_seo_kit.%s must be a literal boolean (no %%env()%% placeholder).', $key));
+            }
+        }
         foreach (['settings_template' => 'settings', 'surfaces_index_template' => 'surfaces_index', 'surfaces_form_template' => 'surfaces_form'] as $key => $page) {
             if (is_string($legacy[$key] ?? null) && $legacy[$key] !== '') {
                 $webUi['templates'][$page] = $legacy[$key];

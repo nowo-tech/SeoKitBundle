@@ -123,6 +123,8 @@ nowo_seo_kit:
 - The admin UI now needs **SecurityBundle** (the container does not compile without it) unless
   `security.allow_unauthenticated: true` (demo only), and an empty role list needs a custom `security.access_checker`.
 - `admin.role: PUBLIC_ACCESS` (or an empty role) is refused: use `allow_unauthenticated` for a demo.
+- `security.allow_unauthenticated: true` only compiles with `kernel.debug` (never in `prod`); the security switches
+  must be literal booleans.
 - Add `access_control` for the admin paths and `^/_nowo/seo/` (see
   [CONFIGURATION.md — Host access_control](CONFIGURATION.md#host-access_control)).
 
