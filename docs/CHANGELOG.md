@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.19.0] - 2026-10-30](#1190---2026-10-30)
 - [[1.18.0] - 2026-10-28](#1180---2026-10-28)
 - [[1.17.0] - 2026-10-27](#1170---2026-10-27)
 - [[1.16.1] - 2026-10-24](#1161---2026-10-24)
@@ -40,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100---2026-07-16)
 
 ## [Unreleased]
+
+## [1.19.0] - 2026-10-30
+
+UiKit page contract, access_roles/access_checker (allow_unauthenticated debug-only), opt-in routes, audit BV hardening (literal roles, legacy-key conflicts, placeholder allowlist, filtered area nav). See [UPGRADING](UPGRADING.md#to-1190).
 
 Admin UI on the UiKit page contract with the standard `web_ui` / `security` configuration, plus security hardening.
 See [UPGRADING](UPGRADING.md#unreleased).
@@ -588,7 +593,7 @@ Locale tabs for the per-locale wording on /settings/seo (FormKit 2.13 fields mod
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.18.0...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.19.0...HEAD
 [1.10.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.1
 [1.10.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.0
 [1.9.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.9.0

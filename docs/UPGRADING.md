@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.19.0](#to-1190)
   - [Configuration: `admin` → `web_ui` + `security`](#configuration-admin--web_ui--security)
   - [Template contract](#template-contract)
   - [Security changes](#security-changes)
@@ -81,6 +82,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.19.0
+
+From **1.18.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 From **1.18.x**:
 
