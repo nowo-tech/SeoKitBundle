@@ -45,6 +45,7 @@ use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -135,7 +136,11 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
         if (($config['persistence']['enabled'] ?? false) === true) {
             $this->registerPersistence($container, $config['persistence']);
-            $this->registerTablePrefix($container, (string) ($config['doctrine']['table_prefix'] ?? ''));
+            $this->registerTablePrefix(
+                $container,
+                (string) ($config['doctrine']['table_prefix'] ?? ''),
+                (string) ($config['doctrine']['table_name_prefix'] ?? TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX),
+            );
             $manager = new Definition(SeoSurfaceManager::class);
             $manager->setAutowired(true);
             $manager->setAutoconfigured(true);
@@ -273,17 +278,28 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     }
 
     /**
-     * REQ-ORM-002: the listener only exists when a prefix is configured.
+     * REQ-ORM-002: the listener only exists when a name differs from the mapped one.
      */
-    private function registerTablePrefix(ContainerBuilder $container, string $prefix): void
+    private function registerTablePrefix(ContainerBuilder $container, string $prefix, string $tableNamePrefix): void
     {
         $container->setParameter(Configuration::ALIAS . '.doctrine.table_prefix', $prefix);
-        if ($prefix === '') {
+        $container->setParameter(Configuration::ALIAS . '.doctrine.table_name_prefix', $tableNamePrefix);
+        // Table names are part of the schema: %env()% is not supported, so every published name is validated.
+        if ($container->resolveEnvPlaceholders($prefix) !== $prefix || $container->resolveEnvPlaceholders($tableNamePrefix) !== $tableNamePrefix) {
+            throw new InvalidConfigurationException('doctrine.table_prefix and doctrine.table_name_prefix do not support %env()%: the table names are part of the schema; set literal values.');
+        }
+        try {
+            TablePrefixListener::validate($prefix, $tableNamePrefix);
+        } catch (InvalidArgumentException $exception) {
+            throw new InvalidConfigurationException($exception->getMessage(), 0, $exception);
+        }
+        if ($prefix === '' && $tableNamePrefix === TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX) {
             return;
         }
 
         $listener = new Definition(TablePrefixListener::class);
         $listener->setArgument('$tablePrefix', $prefix);
+        $listener->setArgument('$tableNamePrefix', $tableNamePrefix);
         $listener->addTag('doctrine.event_listener', ['event' => 'loadClassMetadata']);
         $container->setDefinition(TablePrefixListener::class, $listener);
     }

@@ -204,17 +204,22 @@ Tables: `nowo_seo_site_settings`, `nowo_seo_site_settings_translation`, `nowo_se
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `table_prefix` | `''` | Prepended to every SeoKit table and named unique constraint (REQ-ORM-002). Letters, digits and underscores only. Empty keeps the names above. Applied by a `loadClassMetadata` listener that only touches `Nowo\SeoKitBundle\Entity\*` and is registered only when persistence is enabled and the prefix is not empty. |
+| `table_name_prefix` | `nowo_seo_` | Replaces the `nowo_seo_` part of every SeoKit table and named unique constraint (REQ-ORM-002). One or more letters, digits and underscores. `seo_` gives `seo_site_settings`, `seo_site_settings_translation`, `seo_surface`, `uniq_seo_surface_key_locale`; the Doctrine-generated `IDX_*` / `FK_*` names follow the new table names. |
+| `table_prefix` | `''` | Prepended to every SeoKit table and named unique constraint **after** `table_name_prefix` is applied (REQ-ORM-002). Letters, digits and underscores only. Empty keeps the names. |
+
+Both match `/^[a-z][a-z0-9_]*\z/` (`table_prefix` may be empty) and together may not exceed 26 characters, so every generated name stays within 63 characters; both are checked when the container is built, and `%env()%` is **not supported** for either option (the table names are part of the schema, and every published table-name parameter must come from a validated literal): the container build fails. Both are applied by a `loadClassMetadata` listener that only touches `Nowo\SeoKitBundle\Entity\*` and is registered only when persistence is enabled and an option differs from its default.
 
 ```yaml
 nowo_seo_kit:
     persistence:
         enabled: true
     doctrine:
-        table_prefix: 'app_'   # app_nowo_seo_site_settings, app_nowo_seo_site_settings_translation, app_nowo_seo_surface
+        table_name_prefix: seo_   # seo_site_settings, seo_site_settings_translation, seo_surface
+        # table_prefix: 'app_'    # then app_seo_site_settings, app_seo_site_settings_translation, app_seo_surface
 ```
 
-Changing the prefix renames the tables: generate a Doctrine migration (`doctrine:migrations:diff`) and review the `RENAME TABLE` statements before deploying.
+Changing either option renames the tables: run the rename statements from [UPGRADING](UPGRADING.md#unreleased) (or
+generate a migration and turn the drop/create into renames) before deploying.
 
 Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
 

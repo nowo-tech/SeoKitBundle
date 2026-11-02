@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\DependencyInjection;
 
+use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Enum\SitemapChangeFreq;
 use Nowo\SeoKitBundle\Enum\TwitterCard;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
@@ -109,12 +110,20 @@ final class Configuration implements ConfigurationInterface
             ->info('Doctrine options for the bundle-owned entities (persistence.enabled).')
             ->addDefaultsIfNotSet()
             ->children()
+                ->scalarNode('table_name_prefix')
+                    ->info('Replaces the "nowo_seo_" part of every SeoKit table and named unique constraint (REQ-ORM-002), e.g. "seo_" yields seo_surface and uniq_seo_surface_key_locale.')
+                    ->defaultValue(TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX)
+                    ->validate()
+                        ->ifTrue(static fn (mixed $v): bool => !is_string($v) || preg_match(TablePrefixListener::PREFIX_PATTERN, $v) !== 1)
+                        ->thenInvalid('nowo_seo_kit.doctrine.table_name_prefix must start with a lowercase letter and contain only lowercase letters, digits and underscores; got %s.')
+                    ->end()
+                ->end()
                 ->scalarNode('table_prefix')
-                    ->info('Prepended to every SeoKit table and named unique constraint (REQ-ORM-002), e.g. "app_" yields app_nowo_seo_surface. Empty = unchanged.')
+                    ->info('Prepended to every SeoKit table and named unique constraint after table_name_prefix is applied (REQ-ORM-002), e.g. "app_" yields app_nowo_seo_surface. Empty = unchanged.')
                     ->defaultValue('')
                     ->validate()
-                        ->ifTrue(static fn (mixed $v): bool => !is_string($v) || preg_match('/^[A-Za-z0-9_]*$/', $v) !== 1)
-                        ->thenInvalid('nowo_seo_kit.doctrine.table_prefix may only contain letters, digits and underscores; got %s.')
+                        ->ifTrue(static fn (mixed $v): bool => !is_string($v) || ($v !== '' && preg_match(TablePrefixListener::PREFIX_PATTERN, $v) !== 1))
+                        ->thenInvalid('nowo_seo_kit.doctrine.table_prefix must be empty or start with a lowercase letter and contain only lowercase letters, digits and underscores; got %s.')
                     ->end()
                 ->end()
             ->end()

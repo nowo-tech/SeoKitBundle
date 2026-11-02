@@ -83,6 +83,67 @@
 
 ## Unreleased
 
+New option `nowo_seo_kit.doctrine.table_name_prefix` (default `nowo_seo_`): it **replaces** the `nowo_seo_` part of
+every table and named unique-constraint name. With the default nothing changes: every table, index, unique and
+foreign-key name stays byte-identical, so no migration is needed. `doctrine.table_prefix` keeps its meaning and is
+prepended to the result (`table_name_prefix: seo_` + `table_prefix: app_` gives `app_seo_surface`).
+
+**Validation:** both options must match `/^[a-z][a-z0-9_]*\z/` (`table_prefix` was letters, digits and `_` in any
+case: an uppercase or digit-first `table_prefix` now fails the container build), and `table_prefix` +
+`table_name_prefix` may not exceed 26 characters (the longest name, `uniq_nowo_seo_site_settings_translation_locale`,
+must stay within 63). `%env()%` is not supported for either option (the build fails).
+
+**Switching an existing database to another `table_name_prefix`** renames the tables, the named unique constraints and
+the Doctrine-generated `IDX_*` / `FK_*` names of the translation table (Doctrine derives them from the table name).
+From `nowo_seo_` to `seo_` with no `table_prefix`; the statements were checked against MySQL 8.0 and PostgreSQL 17 (the
+renamed schema matches a fresh install). For another prefix, replace `seo_` and take the new `IDX_*` / `FK_*` names from
+`php bin/console doctrine:schema:update --dump-sql` on an empty database.
+
+Before you run it:
+
+- **Check that no host table already uses one of the new names** (`seo_surface`, …): the rename fails on a clash.
+- **Take a backup and plan a short maintenance window.** On MySQL / MariaDB DDL is **not transactional**: every
+  statement commits on its own, so a failure half-way leaves a partly renamed schema. Put the application in
+  maintenance mode and stop the workers; keep `FOREIGN_KEY_CHECKS=1`. In a Doctrine migration declare
+  `isTransactional(): false` on MySQL. Deploy the `table_name_prefix` change **together with** the migration.
+- On **PostgreSQL** DDL is transactional: run the whole block in one transaction (a Doctrine migration does that by
+  default).
+
+MySQL 8 / MariaDB ≥ 10.5.2 (foreign keys cannot be renamed, so the one foreign key is dropped and re-created):
+
+```sql
+RENAME TABLE
+    nowo_seo_site_settings TO seo_site_settings,
+    nowo_seo_site_settings_translation TO seo_site_settings_translation,
+    nowo_seo_surface TO seo_surface;
+ALTER TABLE seo_site_settings_translation
+    DROP FOREIGN KEY FK_42535D7A59949888;
+ALTER TABLE seo_site_settings_translation
+    RENAME INDEX IDX_42535D7A59949888 TO IDX_FCC327F259949888,
+    RENAME INDEX uniq_nowo_seo_site_settings_translation_locale TO uniq_seo_site_settings_translation_locale;
+ALTER TABLE seo_surface
+    RENAME INDEX uniq_nowo_seo_surface_key_locale TO uniq_seo_surface_key_locale;
+ALTER TABLE seo_site_settings_translation
+    ADD CONSTRAINT FK_FCC327F259949888 FOREIGN KEY (settings_id) REFERENCES seo_site_settings (id) ON DELETE CASCADE;
+```
+
+PostgreSQL (the identity sequences and primary keys are renamed too so the names match a fresh install):
+
+```sql
+ALTER TABLE nowo_seo_site_settings RENAME TO seo_site_settings;
+ALTER INDEX nowo_seo_site_settings_pkey RENAME TO seo_site_settings_pkey;
+ALTER TABLE nowo_seo_site_settings_translation RENAME TO seo_site_settings_translation;
+ALTER SEQUENCE nowo_seo_site_settings_translation_id_seq RENAME TO seo_site_settings_translation_id_seq;
+ALTER INDEX nowo_seo_site_settings_translation_pkey RENAME TO seo_site_settings_translation_pkey;
+ALTER TABLE nowo_seo_surface RENAME TO seo_surface;
+ALTER SEQUENCE nowo_seo_surface_id_seq RENAME TO seo_surface_id_seq;
+ALTER INDEX nowo_seo_surface_pkey RENAME TO seo_surface_pkey;
+ALTER INDEX IDX_42535D7A59949888 RENAME TO IDX_FCC327F259949888;
+ALTER INDEX uniq_nowo_seo_site_settings_translation_locale RENAME TO uniq_seo_site_settings_translation_locale;
+ALTER INDEX uniq_nowo_seo_surface_key_locale RENAME TO uniq_seo_surface_key_locale;
+ALTER TABLE seo_site_settings_translation RENAME CONSTRAINT FK_42535D7A59949888 TO FK_FCC327F259949888;
+```
+
 ## To 1.19.0
 
 From **1.18.0**:

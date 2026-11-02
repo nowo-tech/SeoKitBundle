@@ -46,9 +46,11 @@ use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\ParameterBag\EnvPlaceholderParameterBag;
 use Symfony\Component\DependencyInjection\Reference;
 
 use function explode;
+use function str_repeat;
 
 final class SeoKitExtensionTest extends TestCase
 {
@@ -167,6 +169,16 @@ final class SeoKitExtensionTest extends TestCase
         self::assertSame([['event' => 'loadClassMetadata']], $listener->getTag('doctrine.event_listener'));
         self::assertSame('app_', $with->getParameter(Configuration::ALIAS . '.doctrine.table_prefix'));
 
+        $renamed = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'doctrine'    => ['table_name_prefix' => 'seo_'],
+        ]], $renamed);
+        self::assertSame('', $renamed->getDefinition(TablePrefixListener::class)->getArgument('$tablePrefix'));
+        self::assertSame('seo_', $renamed->getDefinition(TablePrefixListener::class)->getArgument('$tableNamePrefix'));
+        self::assertSame('seo_', $renamed->getParameter(Configuration::ALIAS . '.doctrine.table_name_prefix'));
+        self::assertSame('nowo_seo_', $without->getParameter(Configuration::ALIAS . '.doctrine.table_name_prefix'));
+
         $noPersistence = new ContainerBuilder();
         (new SeoKitExtension())->load([['doctrine' => ['table_prefix' => 'app_']]], $noPersistence);
         self::assertFalse($noPersistence->hasDefinition(TablePrefixListener::class));
@@ -176,6 +188,84 @@ final class SeoKitExtensionTest extends TestCase
     {
         $this->expectException(InvalidConfigurationException::class);
         (new SeoKitExtension())->load([['doctrine' => ['table_prefix' => 'app-; drop']]], new ContainerBuilder());
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function invalidTablePrefixes(): iterable
+    {
+        yield 'leading digit' => [['table_name_prefix' => '1seo_']];
+        yield 'uppercase' => [['table_name_prefix' => 'Seo_']];
+        yield 'trailing newline' => [['table_name_prefix' => "seo_\n"]];
+        yield 'uppercase table_prefix' => [['table_prefix' => 'App_']];
+        yield 'too long' => [['table_name_prefix' => 's' . str_repeat('x', 22), 'table_prefix' => 'app_']];
+    }
+
+    /**
+     * @param array<string, mixed> $doctrine
+     */
+    #[DataProvider('invalidTablePrefixes')]
+    public function testInvalidTablePrefixesAreRejected(array $doctrine): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true], 'doctrine' => $doctrine]], new ContainerBuilder());
+    }
+
+    public function testLongestAllowedTablePrefixesFit(): void
+    {
+        // uniq_nowo_seo_site_settings_translation_locale leaves 26 characters for both prefixes.
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true], 'doctrine' => ['table_name_prefix' => 's' . str_repeat('x', 21), 'table_prefix' => 'app_']]], $container);
+        self::assertSame('app_', $container->getDefinition(TablePrefixListener::class)->getArgument('$tablePrefix'));
+    }
+
+    public function testEnvPlaceholderTablePrefixIsRejected(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('do not support %env()%');
+
+        $bag         = new EnvPlaceholderParameterBag();
+        $container   = new ContainerBuilder($bag);
+        $placeholder = $bag->get('env(SEO_TABLE_PREFIX)');
+        self::assertIsString($placeholder);
+
+        BaseNode::setPlaceholderUniquePrefix($bag->getEnvPlaceholderUniquePrefix());
+        try {
+            (new SeoKitExtension())->load([['persistence' => ['enabled' => true], 'doctrine' => ['table_prefix' => $placeholder]]], $container);
+        } finally {
+            BaseNode::resetPlaceholders();
+        }
+    }
+
+    public function testListenerRejectsInvalidResolvedValues(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('the limit is 63');
+
+        new TablePrefixListener(str_repeat('a', 30));
+    }
+
+    public function testListenerRejectsMalformedTablePrefix(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid doctrine.table_prefix');
+
+        new TablePrefixListener('App_');
+    }
+
+    public function testListenerRejectsMalformedTableNamePrefix(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid doctrine.table_name_prefix');
+
+        new TablePrefixListener('', '_seo');
+    }
+
+    public function testTableNamePrefixRejectsEmptyValue(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        (new SeoKitExtension())->load([['doctrine' => ['table_name_prefix' => '']]], new ContainerBuilder());
     }
 
     public function testLoadAdminCanDisableSubControllers(): void
