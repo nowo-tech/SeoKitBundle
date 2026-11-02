@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.20.0](#to-1200)
 - [To 1.19.0](#to-1190)
   - [Configuration: `admin` → `web_ui` + `security`](#configuration-admin--web_ui--security)
   - [Template contract](#template-contract)
@@ -82,6 +83,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.20.0
+
+From **1.19.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 New option `nowo_seo_kit.doctrine.table_name_prefix` (default `nowo_seo_`): it **replaces** the `nowo_seo_` part of
 every table and named unique-constraint name. With the default nothing changes: every table, index, unique and
