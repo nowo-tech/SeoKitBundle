@@ -53,8 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `doctrine.table_prefix` / `doctrine.table_name_prefix` must match `/^[a-z][a-z0-9_]*\z/` (uppercase and a leading
-  digit are now rejected) and may not make a generated name longer than 63 characters; checked at compile time and,
-  for `%env()%` values, when the listener is built.
+  digit are now rejected) and may not make a generated name longer than 63 characters; checked at compile time;
+  `%env()%` is rejected for both options (table names are part of the schema).
 
 ## [1.19.0] - 2026-10-30
 

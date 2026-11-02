@@ -91,7 +91,7 @@ prepended to the result (`table_name_prefix: seo_` + `table_prefix: app_` gives 
 **Validation:** both options must match `/^[a-z][a-z0-9_]*\z/` (`table_prefix` was letters, digits and `_` in any
 case: an uppercase or digit-first `table_prefix` now fails the container build), and `table_prefix` +
 `table_name_prefix` may not exceed 26 characters (the longest name, `uniq_nowo_seo_site_settings_translation_locale`,
-must stay within 63). `%env()%` values are checked when the listener is built.
+must stay within 63). `%env()%` is not supported for either option (the build fails).
 
 **Switching an existing database to another `table_name_prefix`** renames the tables, the named unique constraints and
 the Doctrine-generated `IDX_*` / `FK_*` names of the translation table (Doctrine derives them from the table name).

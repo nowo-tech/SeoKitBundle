@@ -220,8 +220,11 @@ final class SeoKitExtensionTest extends TestCase
         self::assertSame('app_', $container->getDefinition(TablePrefixListener::class)->getArgument('$tablePrefix'));
     }
 
-    public function testEnvPlaceholderTablePrefixIsLeftToTheListener(): void
+    public function testEnvPlaceholderTablePrefixIsRejected(): void
     {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('do not support %env()%');
+
         $bag         = new EnvPlaceholderParameterBag();
         $container   = new ContainerBuilder($bag);
         $placeholder = $bag->get('env(SEO_TABLE_PREFIX)');
@@ -233,7 +236,6 @@ final class SeoKitExtensionTest extends TestCase
         } finally {
             BaseNode::resetPlaceholders();
         }
-        self::assertSame($placeholder, $container->getDefinition(TablePrefixListener::class)->getArgument('$tablePrefix'));
     }
 
     public function testListenerRejectsInvalidResolvedValues(): void
