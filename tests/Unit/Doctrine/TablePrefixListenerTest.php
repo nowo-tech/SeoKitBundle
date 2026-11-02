@@ -70,6 +70,38 @@ final class TablePrefixListenerTest extends TestCase
         return array_keys($entries);
     }
 
+    public function testTableNamePrefixReplacesTheDefaultPartOfEveryName(): void
+    {
+        $metadata = new ClassMetadata(SeoSurface::class);
+        $metadata->setPrimaryTable([
+            'name'              => 'nowo_seo_surface',
+            'uniqueConstraints' => ['uniq_nowo_seo_surface_key_locale' => ['columns' => ['surface_key', 'locale']], 0 => ['columns' => ['id']]],
+            'indexes'           => ['idx_other' => ['columns' => ['locale']]],
+        ]);
+
+        (new TablePrefixListener('', 'seo_'))->loadClassMetadata($this->event($metadata));
+
+        $this->assertSame('seo_surface', $metadata->getTableName());
+        $this->assertSame(['uniq_seo_surface_key_locale', 0], array_keys($metadata->table['uniqueConstraints'] ?? []));
+        $this->assertSame(['idx_other'], array_keys($metadata->table['indexes'] ?? []), 'names without nowo_seo_ are kept');
+
+        $both = new ClassMetadata(SeoSurface::class);
+        $both->setPrimaryTable(['name' => 'nowo_seo_surface', 'uniqueConstraints' => ['uniq_nowo_seo_surface_key_locale' => ['columns' => ['locale']]]]);
+        (new TablePrefixListener('app_', 'seo_'))->loadClassMetadata($this->event($both));
+        $this->assertSame('app_seo_surface', $both->getTableName());
+        $this->assertSame(['app_uniq_seo_surface_key_locale'], array_keys($both->table['uniqueConstraints'] ?? []));
+    }
+
+    public function testDefaultsLeaveNamesUnchanged(): void
+    {
+        $metadata = new ClassMetadata(SeoSurface::class);
+        $metadata->setPrimaryTable(['name' => 'nowo_seo_surface']);
+
+        (new TablePrefixListener('', TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX))->loadClassMetadata($this->event($metadata));
+
+        $this->assertSame('nowo_seo_surface', $metadata->getTableName());
+    }
+
     /**
      * @param class-string $class
      *

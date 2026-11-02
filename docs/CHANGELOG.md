@@ -42,6 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `doctrine.table_name_prefix` (default `nowo_seo_`) replaces the `nowo_seo_` part of every table and named
+  unique-constraint name (`seo_` gives `seo_surface`, `seo_site_settings`, `seo_site_settings_translation`,
+  `uniq_seo_surface_key_locale`), so a host can name the tables after its own conventions. With the default every
+  table, index, unique and foreign-key name is byte-identical (golden schema test). `doctrine.table_prefix` keeps
+  prepending to the result. Rename SQL for MySQL / MariaDB and PostgreSQL in [UPGRADING](UPGRADING.md#unreleased).
+
 ## [1.19.0] - 2026-10-30
 
 UiKit page contract, access_roles/access_checker (allow_unauthenticated debug-only), opt-in routes, audit BV hardening (literal roles, legacy-key conflicts, placeholder allowlist, filtered area nav). See [UPGRADING](UPGRADING.md#to-1190).

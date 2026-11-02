@@ -23,7 +23,7 @@ Every production artifact under `src/` is listed below.
 | `DependencyInjection/Compiler/TwigPathsPass.php` | Twig namespace paths | FR-SEO-006 |
 | `DependencyInjection/Compiler/CsrfProtectionPass.php` | Fail closed without form CSRF while `web_ui.enabled` (REQ-SEC-005) | FR-SEO-001 |
 | `DependencyInjection/Compiler/WebUiSecurityPass.php` | Fail closed without SecurityBundle while `web_ui.enabled` (REQ-UI-002) | FR-SEO-001 |
-| `Doctrine/TablePrefixListener.php` | Optional `doctrine.table_prefix` (REQ-ORM-002) | FR-SEO-001 |
+| `Doctrine/TablePrefixListener.php` | `doctrine.table_name_prefix` / optional `doctrine.table_prefix` (REQ-ORM-002) | FR-SEO-001 |
 | `Entity/SeoSiteSettings.php` | Optional Doctrine site settings | FR-SEO-001 |
 | `Entity/SeoSiteSettingsTranslation.php` | Site settings i18n | FR-I18N-001 |
 | `Entity/SeoSurface.php` | Surface override entity | FR-SEO-001 |

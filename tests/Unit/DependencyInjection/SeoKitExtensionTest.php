@@ -167,6 +167,16 @@ final class SeoKitExtensionTest extends TestCase
         self::assertSame([['event' => 'loadClassMetadata']], $listener->getTag('doctrine.event_listener'));
         self::assertSame('app_', $with->getParameter(Configuration::ALIAS . '.doctrine.table_prefix'));
 
+        $renamed = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'persistence' => ['enabled' => true],
+            'doctrine'    => ['table_name_prefix' => 'seo_'],
+        ]], $renamed);
+        self::assertSame('', $renamed->getDefinition(TablePrefixListener::class)->getArgument('$tablePrefix'));
+        self::assertSame('seo_', $renamed->getDefinition(TablePrefixListener::class)->getArgument('$tableNamePrefix'));
+        self::assertSame('seo_', $renamed->getParameter(Configuration::ALIAS . '.doctrine.table_name_prefix'));
+        self::assertSame('nowo_seo_', $without->getParameter(Configuration::ALIAS . '.doctrine.table_name_prefix'));
+
         $noPersistence = new ContainerBuilder();
         (new SeoKitExtension())->load([['doctrine' => ['table_prefix' => 'app_']]], $noPersistence);
         self::assertFalse($noPersistence->hasDefinition(TablePrefixListener::class));
@@ -176,6 +186,12 @@ final class SeoKitExtensionTest extends TestCase
     {
         $this->expectException(InvalidConfigurationException::class);
         (new SeoKitExtension())->load([['doctrine' => ['table_prefix' => 'app-; drop']]], new ContainerBuilder());
+    }
+
+    public function testTableNamePrefixRejectsEmptyValue(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        (new SeoKitExtension())->load([['doctrine' => ['table_name_prefix' => '']]], new ContainerBuilder());
     }
 
     public function testLoadAdminCanDisableSubControllers(): void

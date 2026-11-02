@@ -135,7 +135,11 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
         if (($config['persistence']['enabled'] ?? false) === true) {
             $this->registerPersistence($container, $config['persistence']);
-            $this->registerTablePrefix($container, (string) ($config['doctrine']['table_prefix'] ?? ''));
+            $this->registerTablePrefix(
+                $container,
+                (string) ($config['doctrine']['table_prefix'] ?? ''),
+                (string) ($config['doctrine']['table_name_prefix'] ?? TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX),
+            );
             $manager = new Definition(SeoSurfaceManager::class);
             $manager->setAutowired(true);
             $manager->setAutoconfigured(true);
@@ -273,17 +277,19 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     }
 
     /**
-     * REQ-ORM-002: the listener only exists when a prefix is configured.
+     * REQ-ORM-002: the listener only exists when a name differs from the mapped one.
      */
-    private function registerTablePrefix(ContainerBuilder $container, string $prefix): void
+    private function registerTablePrefix(ContainerBuilder $container, string $prefix, string $tableNamePrefix): void
     {
         $container->setParameter(Configuration::ALIAS . '.doctrine.table_prefix', $prefix);
-        if ($prefix === '') {
+        $container->setParameter(Configuration::ALIAS . '.doctrine.table_name_prefix', $tableNamePrefix);
+        if ($prefix === '' && $tableNamePrefix === TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX) {
             return;
         }
 
         $listener = new Definition(TablePrefixListener::class);
         $listener->setArgument('$tablePrefix', $prefix);
+        $listener->setArgument('$tableNamePrefix', $tableNamePrefix);
         $listener->addTag('doctrine.event_listener', ['event' => 'loadClassMetadata']);
         $container->setDefinition(TablePrefixListener::class, $listener);
     }
