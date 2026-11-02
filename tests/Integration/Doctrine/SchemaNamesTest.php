@@ -16,9 +16,13 @@ use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
+use function array_keys;
 use function dirname;
 use function implode;
 use function ksort;
+use function max;
+use function str_repeat;
+use function strlen;
 
 use const PHP_VERSION_ID;
 
@@ -38,6 +42,21 @@ final class SchemaNamesTest extends TestCase
     public function testTableNamePrefixReachesEveryDerivedName(): void
     {
         self::assertSame(self::SEO_NAMES, $this->schemaNames(['table_name_prefix' => 'seo_']));
+    }
+
+    public function testLongestAllowedPrefixKeepsEveryNameWithinTheIdentifierLimit(): void
+    {
+        $prefix = 's' . str_repeat('x', 25);
+        TablePrefixListener::validate('', $prefix);
+
+        $longest = 0;
+        foreach ($this->schemaNames(['table_name_prefix' => $prefix]) as $table => $names) {
+            $longest = max($longest, strlen($table . '_id_seq'));
+            foreach ([...array_keys($names['indexes']), ...array_keys($names['unique']), ...array_keys($names['fk'])] as $name) {
+                $longest = max($longest, strlen($name));
+            }
+        }
+        self::assertSame(TablePrefixListener::MAX_IDENTIFIER_LENGTH, $longest, 'the budget is exact: one more character would overflow');
     }
 
     public function testTablePrefixIsPrependedAfterTheNamePrefix(): void

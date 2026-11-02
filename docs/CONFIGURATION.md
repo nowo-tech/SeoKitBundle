@@ -207,7 +207,7 @@ Tables: `nowo_seo_site_settings`, `nowo_seo_site_settings_translation`, `nowo_se
 | `table_name_prefix` | `nowo_seo_` | Replaces the `nowo_seo_` part of every SeoKit table and named unique constraint (REQ-ORM-002). One or more letters, digits and underscores. `seo_` gives `seo_site_settings`, `seo_site_settings_translation`, `seo_surface`, `uniq_seo_surface_key_locale`; the Doctrine-generated `IDX_*` / `FK_*` names follow the new table names. |
 | `table_prefix` | `''` | Prepended to every SeoKit table and named unique constraint **after** `table_name_prefix` is applied (REQ-ORM-002). Letters, digits and underscores only. Empty keeps the names. |
 
-Both are applied by a `loadClassMetadata` listener that only touches `Nowo\SeoKitBundle\Entity\*` and is registered only when persistence is enabled and an option differs from its default.
+Both match `/^[a-z][a-z0-9_]*\z/` (`table_prefix` may be empty) and together may not exceed 26 characters, so every generated name stays within 63 characters; literal values are checked when the container is built, `%env()%` values when the listener is built (give the env var a default with an `env(NAME)` parameter). Both are applied by a `loadClassMetadata` listener that only touches `Nowo\SeoKitBundle\Entity\*` and is registered only when persistence is enabled and an option differs from its default.
 
 ```yaml
 nowo_seo_kit:

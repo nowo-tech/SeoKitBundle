@@ -45,6 +45,7 @@ use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -283,6 +284,14 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
     {
         $container->setParameter(Configuration::ALIAS . '.doctrine.table_prefix', $prefix);
         $container->setParameter(Configuration::ALIAS . '.doctrine.table_name_prefix', $tableNamePrefix);
+        // %env()% values are checked by the listener once resolved.
+        if ($container->resolveEnvPlaceholders($prefix) === $prefix && $container->resolveEnvPlaceholders($tableNamePrefix) === $tableNamePrefix) {
+            try {
+                TablePrefixListener::validate($prefix, $tableNamePrefix);
+            } catch (InvalidArgumentException $exception) {
+                throw new InvalidConfigurationException($exception->getMessage(), 0, $exception);
+            }
+        }
         if ($prefix === '' && $tableNamePrefix === TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX) {
             return;
         }

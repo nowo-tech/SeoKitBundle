@@ -88,11 +88,26 @@ every table and named unique-constraint name. With the default nothing changes: 
 foreign-key name stays byte-identical, so no migration is needed. `doctrine.table_prefix` keeps its meaning and is
 prepended to the result (`table_name_prefix: seo_` + `table_prefix: app_` gives `app_seo_surface`).
 
+**Validation:** both options must match `/^[a-z][a-z0-9_]*\z/` (`table_prefix` was letters, digits and `_` in any
+case: an uppercase or digit-first `table_prefix` now fails the container build), and `table_prefix` +
+`table_name_prefix` may not exceed 26 characters (the longest name, `uniq_nowo_seo_site_settings_translation_locale`,
+must stay within 63). `%env()%` values are checked when the listener is built.
+
 **Switching an existing database to another `table_name_prefix`** renames the tables, the named unique constraints and
 the Doctrine-generated `IDX_*` / `FK_*` names of the translation table (Doctrine derives them from the table name).
 From `nowo_seo_` to `seo_` with no `table_prefix`; the statements were checked against MySQL 8.0 and PostgreSQL 17 (the
 renamed schema matches a fresh install). For another prefix, replace `seo_` and take the new `IDX_*` / `FK_*` names from
 `php bin/console doctrine:schema:update --dump-sql` on an empty database.
+
+Before you run it:
+
+- **Check that no host table already uses one of the new names** (`seo_surface`, …): the rename fails on a clash.
+- **Take a backup and plan a short maintenance window.** On MySQL / MariaDB DDL is **not transactional**: every
+  statement commits on its own, so a failure half-way leaves a partly renamed schema. Put the application in
+  maintenance mode and stop the workers; keep `FOREIGN_KEY_CHECKS=1`. In a Doctrine migration declare
+  `isTransactional(): false` on MySQL. Deploy the `table_name_prefix` change **together with** the migration.
+- On **PostgreSQL** DDL is transactional: run the whole block in one transaction (a Doctrine migration does that by
+  default).
 
 MySQL 8 / MariaDB ≥ 10.5.2 (foreign keys cannot be renamed, so the one foreign key is dropped and re-created):
 
