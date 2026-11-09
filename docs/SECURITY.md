@@ -100,7 +100,7 @@ Record confirmation in the release PR or tag notes.
 
 ## Brand (spec 220 S6)
 
-**Audit status: re-verification pending** (new in Unreleased, target 1.21.0; the independent batch audit of spec 220
+**Audit status: audited: Appendix IW **Pass** (IW-I5..I8 Info)** (new in Unreleased, target 1.21.0; the independent batch audit of spec 220
 S6 has not run yet).
 
 - **Source.** The brand comes from the host's `Nowo\Brand\Contract\BrandProviderInterface` service (an admin-edited

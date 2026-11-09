@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.21.0](#to-1210)
 - [To 1.20.0](#to-1200)
 - [To 1.19.0](#to-1190)
   - [Configuration: `admin` → `web_ui` + `security`](#configuration-admin--web_ui--security)
@@ -83,6 +84,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.21.0
+
+From **1.20.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 **Brand (spec 220 S6), no action needed.** With no `Nowo\Brand\Contract\BrandProviderInterface` service in the
 application nothing changes. When the application has one (InstanceSettingsBundle 1.5 with `brand.enabled: true`, or

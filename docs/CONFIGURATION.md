@@ -46,7 +46,7 @@ Later layers override earlier ones:
 | `default_locale` | `en` | Fallback locale |
 | `locales` | `en, es, fr, de, it, pt, nl` | Locales for hreflang and sitemap |
 | `brand` | `auto` | Read the site name (and, opt-in, the logo) from a `nowo-tech/brand-contracts` brand provider (see [brand](#brand)). |
-| `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests). Also switches on `AbsoluteUrlBuilder` and the PageHead pipeline (see [page_head](#page_head)); set it whenever `persistence` / `web_ui` are enabled (see [persistence](#persistence)). |
+| `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests). Also switches on `AbsoluteUrlBuilder` and the PageHead pipeline (see [page_head](#page_head)); set it whenever `persistence` / `web_ui` are enabled (see [persistence](#persistence)). With `brand.images`, a `base_url` that has a path drops the brand image (fail closed, audit IW-I6); without `base_url` the brand og:image follows the request host like the canonical URL, so configure `framework.trusted_hosts` (IW-I5). |
 
 ## Host extension points
 
