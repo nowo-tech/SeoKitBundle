@@ -20,6 +20,8 @@ services:
         arguments:
             $config: '%nowo_seo_kit.config%'
             $defaultsProviders: !tagged_iterator nowo_seo_kit.defaults_provider
+            # Spec 220 S6: registered by SeoKitExtension only with brand.mode auto and nowo-tech/brand-contracts installed.
+            $brand: '@?Nowo\SeoKitBundle\Brand\SeoKitBrand'
 
     Nowo\SeoKitBundle\Service\SitemapGenerator:
         arguments:

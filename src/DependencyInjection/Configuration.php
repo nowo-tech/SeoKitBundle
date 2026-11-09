@@ -36,6 +36,11 @@ final class Configuration implements ConfigurationInterface
     /** Security attributes that grant anonymous users: refused in security.access_roles. */
     public const PUBLIC_ATTRIBUTES = ['PUBLIC_ACCESS', 'IS_AUTHENTICATED_ANONYMOUSLY'];
 
+    /** brand.mode values (spec 220 S6). */
+    public const BRAND_AUTO = 'auto';
+
+    public const BRAND_OFF = 'off';
+
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder(self::ALIAS);
@@ -74,6 +79,7 @@ final class Configuration implements ConfigurationInterface
         $this->addRobotsNode($root);
         $this->addTemplatesNode($root);
         $this->addPageHeadNode($root);
+        $this->addBrandNode($root);
         $this->addPersistenceNode($root);
         $this->addDoctrineNode($root);
         $this->addWebUiNode($root);
@@ -97,6 +103,31 @@ final class Configuration implements ConfigurationInterface
                         'es' => 'ES', 'ca' => 'ES', 'en' => 'GB',
                         'pt' => 'PT', 'fr' => 'FR', 'it' => 'IT',
                     ])
+                ->end()
+            ->end()
+            ->end()
+        ->end();
+    }
+
+    private function addBrandNode(ArrayNodeDefinition $root): void
+    {
+        $root->children()
+            ->arrayNode('brand')
+            ->info('Spec 220: read the site name (and, opt-in, the logo) from a nowo-tech/brand-contracts BrandProviderInterface service when the app has one. Configured values always win. "auto" or "off" is accepted as a shorthand for mode.')
+            ->addDefaultsIfNotSet()
+            ->beforeNormalization()
+                ->ifString()
+                ->then(static fn (string $v): array => ['mode' => $v])
+            ->end()
+            ->children()
+                ->enumNode('mode')
+                    ->info('auto: use the brand provider when one exists (the configuration stays the fallback). off: ignore it.')
+                    ->values([self::BRAND_AUTO, self::BRAND_OFF])
+                    ->defaultValue(self::BRAND_AUTO)
+                ->end()
+                ->booleanNode('images')
+                    ->info('Also use the brand logo (logo_light, then mark; PNG, JPEG or WebP only) as the fallback og:image / twitter:image and as the JSON-LD Organization logo when none is configured.')
+                    ->defaultFalse()
                 ->end()
             ->end()
             ->end()
