@@ -43,6 +43,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Brand from `nowo-tech/brand-contracts` (spec 220 S6).** New `nowo_seo_kit.brand` option (`auto`, the default, or
+  `off`; `"auto"` / `"off"` is accepted as a shorthand). When the application has a
+  `Nowo\Brand\Contract\BrandProviderInterface` service (for example InstanceSettingsBundle 1.5 with
+  `brand.enabled: true`), the brand name fills `defaults.site_name` when it is empty after the configuration and the
+  defaults providers, so `og:site_name`, the `{site_name}` title placeholder and the PageHead site name follow it, and
+  fills the `name` of a configured JSON-LD Organization that has none. Configured values always win.
+- `brand.images` (default `false`, opt-in): the brand logo also becomes the fallback `og:image` / `twitter:image`
+  (`logo_light`, then `mark`, with the logo's own width and height) and the JSON-LD Organization `logo` (`mark`, then
+  `logo_light`) when nothing is configured. Only PNG, JPEG and WebP assets are used (never SVG or ICO), and the URL is
+  made absolute on `base_url` (else the request origin) and checked to be a plain http(s) URL.
+- `nowo-tech/brand-contracts` `^1.0` in `require-dev` and `suggest` (with `conflict: <1.0 || >=2.0`); it is not a
+  runtime requirement.
+
+### Unchanged
+
+- Without a brand provider, with `brand: off`, or with a provider that throws (logged as a warning), the head, the
+  JSON-LD and the PageHead defaults are byte-identical to 1.20.0.
+
 ## [1.20.0] - 2026-11-03
 
 replaceable table-name prefix (doctrine.table_name_prefix), stricter prefix validation

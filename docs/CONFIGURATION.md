@@ -15,6 +15,7 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 - [robots](#robots)
 - [templates](#templates)
 - [page_head](#page_head)
+- [brand](#brand)
 - [persistence](#persistence)
 - [doctrine](#doctrine)
 - [web_ui](#web_ui)
@@ -44,6 +45,7 @@ Later layers override earlier ones:
 | `indexable` | `true` | When false (or a `SiteIndexabilityProviderInterface` returns false), robots disallow `/` and sitemap is empty/404. Page meta robots is forced to `noindex,nofollow` (overriding any `robots` set by defaults, pages, slugs or providers) unless it already contains `noindex`. |
 | `default_locale` | `en` | Fallback locale |
 | `locales` | `en, es, fr, de, it, pt, nl` | Locales for hreflang and sitemap |
+| `brand` | `auto` | Read the site name (and, opt-in, the logo) from a `nowo-tech/brand-contracts` brand provider (see [brand](#brand)). |
 | `base_url` | `null` | Absolute origin when Request host unavailable (CLI, tests). Also switches on `AbsoluteUrlBuilder` and the PageHead pipeline (see [page_head](#page_head)); set it whenever `persistence` / `web_ui` are enabled (see [persistence](#persistence)). |
 
 ## Host extension points
@@ -179,6 +181,40 @@ nowo_seo_kit:
             en: US
             es: MX
             de: AT
+```
+
+## brand
+
+Spec 220 S6: read the site name (and, opt-in, the logo) from a `nowo-tech/brand-contracts`
+`Nowo\Brand\Contract\BrandProviderInterface` service when the application has one. The consumer is registered only
+with `mode: auto` and the package installed; without a provider service it reads nothing and every output stays the
+configuration. A provider that throws is logged as a warning and the configuration applies.
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `mode` | `auto` | `auto`: use the brand provider when one exists. `off`: ignore it. `brand: auto` / `brand: off` is accepted as a shorthand. |
+| `images` | `false` | Also use the brand logo as the fallback `og:image` / `twitter:image` (slot `logo_light`, then `mark`, with its width and height) and as the JSON-LD Organization `logo` (`mark`, then `logo_light`). PNG, JPEG and WebP only, never SVG or ICO. |
+
+What the brand fills, always only where nothing is configured:
+
+| Output | From the brand | Configuration that wins |
+| --- | --- | --- |
+| `defaults.site_name` (title suffix, `{site_name}` placeholder, `og:site_name`) | `name` | `defaults.site_name`, a `SeoDefaultsProviderInterface` `site_name` |
+| `og:site_name` | `name` (through `site_name`) | `defaults.open_graph.site_name` and the per-layer `open_graph.site_name` |
+| JSON-LD Organization `name` | `name` | `defaults.json_ld.organization.name` (no Organization is added when none is configured) |
+| `og:image`, `og:image:width` / `:height`, `twitter:image` (`images: true`) | `logo_light` → `mark` | `og_image` / `open_graph.image` of any layer, `open_graph.image_width` / `_height`, `twitter.image` |
+| JSON-LD Organization `logo` (`images: true`) | `mark` → `logo_light` | `defaults.json_ld.organization.logo` |
+| PageHead `siteName`, default `title`, `ogImage` (`base_url` set) | `name`, `logo_light` → `mark` | the same `defaults` keys |
+
+Image URLs: an `https://` asset URL is kept; a root-relative one is prefixed with `base_url` (else the request's
+scheme and host). The result must be a plain absolute http(s) URL without quotes, angle brackets or spaces, and the
+origin must have no path, query or credentials; otherwise no brand image is used.
+
+```yaml
+nowo_seo_kit:
+    base_url: 'https://example.com'
+    brand:
+        images: true   # opt-in: brand logo as fallback og:image and Organization logo
 ```
 
 ## persistence
