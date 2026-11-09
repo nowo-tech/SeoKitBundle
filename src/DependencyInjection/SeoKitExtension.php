@@ -6,6 +6,8 @@ namespace Nowo\SeoKitBundle\DependencyInjection;
 
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use InvalidArgumentException;
+use Nowo\Brand\Contract\BrandProviderInterface;
+use Nowo\SeoKitBundle\Brand\SeoKitBrand;
 use Nowo\SeoKitBundle\Command\SeoAuditCommand;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSiteSettingsController;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
@@ -60,6 +62,7 @@ use function array_keys;
 use function array_unique;
 use function array_values;
 use function in_array;
+use function interface_exists;
 use function is_array;
 use function is_bool;
 use function is_string;
@@ -90,6 +93,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
+        $this->registerBrand($container, $config['brand']);
 
         $container->registerForAutoconfiguration(SeoDefaultsProviderInterface::class)
             ->addTag('nowo_seo_kit.defaults_provider');
@@ -325,6 +329,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $yamlDefaults->setAutowired(true);
         $yamlDefaults->setAutoconfigured(true);
         $yamlDefaults->setArgument('$config', $config);
+        $yamlDefaults->setArgument('$brand', new Reference(SeoKitBrand::class, ContainerInterface::NULL_ON_INVALID_REFERENCE));
+        $yamlDefaults->setArgument('$urls', new Reference(AbsoluteUrlBuilder::class));
         $container->setDefinition(ConfigPageHeadDefaultsProvider::class, $yamlDefaults);
         $container->setAlias(PageHeadDefaultsProviderInterface::class, ConfigPageHeadDefaultsProvider::class);
 
@@ -354,6 +360,27 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $pencil->setAutowired(true);
         $pencil->setAutoconfigured(true);
         $container->setDefinition(SeoPencilCatalogFactory::class, $pencil);
+    }
+
+    /**
+     * Spec 220 S6: the brand consumer, only with `brand.mode: auto` and brand-contracts installed. The provider is an
+     * optional reference: without a BrandProviderInterface service the consumer reads no brand and every output stays
+     * the configuration.
+     *
+     * @param array{mode: string, images: bool} $brand
+     */
+    private function registerBrand(ContainerBuilder $container, array $brand): void
+    {
+        if ($brand['mode'] !== Configuration::BRAND_AUTO || !interface_exists(BrandProviderInterface::class)) {
+            return;
+        }
+
+        $container->register(SeoKitBrand::class, SeoKitBrand::class)
+            ->setArguments([
+                '$provider' => new Reference(BrandProviderInterface::class, ContainerInterface::NULL_ON_INVALID_REFERENCE),
+                '$images'   => $brand['images'],
+                '$logger'   => new Reference('logger', ContainerInterface::NULL_ON_INVALID_REFERENCE),
+            ]);
     }
 
     /**

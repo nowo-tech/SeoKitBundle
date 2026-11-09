@@ -84,6 +84,22 @@
 
 ## Unreleased
 
+**Brand (spec 220 S6), no action needed.** With no `Nowo\Brand\Contract\BrandProviderInterface` service in the
+application nothing changes. When the application has one (InstanceSettingsBundle 1.5 with `brand.enabled: true`, or
+a host class), and `nowo_seo_kit.defaults.site_name` is empty (and no defaults provider such as the persistence layer
+sets one), the brand name now becomes the site name:
+
+- the document title gains the `{separator}{site_name}` suffix of `title_template` (`Home` → `Home | Acme`);
+- `<meta property="og:site_name">` appears (unless `defaults.open_graph.site_name` is set);
+- a configured `json_ld.organization` without `name` gets the brand name;
+- on the PageHead path (`base_url` set), `PageHeadDefaults::$siteName` and the default title follow it.
+
+Set `defaults.site_name` to keep a fixed value, or `nowo_seo_kit.brand: off` to ignore the brand. The brand name is
+used even while the brand is the provider's default one (`Brand::$isDefault`), because an empty site name has no
+better fallback. Logos are **not** used unless you opt in with `brand.images: true` (fallback `og:image` and
+Organization `logo`; SVG and ICO assets are never used). A brand logo is usually not a good 1200 × 630 share image:
+prefer a configured `open_graph.image` when you have one.
+
 ## To 1.20.0
 
 From **1.19.0**:

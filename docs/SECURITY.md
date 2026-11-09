@@ -10,6 +10,7 @@
 - [Integrator guidance](#integrator-guidance)
 - [Dependencies](#dependencies)
 - [Release security checklist (12.4.1)](#release-security-checklist-1241)
+- [Brand (spec 220 S6)](#brand-spec-220-s6)
 - [AI security audit (REQ-SEC-004)](#ai-security-audit-req-sec-004)
 
 ## Reporting vulnerabilities
@@ -24,6 +25,7 @@ See [.github/SECURITY.md](../.github/SECURITY.md) for supported versions.
 |---------|----------|------------|
 | `GET /sitemap.xml`, `GET /robots.txt` (bundle route loader) | Public, unauthenticated | Read-only; URLs built from config and tagged providers only, never from request input; absolute URLs use `base_url`; without it they follow the request `Host` header (`OriginUrlGuard` only validates canonical overrides), so set `base_url` (the recipe uses `%env(default::DEFAULT_URI)%`) or `framework.trusted_hosts` before the public sitemap (cached `public, max-age=3600`) goes behind a shared cache. |
 | Twig `nowo_seo_head()` / `nowo_seo_metadata()` | Every page that renders them | Values are escaped by Twig; JSON-LD is encoded with `<` / `>` escaped so it cannot break out of `<script>`. |
+| Brand values (`brand: auto`, spec 220 S6) | Every page that renders the head, when the app has a `BrandProviderInterface` service | See [Brand (spec 220 S6)](#brand-spec-220-s6). The brand name goes through the same Twig escaping and JSON-LD encoding as configured values; brand images are opt-in (`brand.images`), raster only, and absolute http(s) URLs only. |
 | Admin UI `/settings/seo`, `/admin/seo/surfaces` or `<web_ui.path_prefix>/settings`, `/surfaces` (`web_ui.enabled`, off by default) | Session-authenticated | `SeoKitAccessCheckerInterface` on every action (default: any of `security.access_roles`, default `ROLE_ADMIN`); Symfony Forms with CSRF; canonical overrides restricted to the site origin; image URLs limited to site paths / https; no control characters in URLs. |
 | JSON pencil API `GET/POST /_nowo/seo/surfaces/{key}/{locale}` (`web_ui.api_enabled`) | Session-authenticated | Same access checker; locales that are not enabled and keys over 180 characters answer 404; `POST` requires `Content-Type: application/json` **and** an `X-CSRF-Token` header (see below); payload goes through the same validated `SeoSurfaceType`. |
 | `nowo:seo:audit` console command | Operators only | Read-only report over tagged audit subjects. |
@@ -95,6 +97,36 @@ Before tagging a release, confirm:
 
 Record confirmation in the release PR or tag notes.
 
+
+## Brand (spec 220 S6)
+
+**Audit status: re-verification pending** (new in Unreleased, target 1.21.0; the independent batch audit of spec 220
+S6 has not run yet).
+
+- **Source.** The brand comes from the host's `Nowo\Brand\Contract\BrandProviderInterface` service (an admin-edited
+  value in InstanceSettingsBundle). The contract's value objects already refuse control, bidi and separator
+  characters in the name, and unsafe asset URLs (`BrandAsset::isSafeUrl()`: root-relative or `https://`, printable
+  ASCII without quotes, angle brackets, backslashes, backticks, commas, parentheses or whitespace).
+- **HTML.** The name reaches `<title>` and `<meta content>` through Twig autoescape only (no `|raw`).
+- **JSON-LD.** The Organization `name` / `logo` are added to the graph array, which the head template encodes with
+  `JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT`: a name such as `</script><!--` is printed as
+  `\u003C/script\u003E\u003C!--` and cannot close the script element or open a script-data comment (test
+  `SeoMetadataResolverBrandTest::testAHostileBrandNameIsEncodedInTheHeadAndTheJsonLd`). A pre-encoded
+  `json_ld.json` string (PageHead path) is not touched by the brand.
+- **Images (opt-in, `brand.images: true`).** Only PNG, JPEG and WebP assets are used; an SVG (possible for config
+  default assets) or ICO is skipped, so `og:image` never points at an SVG. The URL is the asset URL when it is
+  `https://`, else `base_url` (or the request scheme and host) plus the root-relative path; the result must match a
+  plain absolute http(s) URL and the origin must have no path, query, fragment or credentials, otherwise no brand
+  image is used. Without `base_url` the origin follows the request `Host` header, as canonicals already do: set
+  `base_url` or `framework.trusted_hosts` in production.
+- **Precedence.** Configured values and defaults providers always win; the brand only fills empty values. No
+  Organization node is created by the brand.
+- **Failure.** A throwing provider is caught (`Throwable`), logged as a warning with the exception, and the
+  configuration applies; the page never fails because of the brand.
+- **Workers.** `SeoKitBrand` is `readonly` and stateless; the provider is asked once per resolved head (no memo in
+  SeoKit), so nothing is kept between requests in a FrankenPHP worker.
+- **Caching.** The brand is instance-wide (contract §1). A host whose provider varies per session or tenant must not
+  let a shared cache store pages across those variations (same rule as any per-user head content).
 
 ## AI security audit (REQ-SEC-004)
 

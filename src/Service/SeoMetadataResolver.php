@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Service;
 
+use Nowo\Brand\Contract\Brand;
+use Nowo\Brand\Contract\BrandAsset;
 use Nowo\SeoKitBundle\Attribute\Seo;
+use Nowo\SeoKitBundle\Brand\SeoKitBrand;
 use Nowo\SeoKitBundle\Model\SeoMetadata;
 use ReflectionClass;
 use ReflectionMethod;
@@ -23,10 +26,12 @@ use function is_string;
 use function parse_str;
 use function parse_url;
 use function preg_match;
+use function rtrim;
 use function str_replace;
 use function str_starts_with;
 use function strlen;
 use function strtolower;
+use function trim;
 
 use const PHP_URL_QUERY;
 
@@ -51,6 +56,7 @@ final readonly class SeoMetadataResolver
         private UrlGeneratorInterface $urlGenerator,
         #[TaggedIterator('nowo_seo_kit.defaults_provider')]
         private iterable $defaultsProviders = [],
+        private ?SeoKitBrand $brand = null,
     ) {
     }
 
@@ -66,6 +72,11 @@ final readonly class SeoMetadataResolver
         $defaults         = is_array($this->config['defaults'] ?? null) ? $this->config['defaults'] : [];
         $providersNoindex = false;
         $defaults         = $this->mergeDefaultsProviders($defaults, $providersNoindex);
+        // Spec 220 S6: the brand fills what the configuration and the defaults providers leave empty.
+        $brand = $this->brand?->current();
+        if ($brand instanceof Brand && $this->isBlank($defaults['site_name'] ?? null)) {
+            $defaults['site_name'] = $brand->name;
+        }
         // `indexable: false` (config or a defaults provider) must win over any robots value set by a layer.
         $forceNoindex = ($this->config['indexable'] ?? true) !== true || $providersNoindex;
 
@@ -207,6 +218,11 @@ final readonly class SeoMetadataResolver
         $tw      = is_array($merged['twitter'] ?? null) ? $merged['twitter'] : [];
         $ogImage = is_string($merged['og_image'] ?? null) ? $merged['og_image'] : ($og['image'] ?? null);
 
+        $brandImage = null;
+        if ($brand instanceof Brand && (!is_string($ogImage) || $ogImage === '')) {
+            $brandImage = $this->brandImageUrl($request, $this->brand->ogImage($brand));
+        }
+
         $localeAlternates = [];
         if (isset($og['locale_alternates']) && is_array($og['locale_alternates'])) {
             foreach ($og['locale_alternates'] as $altLocale) {
@@ -221,9 +237,9 @@ final readonly class SeoMetadataResolver
             'type'              => (string) ($og['type'] ?? 'website'),
             'title'             => is_string($og['title'] ?? null) ? $og['title'] : $title,
             'description'       => is_string($og['description'] ?? null) ? $og['description'] : $description,
-            'image'             => is_string($ogImage) ? $this->paths->absoluteUrl($request, $ogImage) : null,
-            'image_width'       => is_int($og['image_width'] ?? null) ? $og['image_width'] : null,
-            'image_height'      => is_int($og['image_height'] ?? null) ? $og['image_height'] : null,
+            'image'             => $brandImage['url'] ?? (is_string($ogImage) ? $this->paths->absoluteUrl($request, $ogImage) : null),
+            'image_width'       => is_int($og['image_width'] ?? null) ? $og['image_width'] : ($brandImage['width'] ?? null),
+            'image_height'      => is_int($og['image_height'] ?? null) ? $og['image_height'] : ($brandImage['height'] ?? null),
             'image_alt'         => is_string($og['image_alt'] ?? null) ? $og['image_alt'] : null,
             'url'               => $canonical,
             'site_name'         => is_string($og['site_name'] ?? null) ? $og['site_name'] : ($defaults['site_name'] ?? null),
@@ -243,7 +259,7 @@ final readonly class SeoMetadataResolver
             'creator' => is_string($tw['creator'] ?? null) ? $tw['creator'] : null,
         ];
 
-        $jsonLd = $this->buildJsonLd($defaults, $merged, $request, $canonical, $title, $description);
+        $jsonLd = $this->buildJsonLd($defaults, $merged, $request, $canonical, $title, $description, $brand);
 
         $verificationCfg = is_array($defaults['verification'] ?? null) ? $defaults['verification'] : [];
         if (isset($merged['verification']) && is_array($merged['verification'])) {
@@ -491,7 +507,7 @@ final readonly class SeoMetadataResolver
      *
      * @return array{enabled: bool, graph: list<array<string, mixed>>, document: array<string, mixed>|null, json: ?string}
      */
-    private function buildJsonLd(array $defaults, array $merged, Request $request, ?string $canonical, string $title, string $description): array
+    private function buildJsonLd(array $defaults, array $merged, Request $request, ?string $canonical, string $title, string $description, ?Brand $brand = null): array
     {
         $cfg = is_array($defaults['json_ld'] ?? null) ? $defaults['json_ld'] : [];
         if (isset($merged['json_ld']) && is_array($merged['json_ld'])) {
@@ -521,6 +537,9 @@ final readonly class SeoMetadataResolver
 
         $org = is_array($cfg['organization'] ?? null) ? $cfg['organization'] : [];
         if ($org !== []) {
+            if ($brand instanceof Brand) {
+                $org = $this->brandOrganization($org, $brand, $request);
+            }
             $graph[] = array_replace(['@type' => 'Organization'], $org);
         }
 
@@ -539,6 +558,52 @@ final readonly class SeoMetadataResolver
         }
 
         return ['enabled' => $enabled, 'graph' => $graph, 'document' => null, 'json' => null];
+    }
+
+    /**
+     * Spec 220 S6: the brand name as the Organization `name` and, with `brand.images: true`, the brand logo as its
+     * `logo`, each only when the configured organization leaves it empty.
+     *
+     * @param array<mixed> $org
+     *
+     * @return array<mixed>
+     */
+    private function brandOrganization(array $org, Brand $brand, Request $request): array
+    {
+        if ($this->isBlank($org['name'] ?? null)) {
+            $org['name'] = $brand->name;
+        }
+        if ($this->isBlank($org['logo'] ?? null)) {
+            $logo = $this->brandImageUrl($request, $this->brand?->logo($brand));
+            if ($logo !== null) {
+                $org['logo'] = $logo['url'];
+            }
+        }
+
+        return $org;
+    }
+
+    /**
+     * Absolute URL and size of a brand image on this site's origin (`base_url`, else the request), or null when the
+     * asset is missing or its URL is not a plain absolute http(s) URL.
+     *
+     * @return array{url: string, width: ?int, height: ?int}|null
+     */
+    private function brandImageUrl(Request $request, ?BrandAsset $asset): ?array
+    {
+        if (!$asset instanceof BrandAsset) {
+            return null;
+        }
+        $base   = $this->config['base_url'] ?? null;
+        $origin = is_string($base) && $base !== '' ? rtrim($base, '/') : $request->getSchemeAndHttpHost();
+        $url    = SeoKitBrand::absoluteUrl($asset, $origin);
+
+        return $url === null ? null : ['url' => $url, 'width' => $asset->width, 'height' => $asset->height];
+    }
+
+    private function isBlank(mixed $value): bool
+    {
+        return $value === null || (is_string($value) && trim($value) === '');
     }
 
     /**

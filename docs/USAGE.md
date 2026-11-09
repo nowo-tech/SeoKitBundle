@@ -17,6 +17,7 @@
 - [Dependency updates (maintainers)](#dependency-updates-maintainers)
 - [Surface keys (1.8+)](#surface-keys-18)
 - [Absolute URLs (1.8.1+)](#absolute-urls-181)
+- [Brand name and logo (1.21+)](#brand-name-and-logo-121)
 
 ## Twig
 
@@ -234,3 +235,32 @@ $urls->belongsToSite($canonical); // true
 ```
 
 Prefer this over a host-only canonical helper so origin + path shape stay consistent with sitemap / robots / head.
+
+## Brand name and logo (1.21+)
+
+With `nowo-tech/brand-contracts` installed and a `Nowo\Brand\Contract\BrandProviderInterface` service in the
+application (InstanceSettingsBundle 1.5 registers one with `nowo_instance_settings.brand.enabled: true`), SeoKit reads
+the brand name for an empty `defaults.site_name`, so the title suffix, `og:site_name` and a configured JSON-LD
+Organization `name` follow the brand the admins edit. Nothing to configure: `nowo_seo_kit.brand` defaults to `auto`.
+
+A host without InstanceSettings can provide the brand itself:
+
+```php
+use Nowo\Brand\Contract\Brand;
+use Nowo\Brand\Contract\BrandColors;
+use Nowo\Brand\Contract\BrandProviderInterface;
+
+final class AppBrandProvider implements BrandProviderInterface
+{
+    public function getBrand(): Brand
+    {
+        $colors = new BrandColors('#1f6f54', '#134736', '#b42318', '#b54708', '#f3f6f4', '#0f1c18', '#ffffff');
+
+        return new Brand('Acme', $colors, $colors);
+    }
+}
+```
+
+Opt in to the logo as fallback share image and Organization `logo` with `brand: { images: true }` (raster assets
+only). Keys, precedence and URL rules: [CONFIGURATION.md — brand](CONFIGURATION.md#brand).
+
