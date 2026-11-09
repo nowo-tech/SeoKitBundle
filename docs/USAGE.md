@@ -6,6 +6,7 @@
 - [PHP attribute](#php-attribute)
 - [Runtime overrides](#runtime-overrides)
 - [Optional Doctrine persistence](#optional-doctrine-persistence)
+- [Using it from a DDD / hexagonal application](#using-it-from-a-ddd--hexagonal-application)
 - [Optional SEO admin](#optional-seo-admin)
 - [Audit CLI](#audit-cli)
 - [Typed JSON-LD](#typed-json-ld)
@@ -82,6 +83,57 @@ Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `Site
 ## Optional Doctrine persistence
 
 Enable with `nowo_seo_kit.persistence.enabled: true` (requires Doctrine ORM). See [CONFIGURATION.md — persistence](CONFIGURATION.md#persistence) and [UPGRADING.md — To 1.6.0](UPGRADING.md#to-160).
+
+## Using it from a DDD / hexagonal application
+
+SeoKit is a **presentation** bundle (head tags, JSON-LD, sitemap, robots.txt) with an **optional** small model of
+its own (site settings and per-surface overrides, `persistence.enabled: true`). It never references your entities:
+no relations, no `resolve_target_entities`, no base class. Host objects are linked by string surface keys
+(`SeoSurfaceKeys::page('pricing')`, `SeoSurfaceKeys::blog($id)`), so your domain stays free of the bundle.
+
+**Feed it from your domain through ports** (all autoconfigured, implement them in your infrastructure layer):
+
+- `SitemapUrlProviderInterface` — sitemap entries for your published aggregates.
+- `SeoAuditSubjectProviderInterface` — pages for `nowo:seo:audit`.
+- `SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `PageHeadDefaultsProviderInterface`,
+  `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface` — defaults, indexability, site JSON-LD,
+  title composition.
+- `SeoPathBuilderInterface` — replace or decorate URL building (RoutingKitBundle does this).
+- `SeoKitAccessCheckerInterface` — admin access (`nowo_seo_kit.security.access_checker`).
+- Site name and logo can come from a `Nowo\Brand\Contract\BrandProviderInterface` service (`nowo_seo_kit.brand`).
+
+```php
+final class ProductSitemapProvider implements SitemapUrlProviderInterface
+{
+    public function __construct(
+        private ProductCatalog $catalog,          // your domain/application port
+        private UrlGeneratorInterface $urls,
+    ) {}
+
+    public function getEntries(Request $request): array
+    {
+        $entries = [];
+        foreach ($this->catalog->publishedSlugs() as $slug) {
+            $entries[] = ['loc' => $this->urls->generate('product_show', ['slug' => $slug], UrlGeneratorInterface::ABSOLUTE_URL)];
+        }
+
+        return $entries;
+    }
+}
+```
+
+**Describe a page with DTOs, not entities.** In controllers, pass values through `SeoRuntime::set([...])` or build
+a `PageHeadInput` and call `PageHeadContext::describe()`; map your domain objects to these in the controller or a
+presenter, never the other way round.
+
+**Known limitations.**
+
+- Surface overrides are only available as the bundle's Doctrine entity `SeoSurface` through `SeoSurfaceManager`
+  (final, Doctrine-backed); there is no storage port yet, so keep that call in an infrastructure adapter.
+- The bundle does not apply surface overrides to the head by itself: read them in your adapter and pass the values to
+  `SeoRuntime` / `PageHeadInput`.
+- No events are dispatched when settings or surfaces change in the admin or API.
+- The admin UI requires `persistence.enabled: true`; the entities use the default entity manager.
 
 ## Optional SEO admin
 
