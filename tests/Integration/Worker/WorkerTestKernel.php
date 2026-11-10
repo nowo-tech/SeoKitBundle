@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Tests\Integration\Worker;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Doctrine\ORM\EntityManagerInterface;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\SeoKitBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -18,7 +19,7 @@ use function sys_get_temp_dir;
 
 /**
  * DDD-style host: the SeoKit entities on a dedicated "seo" manager (doctrine.entity_manager), the host's own
- * entities on "default".
+ * entities on "default" (auto_mapping, no explicit default_entity_manager).
  */
 final class WorkerTestKernel extends Kernel
 {
@@ -62,10 +63,10 @@ final class WorkerTestKernel extends Kernel
                     'seo'     => ['url' => 'sqlite:///:memory:'],
                 ],
             ],
+            // Audit LD-SEO-M1 / L1: no default_entity_manager, and auto_mapping on the host's default manager.
             'orm' => [
-                'default_entity_manager' => 'default',
-                'entity_managers'        => [
-                    'default' => ['connection' => 'default'],
+                'entity_managers' => [
+                    'default' => ['connection' => 'default', 'auto_mapping' => true],
                     'seo'     => ['connection' => 'seo'],
                 ],
             ],
@@ -79,6 +80,7 @@ final class WorkerTestKernel extends Kernel
             'doctrine'       => ['entity_manager' => 'seo'],
         ]);
         $container->services()->alias('test.worker.seo_surface_repository', SeoSurfaceRepository::class)->public();
+        $container->services()->alias('test.worker.entity_manager', EntityManagerInterface::class)->public();
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void

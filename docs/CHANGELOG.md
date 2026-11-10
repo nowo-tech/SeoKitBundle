@@ -45,13 +45,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Target 1.22.1.
+Target 1.23.0 (minor: a new public configuration key).
 
 ### Added
 
 - `nowo_seo_kit.doctrine.entity_manager` (default `null`): maps the SeoKit entities on that entity manager only, so a
   DDD host can keep them off its own manager. The repositories then write to, and reset after a failed flush, only that
-  manager (rule 6 of the bundle architecture bar). `null` keeps the mapping on the default manager.
+  manager (rule 6 of the bundle architecture bar). Also:
+  - the entities are removed from every other manager, including one with `auto_mapping` (audit LD-SEO-L1);
+  - the host's default manager stays the default even when the host does not set `default_entity_manager`, including
+    the Flex shorthand (audit LD-SEO-M1);
+  - the build fails when the manager does not exist.
+
+  `null` keeps the mapping on the default manager.
 
 ### Changed
 

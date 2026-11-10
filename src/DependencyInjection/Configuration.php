@@ -142,7 +142,7 @@ final class Configuration implements ConfigurationInterface
             ->addDefaultsIfNotSet()
             ->children()
                 ->scalarNode('entity_manager')
-                    ->info('Since 1.22.1: entity manager that maps the SeoKit entities (e.g. a dedicated manager in a DDD host). The repositories write, and reset after a failed flush, only this manager; host managers are never touched. null (default): the default manager, as before.')
+                    ->info('Since 1.23.0: entity manager that maps the SeoKit entities (e.g. a dedicated manager in a DDD host). The entities are mapped there only (also removed from an auto-mapped manager); the repositories write, and reset after a failed flush, only this manager; host managers are never touched; the host default manager stays the default. The build fails when the manager does not exist. null (default): the default manager, as before.')
                     ->defaultNull()
                     ->validate()
                         ->ifTrue(static fn (mixed $v): bool => $v !== null && (!is_string($v) || $v === ''))

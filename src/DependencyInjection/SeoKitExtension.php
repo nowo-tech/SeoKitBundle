@@ -12,6 +12,7 @@ use Nowo\SeoKitBundle\Command\SeoAuditCommand;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSiteSettingsController;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\EntityManagerOptionPass;
 use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
@@ -140,6 +141,7 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $adminLoader->addTag('routing.loader');
         $container->setDefinition(SeoAdminRouteLoader::class, $adminLoader);
 
+        $container->setParameter(EntityManagerOptionPass::PARAMETER, ($config['persistence']['enabled'] ?? false) === true ? ($config['doctrine']['entity_manager'] ?? null) : null);
         if (($config['persistence']['enabled'] ?? false) === true) {
             $this->registerPersistence($container, $config['persistence']);
             $this->registerTablePrefix(
@@ -204,10 +206,51 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
                 'is_bundle' => false,
             ],
         ];
-        // 1.22.1: doctrine.entity_manager maps the entities on that manager only (rule 6: the bundle's own manager).
-        $container->prependExtensionConfig('doctrine', [
-            'orm' => $entityManager === null ? ['mappings' => $mappings] : ['entity_managers' => [$entityManager => ['mappings' => $mappings]]],
-        ]);
+        if ($entityManager === null) {
+            $container->prependExtensionConfig('doctrine', ['orm' => ['mappings' => $mappings]]);
+
+            return;
+        }
+
+        // 1.23.0: doctrine.entity_manager maps the entities on that manager only (rule 6: the bundle's own manager;
+        // EntityManagerOptionPass removes them from the others). The host's default manager stays the default.
+        $container->prependExtensionConfig('doctrine', ['orm' => [
+            'default_entity_manager' => $this->hostDefaultEntityManager($container),
+            'entity_managers'        => [$entityManager => ['mappings' => $mappings]],
+        ]]);
+    }
+
+    /**
+     * The host's default entity manager, resolved from the host's own `doctrine` configuration before the bundle
+     * prepends its manager. Without it, a host that leaves `default_entity_manager` unset (Flex shorthand included)
+     * would get the bundle's manager as its default, because DoctrineBundle takes the first configured manager
+     * (audit LD-SEO-M1).
+     */
+    private function hostDefaultEntityManager(ContainerBuilder $container): string
+    {
+        $default = null;
+        $first   = null;
+        foreach ($container->getExtensionConfig('doctrine') as $config) {
+            $orm = is_array($config['orm'] ?? null) ? $config['orm'] : null;
+            if ($orm === null) {
+                continue;
+            }
+            if (is_string($orm['default_entity_manager'] ?? null) && $orm['default_entity_manager'] !== '') {
+                $default = $orm['default_entity_manager'];
+            }
+            if (!is_array($orm['entity_managers'] ?? null)) {
+                $first ??= 'default';
+
+                continue;
+            }
+            foreach (array_keys($orm['entity_managers']) as $name) {
+                $first ??= (string) $name;
+
+                break;
+            }
+        }
+
+        return $default ?? $first ?? 'default';
     }
 
     private function prependFormKitDefaults(ContainerBuilder $container): void

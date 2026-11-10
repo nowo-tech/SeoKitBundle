@@ -37,6 +37,11 @@ final class WorkerEntityManagerRecoveryTest extends KernelTestCase
         $host = $this->manager($doctrine, 'default');
         $seo  = $this->manager($doctrine, 'seo');
         self::assertSame($seo, $doctrine->getManagerForClass(SeoSurface::class), 'doctrine.entity_manager maps the entities on "seo".');
+        // Audit LD-SEO-M1: the host's default manager stays the default (and the autowired EntityManagerInterface).
+        self::assertSame('default', $container->getParameter('doctrine.default_entity_manager'));
+        self::assertSame($host, $container->get('test.worker.entity_manager'));
+        // Audit LD-SEO-L1: auto_mapping on "default" does not map the SeoKit entities there too.
+        self::assertTrue($host->getMetadataFactory()->isTransient(SeoSurface::class));
         (new SchemaTool($seo))->createSchema($seo->getMetadataFactory()->getAllMetadata());
         $repository = $container->get('test.worker.seo_surface_repository');
         self::assertInstanceOf(SeoSurfaceRepository::class, $repository);
