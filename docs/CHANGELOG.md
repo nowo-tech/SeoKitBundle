@@ -45,6 +45,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Target 1.22.1.
+
+### Added
+
+- `nowo_seo_kit.doctrine.entity_manager` (default `null`): maps the SeoKit entities on that entity manager only, so a
+  DDD host can keep them off its own manager. The repositories then write to, and reset after a failed flush, only that
+  manager (rule 6 of the bundle architecture bar). `null` keeps the mapping on the default manager.
+
+### Changed
+
+- Tests prove that a failed SeoKit flush resets only the manager of the SeoKit entities and never a closed host manager,
+  including in a kept-alive kernel without `kernel.reset` (FrankenPHP worker mode, `FRANKENPHP_RESET_KERNEL=false`).
+
 ## [1.22.0] - 2026-11-10
 
 Target **1.22.0** (minor, additive).

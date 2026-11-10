@@ -326,6 +326,31 @@ final class SeoKitExtensionTest extends TestCase
         self::assertArrayHasKey('NowoSeoKitBundle', $doctrine[0]['orm']['mappings']);
     }
 
+    public function testPrependMapsTheEntitiesOnTheConfiguredEntityManager(): void
+    {
+        $container = new ContainerBuilder();
+        $container->registerExtension(new class extends Extension {
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getAlias(): string
+            {
+                return 'doctrine';
+            }
+        });
+        $container->prependExtensionConfig('nowo_seo_kit', [
+            'persistence' => ['enabled' => true],
+            'doctrine'    => ['entity_manager' => 'seo'],
+        ]);
+
+        (new SeoKitExtension())->prepend($container);
+
+        $doctrine = $container->getExtensionConfig('doctrine');
+        self::assertArrayNotHasKey('mappings', $doctrine[0]['orm']);
+        self::assertArrayHasKey('NowoSeoKitBundle', $doctrine[0]['orm']['entity_managers']['seo']['mappings']);
+    }
+
     public function testPrependIsNoopWithoutDoctrineOrPersistence(): void
     {
         $container = new ContainerBuilder();

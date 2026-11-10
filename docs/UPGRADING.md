@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+  - [To 1.22.1](#to-1221)
 - [To 1.22.0](#to-1220)
 - [To 1.22.0](#to-1220-1)
 - [To 1.21.0](#to-1210)
@@ -86,6 +87,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+### To 1.22.1
+
+From **1.22.0**: `composer update nowo-tech/seo-kit-bundle`. No configuration change is needed.
+
+- Optional: `nowo_seo_kit.doctrine.entity_manager: <name>` maps the SeoKit entities on a dedicated entity manager (it
+  must exist in `doctrine.orm.entity_managers`, with its own connection and schema). SeoKit writes then never flush
+  the host's manager. Default `null`: the default manager, as before.
 
 ## To 1.22.0
 

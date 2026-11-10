@@ -180,11 +180,14 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             return;
         }
 
-        $enabled = false;
+        $enabled       = false;
+        $entityManager = null;
         foreach ($container->getExtensionConfig($this->getAlias()) as $raw) {
             if (($raw['persistence']['enabled'] ?? false) === true) {
                 $enabled = true;
-                break;
+            }
+            if (is_string($raw['doctrine']['entity_manager'] ?? null) && $raw['doctrine']['entity_manager'] !== '') {
+                $entityManager = $raw['doctrine']['entity_manager'];
             }
         }
 
@@ -192,18 +195,18 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             return;
         }
 
-        $container->prependExtensionConfig('doctrine', [
-            'orm' => [
-                'mappings' => [
-                    'NowoSeoKitBundle' => [
-                        'type'      => 'attribute',
-                        'dir'       => __DIR__ . '/../Entity',
-                        'prefix'    => 'Nowo\\SeoKitBundle\\Entity',
-                        'alias'     => 'NowoSeoKit',
-                        'is_bundle' => false,
-                    ],
-                ],
+        $mappings = [
+            'NowoSeoKitBundle' => [
+                'type'      => 'attribute',
+                'dir'       => __DIR__ . '/../Entity',
+                'prefix'    => 'Nowo\\SeoKitBundle\\Entity',
+                'alias'     => 'NowoSeoKit',
+                'is_bundle' => false,
             ],
+        ];
+        // 1.22.1: doctrine.entity_manager maps the entities on that manager only (rule 6: the bundle's own manager).
+        $container->prependExtensionConfig('doctrine', [
+            'orm' => $entityManager === null ? ['mappings' => $mappings] : ['entity_managers' => [$entityManager => ['mappings' => $mappings]]],
         ]);
     }
 
