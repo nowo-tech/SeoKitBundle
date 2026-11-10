@@ -4,6 +4,7 @@
 
 - [Unreleased](#unreleased)
 - [To 1.22.0](#to-1220)
+- [To 1.22.0](#to-1220-1)
 - [To 1.21.0](#to-1210)
 - [To 1.20.0](#to-1200)
 - [To 1.19.0](#to-1190)
@@ -85,6 +86,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.22.0
+
+From **1.21.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 ## To 1.22.0
 

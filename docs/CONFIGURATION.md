@@ -254,7 +254,7 @@ nowo_seo_kit:
         # table_prefix: 'app_'    # then app_seo_site_settings, app_seo_site_settings_translation, app_seo_surface
 ```
 
-Changing either option renames the tables: run the rename statements from [UPGRADING](UPGRADING.md#unreleased) (or
+Changing either option renames the tables: run the rename statements from [UPGRADING](UPGRADING.md#to-1220) (or
 generate a migration and turn the drop/create into renames) before deploying.
 
 Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
@@ -383,7 +383,7 @@ security:
 
 The 1.x `admin` keys still work (each one maps onto its replacement) and trigger a deprecation. A legacy key and its
 replacement set to **different** values is a configuration error; `admin.role` must be a literal role (no
-`%env()%` placeholder). They are removed in 2.0 — see [UPGRADING.md](UPGRADING.md#unreleased).
+`%env()%` placeholder). They are removed in 2.0 — see [UPGRADING.md](UPGRADING.md#to-1220).
 
 | Deprecated key | Replacement |
 | --- | --- |
