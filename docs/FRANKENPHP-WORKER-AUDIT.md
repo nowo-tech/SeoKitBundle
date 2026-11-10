@@ -65,6 +65,7 @@ Worker demo: `demo/symfony8/docker/frankenphp/Caddyfile` has the `worker` line c
 | `Service\SitemapGenerator`, `RobotsTxtGenerator` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\Persistence\DoctrineSeoDefaultsProvider` | yes | none (`final readonly`); reads `SeoSiteConfigProvider` | ✅ | ✅ |
 | `Service\SeoSurfaceManager` | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\SeoChangeNotifier` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\Audit\SeoAuditor`, `SeoAuditRules` | yes | none | ✅ | ✅ |
 | `Repository\SeoSiteSettingsRepository`, `SeoSurfaceRepository` | yes | none (only `readonly` fallback strings and the registry) | ✅ | ✅ |
 | `Twig\SeoKitExtension` | yes | none (`readonly` promoted properties) | ✅ | ✅ |

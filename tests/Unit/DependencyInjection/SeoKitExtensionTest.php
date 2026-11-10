@@ -31,8 +31,10 @@ use Nowo\SeoKitBundle\Service\PageHeadDefaultsProviderInterface;
 use Nowo\SeoKitBundle\Service\PageHeadResolver;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
+use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
+use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
@@ -91,6 +93,8 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(SeoSiteConfigProvider::class));
         self::assertTrue($container->hasDefinition(DoctrineSeoDefaultsProvider::class));
         self::assertTrue($container->hasDefinition(SeoSurfaceManager::class));
+        self::assertSame(SeoSurfaceManager::class, (string) $container->getAlias(SeoSurfaceManagerInterface::class));
+        self::assertTrue($container->hasDefinition(SeoChangeNotifier::class));
         self::assertFalse($container->hasDefinition(SeoAuditCommand::class));
         self::assertSame(
             [

@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
+use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 final class SeoSurfaceManagerTest extends TestCase
 {
@@ -68,5 +71,27 @@ final class SeoSurfaceManagerTest extends TestCase
         $repo->expects(self::never())->method('remove');
 
         self::assertTrue((new SeoSurfaceManager($repo))->saveOrClear($surface));
+    }
+
+    /** Since 1.22: saveOrClear() dispatches SeoSurfaceChangedEvent after each write, nothing when nothing was written. */
+    public function testSaveOrClearDispatchesChangeEventsAfterTheWrite(): void
+    {
+        $events     = [];
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(SeoSurfaceChangedEvent::class, static function (SeoSurfaceChangedEvent $event) use (&$events): void {
+            $events[] = [$event->surfaceKey, $event->locale, $event->surfaceId, $event->deleted];
+        });
+        $surface = (new SeoSurface())->setSurfaceKey('page:about')->setLocale('es')->setMetaTitle('About');
+        $repo    = $this->createMock(SeoSurfaceRepository::class);
+        $repo->method('save')->willReturnCallback(static function (SeoSurface $saved): void {
+            (new ReflectionClass($saved))->getProperty('id')->setValue($saved, 9);
+        });
+        $manager = new SeoSurfaceManager($repo, new SeoChangeNotifier($dispatcher));
+
+        $manager->saveOrClear($surface);
+        $manager->saveOrClear($surface->setMetaTitle(null));
+        $manager->saveOrClear((new SeoSurface())->setSurfaceKey('page:new')->setLocale('es'));
+
+        self::assertSame([['page:about', 'es', 9, false], ['page:about', 'es', 9, true]], $events);
     }
 }

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Controller\Admin;
 
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent;
 use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceType;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
+use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +35,7 @@ final class SeoSurfaceController extends AbstractController
 
     /**
      * @param list<string> $locales
+     * @param SeoChangeNotifier $notifier Dispatches {@see SeoSurfaceChangedEvent} after a write (since 1.22)
      */
     public function __construct(
         private readonly SeoSurfaceRepository $surfaces,
@@ -42,6 +45,7 @@ final class SeoSurfaceController extends AbstractController
         private readonly ?SeoSiteConfigProviderInterface $configProvider = null,
         private readonly array $locales = ['en'],
         private readonly string $defaultLocale = 'en',
+        private readonly SeoChangeNotifier $notifier = new SeoChangeNotifier(),
     ) {
         $this->accessChecker = $accessChecker;
     }
@@ -87,12 +91,15 @@ final class SeoSurfaceController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             if ($this->isEmpty($surface)) {
-                if ($surface->getId() !== null) {
+                $id = $surface->getId();
+                if ($id !== null) {
                     // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                     $this->surfaces->remove($surface);
+                    $this->notifier->surfaceChanged($surfaceKey, $locale, $id, true);
                 }
             } else {
                 $this->surfaces->save($surface);
+                $this->notifier->surfaceChanged($surfaceKey, $locale, $surface->getId(), false);
             }
 
             $this->addFlash('success', 'nowo_seo_kit.flash.surface_saved');
