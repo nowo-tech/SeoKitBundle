@@ -127,7 +127,10 @@ with `actorId` = the security token's user identifier, or null, and `occurredAt`
 `Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent` (`surfaceKey`, `locale`, `surfaceId`, `deleted` when the override
 was cleared) from the surfaces admin, the JSON API and `SeoSurfaceManagerInterface::saveOrClear()`, and
 `Nowo\SeoKitBundle\Event\SeoSiteSettingsChangedEvent` from the settings admin (after the config provider refresh).
-Use them to purge HTTP / CDN caches or update projections.
+Use them to purge HTTP / CDN caches or update projections. They are sent on every successful save (also with
+unchanged values). `getOrCreate()` stores an empty row without an event, so `saveOrClear()` of an all-empty override
+may send `deleted: true` for a row no event announced: treat a delete of an unknown surface as a no-op. `actorId` is
+the user identifier (often the login email).
 
 **Describe a page with DTOs, not entities.** In controllers, pass values through `SeoRuntime::set([...])` or build
 a `PageHeadInput` and call `PageHeadContext::describe()`; map your domain objects to these in the controller or a

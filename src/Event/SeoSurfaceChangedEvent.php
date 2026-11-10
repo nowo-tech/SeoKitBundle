@@ -10,8 +10,9 @@ use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface;
 
 /**
  * A surface override (per-page SEO of one surface key and locale) was saved or cleared (since 1.22), from the admin,
- * the JSON API or {@see SeoSurfaceManagerInterface::saveOrClear()}. Dispatched after the
- * flush; never when nothing was written (an empty override that had no row). Scalars only: a host invalidates its HTTP
+ * the JSON API or {@see SeoSurfaceManagerInterface::saveOrClear()}. Dispatched after every successful save or clear
+ * (also when the values did not change); never for an empty override that had no row, and not for the empty row
+ * `getOrCreate()` writes. Scalars only: a host invalidates its HTTP
  * or CDN cache, or updates a projection, from it.
  */
 final readonly class SeoSurfaceChangedEvent

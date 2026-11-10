@@ -19,7 +19,9 @@ interface SeoSurfaceManagerInterface
     public function find(string $surfaceKey, string $locale): ?SeoSurface;
 
     /**
-     * The stored override, or a new persisted row for this surface and locale.
+     * The stored override, or a new **empty row persisted and flushed** for this surface and locale (unchanged since
+     * 1.8). Creating that row dispatches no event: only {@see self::saveOrClear()} does. Use {@see self::find()} plus a
+     * new `SeoSurface` when an empty row must not be written.
      */
     public function getOrCreate(string $surfaceKey, string $locale): SeoSurface;
 

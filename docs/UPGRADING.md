@@ -97,7 +97,8 @@ composer update nowo-tech/seo-kit-bundle
 Nothing to change. Optional: type-hint `Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface` instead of the final
 `SeoSurfaceManager`, and listen to `SeoSurfaceChangedEvent` / `SeoSiteSettingsChangedEvent` (dispatched after the
 flush) to purge caches. Hosts that construct the admin controllers or `SeoSurfaceManager` by hand need no change: the
-new `$notifier` argument is last and optional (without it nothing is dispatched).
+new `$notifier` argument is last and optional (without it nothing is dispatched). `getOrCreate()` still writes an
+empty row without an event; only `saveOrClear()`, the admin and the API dispatch.
 
 ## To 1.21.0
 
