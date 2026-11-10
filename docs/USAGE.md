@@ -122,17 +122,24 @@ final class ProductSitemapProvider implements SitemapUrlProviderInterface
 }
 ```
 
+**Reacting to changes (since 1.22).** After a write is flushed the bundle dispatches id-only events (scalars only,
+with `actorId` = the security token's user identifier, or null, and `occurredAt`):
+`Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent` (`surfaceKey`, `locale`, `surfaceId`, `deleted` when the override
+was cleared) from the surfaces admin, the JSON API and `SeoSurfaceManagerInterface::saveOrClear()`, and
+`Nowo\SeoKitBundle\Event\SeoSiteSettingsChangedEvent` from the settings admin (after the config provider refresh).
+Use them to purge HTTP / CDN caches or update projections.
+
 **Describe a page with DTOs, not entities.** In controllers, pass values through `SeoRuntime::set([...])` or build
 a `PageHeadInput` and call `PageHeadContext::describe()`; map your domain objects to these in the controller or a
 presenter, never the other way round.
 
 **Known limitations.**
 
-- Surface overrides are only available as the bundle's Doctrine entity `SeoSurface` through `SeoSurfaceManager`
-  (final, Doctrine-backed); there is no storage port yet, so keep that call in an infrastructure adapter.
+- Surface overrides are only available as the bundle's Doctrine entity `SeoSurface` through
+  `SeoSurfaceManagerInterface` (since 1.22; Doctrine-backed implementation `SeoSurfaceManager`); there is no storage
+  port yet, so keep that call in an infrastructure adapter.
 - The bundle does not apply surface overrides to the head by itself: read them in your adapter and pass the values to
   `SeoRuntime` / `PageHeadInput`.
-- No events are dispatched when settings or surfaces change in the admin or API.
 - The admin UI requires `persistence.enabled: true`; the entities use the default entity manager.
 
 ## Optional SEO admin
@@ -265,7 +272,7 @@ Use conventional keys so admin, API pencil and host stores agree:
 
 ```php
 use Nowo\SeoKitBundle\Service\SeoSurfaceKeys;
-use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
+use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface; // since 1.22; inject it ($surfaceManager)
 
 $key = SeoSurfaceKeys::page('product.insurance_core'); // page:product.insurance_core
 $surface = $surfaceManager->getOrCreate($key, 'es');
@@ -273,7 +280,7 @@ $surface->setMetaTitle('…');
 $surfaceManager->saveOrClear($surface); // deletes the row when every field is empty
 ```
 
-Requires `persistence.enabled: true` (registers `SeoSurfaceManager`).
+Requires `persistence.enabled: true` (registers `SeoSurfaceManager`, aliased as `SeoSurfaceManagerInterface`).
 
 ## Absolute URLs (1.8.1+)
 

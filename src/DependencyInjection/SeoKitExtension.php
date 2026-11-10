@@ -40,9 +40,11 @@ use Nowo\SeoKitBundle\Service\PageHeadTitleComposerInterface;
 use Nowo\SeoKitBundle\Service\Persistence\DoctrineSeoDefaultsProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
+use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoPencilCatalogFactory;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
+use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
@@ -145,10 +147,17 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
                 (string) ($config['doctrine']['table_prefix'] ?? ''),
                 (string) ($config['doctrine']['table_name_prefix'] ?? TablePrefixListener::DEFAULT_TABLE_NAME_PREFIX),
             );
+            // Since 1.22: id-only change events after admin / API / manager writes.
+            $notifier = new Definition(SeoChangeNotifier::class);
+            $notifier->setArgument('$eventDispatcher', new Reference('event_dispatcher', ContainerInterface::NULL_ON_INVALID_REFERENCE));
+            $notifier->setArgument('$tokenStorage', new Reference('security.token_storage', ContainerInterface::NULL_ON_INVALID_REFERENCE));
+            $container->setDefinition(SeoChangeNotifier::class, $notifier);
+
             $manager = new Definition(SeoSurfaceManager::class);
             $manager->setAutowired(true);
             $manager->setAutoconfigured(true);
             $container->setDefinition(SeoSurfaceManager::class, $manager);
+            $container->setAlias(SeoSurfaceManagerInterface::class, SeoSurfaceManager::class);
         }
 
         if (($config['persistence']['register_audit_command'] ?? true) === true) {

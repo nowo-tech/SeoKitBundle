@@ -9,6 +9,8 @@ use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\Event\SeoSiteSettingsChangedEvent;
+use Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent;
 use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
 use Nowo\SeoKitBundle\Model\SeoSiteConfig;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
@@ -17,12 +19,14 @@ use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditor;
 use Nowo\SeoKitBundle\Service\Audit\SeoAuditRules;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
+use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Tests\Support\FormKitTestSupport;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\View\ListPage;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Form\Extension\Csrf\CsrfExtension;
 use Symfony\Component\Form\Extension\HttpFoundation\HttpFoundationExtension;
 use Symfony\Component\Form\Extension\Validator\ValidatorExtension;
@@ -427,6 +431,74 @@ final class SeoAdminControllersTest extends TestCase
 
     /** @var array<string, mixed> */
     private array $lastContext = [];
+
+    /** Since 1.22: settings saves and surface writes (admin and API) dispatch id-only change events. */
+    public function testWritesDispatchChangeEvents(): void
+    {
+        $events     = [];
+        $dispatcher = new EventDispatcher();
+        foreach ([SeoSurfaceChangedEvent::class, SeoSiteSettingsChangedEvent::class] as $name) {
+            $dispatcher->addListener($name, static function (object $event) use (&$events): void {
+                $events[] = $event;
+            });
+        }
+        $notifier = new SeoChangeNotifier($dispatcher);
+
+        $settings = new SeoSiteSettings();
+        $settings->setSiteName('Nowo')->setTitleTemplate('%page% · %site%');
+        $settingsRepo = $this->createStub(SeoSiteSettingsRepository::class);
+        $settingsRepo->method('getOrCreate')->willReturn($settings);
+        $settingsController = new SeoSiteSettingsController($settingsRepo, $this->createStub(SeoSiteConfigProviderInterface::class), $this->checker(), new SeoKitPages(), ['en'], 'en', $notifier);
+        $settingsController->setContainer($this->container());
+        $post = Request::create('/settings/seo', 'POST', ['nowo_seo_site' => [
+            'siteName'                   => 'Nowo',
+            'titleTemplate'              => '%page% · %site%',
+            'indexable'                  => '1',
+            'defaultRobots'              => 'index, follow',
+            'socialProfilesText'         => '',
+            'defaultTitle_en'            => '',
+            'homeTitle_en'               => '',
+            'defaultDescription_en'      => '',
+            'organisationDescription_en' => '',
+        ]]);
+        $post->setSession(new Session(new MockArraySessionStorage()));
+        $this->requestStack()->push($post);
+        self::assertSame(302, $settingsController->edit($post)->getStatusCode());
+        $this->requestStack()->pop();
+
+        $repo = $this->createStub(SeoSurfaceRepository::class);
+        $repo->method('findOneByKeyAndLocale')->willReturn(null);
+        $surfaceController = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), null, ['en'], 'en', $notifier);
+        $surfaceController->setContainer($this->container());
+        $edit = Request::create('/admin/seo/surfaces/en/edit/page%3Ahome', 'POST', ['nowo_seo_surface' => [
+            'metaTitle'         => 'Home',
+            'metaDescription'   => '',
+            'metaRobots'        => '',
+            'canonicalOverride' => '',
+            'openGraphImage'    => '',
+        ]]);
+        $edit->setSession(new Session(new MockArraySessionStorage()));
+        $this->requestStack()->push($edit);
+        self::assertSame(302, $surfaceController->edit('en', 'page%3Ahome', $edit)->getStatusCode());
+        $this->requestStack()->pop();
+
+        $persisted = new SeoSurface();
+        $persisted->setSurfaceKey('page:about')->setLocale('en')->setMetaTitle('X');
+        (new ReflectionClass($persisted))->getProperty('id')->setValue($persisted, 3);
+        $apiRepo = $this->createStub(SeoSurfaceRepository::class);
+        $apiRepo->method('findOneByKeyAndLocale')->willReturn($persisted);
+        $api = new SeoSurfaceApiController($apiRepo, $this->checker(), null, false, ['en'], $notifier);
+        $api->setContainer($this->container());
+        $clear = Request::create('/', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['metaTitle' => ''], JSON_THROW_ON_ERROR));
+        self::assertSame(200, $api->post('page:about', 'en', $clear)->getStatusCode());
+
+        self::assertCount(3, $events);
+        self::assertInstanceOf(SeoSiteSettingsChangedEvent::class, $events[0]);
+        self::assertInstanceOf(SeoSurfaceChangedEvent::class, $events[1]);
+        self::assertSame(['page:home', 'en', false], [$events[1]->surfaceKey, $events[1]->locale, $events[1]->deleted]);
+        self::assertInstanceOf(SeoSurfaceChangedEvent::class, $events[2]);
+        self::assertSame(['page:about', 3, true], [$events[2]->surfaceKey, $events[2]->surfaceId, $events[2]->deleted]);
+    }
 
     private function checker(bool $grant = true): SeoKitAccessCheckerInterface
     {

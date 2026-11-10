@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Controller\Admin;
 
+use Nowo\SeoKitBundle\Event\SeoSiteSettingsChangedEvent;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
+use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +27,7 @@ final class SeoSiteSettingsController extends AbstractController
 
     /**
      * @param list<string> $locales
+     * @param SeoChangeNotifier $notifier Dispatches {@see SeoSiteSettingsChangedEvent} after a save (since 1.22)
      */
     public function __construct(
         private readonly SeoSiteSettingsRepository $repository,
@@ -33,6 +36,7 @@ final class SeoSiteSettingsController extends AbstractController
         private readonly SeoKitPages $pages = new SeoKitPages(),
         private readonly array $locales = ['en'],
         private readonly string $defaultLocale = 'en',
+        private readonly SeoChangeNotifier $notifier = new SeoChangeNotifier(),
     ) {
         $this->accessChecker = $accessChecker;
     }
@@ -54,6 +58,7 @@ final class SeoSiteSettingsController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $this->repository->save($settings);
             $this->configProvider->refresh();
+            $this->notifier->settingsChanged();
             $this->addFlash('success', 'nowo_seo_kit.flash.settings_saved');
 
             return $this->redirectToRoute('nowo_seo_kit_admin_settings');

@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.22.0](#to-1220)
 - [To 1.21.0](#to-1210)
 - [To 1.20.0](#to-1200)
 - [To 1.19.0](#to-1190)
@@ -84,6 +85,19 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.22.0
+
+Target **1.22.0**, from **1.21.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
+
+Nothing to change. Optional: type-hint `Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface` instead of the final
+`SeoSurfaceManager`, and listen to `SeoSurfaceChangedEvent` / `SeoSiteSettingsChangedEvent` (dispatched after the
+flush) to purge caches. Hosts that construct the admin controllers or `SeoSurfaceManager` by hand need no change: the
+new `$notifier` argument is last and optional (without it nothing is dispatched).
 
 ## To 1.21.0
 

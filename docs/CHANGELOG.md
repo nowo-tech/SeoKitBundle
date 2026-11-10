@@ -44,6 +44,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Target **1.22.0** (minor, additive).
+
+### Added
+
+- `Service\SeoSurfaceManagerInterface`, implemented by `SeoSurfaceManager` (stays `final`) and aliased when
+  `persistence.enabled`.
+- Id-only change events dispatched after the flush: `Event\SeoSurfaceChangedEvent` (surface key, locale, row id,
+  `deleted`, actor id, occurred-at) from the surfaces admin, the JSON surface API and
+  `SeoSurfaceManager::saveOrClear()`; `Event\SeoSiteSettingsChangedEvent` (actor id, occurred-at) from the settings
+  admin, after `SeoSiteConfigProviderInterface::refresh()`. New `Service\SeoChangeNotifier` (registered with
+  persistence) dispatches them; the three admin/API controllers and `SeoSurfaceManager` take it as an optional last
+  argument.
+
 ### Documentation
 
 - USAGE: new section "Using it from a DDD / hexagonal application" (where the bundle sits in a hexagonal host, the ports, events and DTOs to build an anti-corruption layer on, and the known limitations).

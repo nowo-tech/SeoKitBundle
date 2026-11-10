@@ -7,9 +7,11 @@ namespace Nowo\SeoKitBundle\Controller\Api;
 use Nowo\SeoKitBundle\Controller\Admin\SeoKitAdminAccessTrait;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent;
 use Nowo\SeoKitBundle\Form\SeoSurfaceType;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use Nowo\SeoKitBundle\Security\SeoKitAccessCheckerInterface;
+use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,6 +44,7 @@ final class SeoSurfaceApiController extends AbstractController
 
     /**
      * @param list<string> $locales enabled locales (`nowo_seo_kit.locales`)
+     * @param SeoChangeNotifier $notifier Dispatches {@see SeoSurfaceChangedEvent} after a write (since 1.22)
      */
     public function __construct(
         private readonly SeoSurfaceRepository $surfaces,
@@ -49,6 +52,7 @@ final class SeoSurfaceApiController extends AbstractController
         private readonly ?CsrfTokenManagerInterface $csrfTokenManager = null,
         private readonly bool $csrfProtection = true,
         private readonly array $locales = ['en'],
+        private readonly SeoChangeNotifier $notifier = new SeoChangeNotifier(),
     ) {
         $this->accessChecker = $accessChecker;
     }
@@ -117,15 +121,18 @@ final class SeoSurfaceApiController extends AbstractController
         }
 
         if ($this->isEmpty($surface)) {
-            if ($surface->getId() !== null) {
+            $id = $surface->getId();
+            if ($id !== null) {
                 // @igor-ignore - HTTP handler delegates to services; no controller worker state.
                 $this->surfaces->remove($surface);
+                $this->notifier->surfaceChanged($surfaceKey, $locale, $id, true);
             }
 
             return $this->json(['ok' => true, 'cleared' => true]);
         }
 
         $this->surfaces->save($surface);
+        $this->notifier->surfaceChanged($surfaceKey, $locale, $surface->getId(), false);
 
         return $this->json(['ok' => true, 'cleared' => false, 'id' => $surface->getId()]);
     }
