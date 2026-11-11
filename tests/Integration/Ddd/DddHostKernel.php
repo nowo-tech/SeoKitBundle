@@ -75,7 +75,7 @@ final class DddHostKernel extends Kernel
                         'mappings'   => [
                             'Host' => [
                                 'type'      => 'xml',
-                                'dir'       => '%kernel.project_dir%/config/doctrine',
+                                'dir'       => '%kernel.project_dir%/mapping',
                                 'prefix'    => 'Nowo\\SeoKitBundle\\Tests\\Integration\\Ddd\\Domain',
                                 'is_bundle' => false,
                             ],

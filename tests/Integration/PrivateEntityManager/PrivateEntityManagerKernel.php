@@ -68,7 +68,7 @@ final class PrivateEntityManagerKernel extends Kernel
                         'mappings' => [
                             'Host' => [
                                 'type'      => 'xml',
-                                'dir'       => __DIR__ . '/../Ddd/config/doctrine',
+                                'dir'       => __DIR__ . '/../Ddd/mapping',
                                 'prefix'    => 'Nowo\\SeoKitBundle\\Tests\\Integration\\Ddd\\Domain',
                                 'is_bundle' => false,
                             ],
