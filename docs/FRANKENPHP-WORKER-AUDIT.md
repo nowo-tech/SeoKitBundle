@@ -69,12 +69,15 @@ Worker demo: `demo/symfony8/docker/frankenphp/Caddyfile` has the `worker` line c
 | `Service\SeoMetadataResolver` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\PageHeadResolver`, `HreflangSetBuilder`, `AbsoluteUrlBuilder`, `PageHeadRuntimeBridge` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\SeoPathBuilder`, `SeoTemplateRenderer`, `OriginUrlGuard`, `SeoPencilCatalogFactory`, `StructuredData\SiteStructuredDataFactory` | yes | none | ✅ | ✅ |
-| `Service\SitemapGenerator`, `RobotsTxtGenerator` | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\SitemapGenerator`, `RobotsTxtGenerator` | yes | none (`final readonly`; the provider de-duplication set is a local variable per call) | ✅ | ✅ |
 | `Service\Persistence\DoctrineSeoDefaultsProvider` | yes | none (`final readonly`); reads `SeoSiteConfigProvider` | ✅ | ✅ |
-| `Service\SeoSurfaceManager` | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\SeoSurfaceManager` (also `SeoSurfaceStoreInterface` since 1.24.0) | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\SitemapContextFactory` (1.24.0, static), `Model\SitemapContext` / `Model\SeoSurfaceData` (1.24.0 value objects, built per call) | n/a | none (`readonly` VOs) | ✅ | ✅ |
 | `Service\SeoChangeNotifier` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\Audit\SeoAuditor`, `SeoAuditRules` | yes | none | ✅ | ✅ |
 | `Repository\SeoSiteSettingsRepository`, `SeoSurfaceRepository` | yes | none (only `readonly` fallback strings and the registry) | ✅ | ✅ |
+| `Doctrine\SeoKitEntityManager` (1.24.0, zero-config) | yes | the private manager and its stale flag; dropped at every boundary and at `kernel.reset`, replaced when closed or stale | ✅ | ✅ |
+| `Doctrine\SeoKitManagerRegistry`, `PrivateEntityManagerMiddleware` (1.24.0) | yes | none (`final readonly`) | ✅ | ✅ |
 | `Twig\SeoKitExtension` | yes | none (`readonly` promoted properties) | ✅ | ✅ |
 | `Controller\SeoKitController`, `Admin\SeoSiteSettingsController`, `Admin\SeoSurfaceController`, `Api\SeoSurfaceApiController` | yes | none (`readonly` promoted properties) | ✅ | ✅ |
 | `Routing\SeoStaticRouteLoader`, `SeoAdminRouteLoader` | yes | `$loaded` flag (route build time only, see Info) | ✅ | ✅ |
@@ -137,7 +140,7 @@ Info / observations:
 - Call `SeoRuntime::set()` / `PageHeadContext::describe()` from controllers or from `kernel.request` listeners with priority < 4096.
 - Configure `nowo_seo_kit.base_url` so URLs never depend on the `Host` header.
 - Create the `SeoSiteSettings` singleton row during deployment (migration or fixture) so the page-render path never writes.
-- Custom `SeoDefaultsProviderInterface`, `PageHeadDefaultsProviderInterface`, `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface`, `SitemapUrlProviderInterface`, `SiteIndexabilityProviderInterface` and `SeoAuditSubjectProviderInterface` services must stay stateless or implement `ResetInterface`. Do not memoize per-page data in them.
+- Custom `SeoDefaultsProviderInterface`, `PageHeadDefaultsProviderInterface`, `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface`, `SitemapEntryProviderInterface` (and the deprecated `SitemapUrlProviderInterface`), `SiteIndexabilityProviderInterface` and `SeoAuditSubjectProviderInterface` services must stay stateless or implement `ResetInterface`. Do not memoize per-page data in them.
 - Always set runtime overrides through `SeoRuntime` / `PageHeadContext` inside the request; never keep a `PageHead` or override array in your own service properties.
 
 ## Boundary events
@@ -151,6 +154,13 @@ Info / observations:
 | Console command start / end | `console.command` / `console.terminate` | 4096 / -4096 | same, only for the outermost command (depth 0→1 / 1→0) and only while no Messenger message is in flight |
 | Messenger worker stopped | `WorkerStoppedEvent` | -4096 | clears the in-flight flag only |
 | Services resetter (when the host runs it) | `kernel.reset` | — | same (kept, not relied on) |
+
+Since 1.24.0 the bundle's private entity manager (`Doctrine\SeoKitEntityManager`, zero-config mode) is one of the
+`$resettables`: it is **dropped** (cleared, then forgotten; the next call creates a fresh one) at the same boundaries,
+with the same nested-command and in-flight-message guards, and at `kernel.reset`. A manager closed by its own failed
+flush, or made stale by a rollback on the connection (doctrine/dbal 4 middleware), is replaced on its next use, unless
+it still has scheduled work. Test: `tests/Integration/PrivateEntityManager/PrivateEntityManagerTest.php`
+(300 requests through `http_kernel` without the resetter while another worker edits the row; nested console commands).
 
 A command run in-process from another command or from a message handler (`Application::doRun()`) fires `console.command` / `console.terminate` too; the subscriber counts the nesting depth and keeps an in-flight message flag (set on received, unset on handled / failed / worker stopped), so such a nested run never clears the outer unit's overrides and page head (audit MI-S-L2; same pattern as BeaconBundle 1.24.0). Tests: `WorkerBoundariesTest::testNestedCommandKeepsTheOuterCommandsState`, `testCommandRunFromAMessageHandlerKeepsTheHandlersState`.
 
@@ -170,7 +180,7 @@ Static checks: `composer igor` (93 service files, 0 KO, 0 WARN) and PHPStan with
 
 ## Host rule: entity managers
 
-A host that disables or bypasses the services resetter must also clear its **own** entity managers at every boundary (main request start or end, each Messenger message, each console command); otherwise the identity map serves stale rows (for example a downgraded permission or a soft-deleted item) across requests (REQ-RUNTIME-002 rule 7). SeoKit's own rows are refreshed on read (`SeoSiteSettingsRepository::getOrCreate()`), and a closed manager of the SeoKit entities is recovered by the bundle.
+A host that disables or bypasses the services resetter must also clear its **own** entity managers at every boundary (main request start or end, each Messenger message, each console command); otherwise the identity map serves stale rows (for example a downgraded permission or a soft-deleted item) across requests (REQ-RUNTIME-002 rule 7). SeoKit's own rows are refreshed on read (`SeoSiteSettingsRepository::getOrCreate()`), and a closed manager of the SeoKit entities is recovered by the bundle. Since 1.24.0 SeoKit never touches the host's managers in zero-config mode (private manager), so the host rule applies only to the host's own entities.
 
 ## Igor findings triage (2026-11-11)
 

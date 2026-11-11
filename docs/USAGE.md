@@ -7,6 +7,8 @@
 - [Runtime overrides](#runtime-overrides)
 - [Optional Doctrine persistence](#optional-doctrine-persistence)
 - [Using it from a DDD / hexagonal application](#using-it-from-a-ddd--hexagonal-application)
+  - [Standard host](#standard-host)
+  - [DDD host](#ddd-host)
 - [Optional SEO admin](#optional-seo-admin)
 - [Audit CLI](#audit-cli)
 - [Typed JSON-LD](#typed-json-ld)
@@ -78,7 +80,7 @@ Runtime overrides are cleared at the **start** of every main request and again o
 `kernel.request` listeners with priority **lower than 4096**. Safe under FrankenPHP worker mode without kernel reset —
 see [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md).
 
-Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapUrlProviderInterface`, `SeoAuditSubjectProviderInterface`, `GeoRobotsGroupsProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
+Hosts may also implement tagged providers (`SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `SitemapEntryProviderInterface` (since 1.24.0; `SitemapUrlProviderInterface` is deprecated), `SeoAuditSubjectProviderInterface`, `GeoRobotsGroupsProviderInterface`) — see [CONFIGURATION.md — Host extension points](CONFIGURATION.md#host-extension-points).
 
 ## Optional Doctrine persistence
 
@@ -91,30 +93,113 @@ its own (site settings and per-surface overrides, `persistence.enabled: true`). 
 no relations, no `resolve_target_entities`, no base class. Host objects are linked by string surface keys
 (`SeoSurfaceKeys::page('pricing')`, `SeoSurfaceKeys::blog($id)`), so your domain stays free of the bundle.
 
+Both kinds of host use the same bundle and the same configuration; the DDD path is opt-in (REQ-ARCH-001). Since
+1.24.0 every host-facing port has a framework-free form: no `Request`, no Doctrine entity.
+
+| Need | Port (since 1.24.0) | Deprecated form (removed in 2.0) |
+|---|---|---|
+| Sitemap entries | `SitemapEntryProviderInterface::getEntriesFor(SitemapContext)` | `SitemapUrlProviderInterface::getEntries(Request)` |
+| URL building | `SeoUrlBuilderInterface::absoluteUrlFor(SitemapContext, string)` (+ `pagePath`, `resolveCanonicalSlug`, `slugPath`) | `SeoPathBuilderInterface::absoluteUrl(Request, string)` |
+| Surface overrides | `SeoSurfaceStoreInterface` (`findData`, `save`, `clear`) with the `SeoSurfaceData` DTO | `SeoSurfaceManagerInterface` (`find`, `getOrCreate`, `saveOrClear`, `isEmpty` on the `SeoSurface` entity) |
+
+`Nowo\SeoKitBundle\Model\SitemapContext` carries the site origin (scheme, host, port), the locale and the base path.
+The sitemap controller builds it from the request (`SitemapContextFactory::fromRequest()`); a console command or a
+Messenger handler builds it by hand and calls `SitemapGenerator::entriesFor($context)`. `nowo_seo_kit.base_url`, when
+set, still wins over the context origin.
+
+### Standard host
+
+Nothing to configure beyond the usual `nowo_seo_kit` keys. Attribute-mapped entities, the default entity manager and
+controllers that use the request are fine:
+
+```yaml
+nowo_seo_kit:
+    base_url: '%env(APP_URL)%'
+    persistence: { enabled: true }   # SeoKit tables on the default manager's connection, written through a private manager
+```
+
+```php
+use Nowo\SeoKitBundle\Model\SeoSurfaceData;
+use Nowo\SeoKitBundle\Model\SitemapContext;
+use Nowo\SeoKitBundle\Service\SeoSurfaceStoreInterface;
+use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
+
+final class PageSitemapProvider implements SitemapEntryProviderInterface
+{
+    public function __construct(private PageRepository $pages, private UrlGeneratorInterface $urls) {}
+
+    public function getEntriesFor(SitemapContext $context): array
+    {
+        $entries = [];
+        foreach ($this->pages->findPublished() as $page) {
+            $entries[] = ['loc' => $this->urls->generate('page_show', ['slug' => $page->getSlug()], UrlGeneratorInterface::ABSOLUTE_URL)];
+        }
+
+        return $entries;
+    }
+}
+
+// In a controller: write an override without touching the SeoSurface entity.
+$store->save(new SeoSurfaceData(SeoSurfaceKeys::page('pricing'), 'en', metaTitle: 'Pricing'));
+```
+
+Since 1.24.0, with `doctrine.entity_manager: null` the SeoKit writes go through a **private entity manager** built
+on the connection, configuration, event manager and SQL filters of your default manager (REQ-ARCH-001 rule 6). A
+SeoKit save never flushes your pending changes and a failed one never closes or resets your manager; the tables stay
+where they are. The connection is shared, so a transaction you open around a SeoKit call includes its rows. See
+[CONFIGURATION.md — doctrine](CONFIGURATION.md#doctrine).
+
+### DDD host
+
+Use only the framework-free ports from your infrastructure layer, keep your domain mapped in XML (or attributes) on
+your own manager. The zero-config private manager already keeps SeoKit writes out of your unit of work; a dedicated
+manager (optionally on its own connection) also keeps the SeoKit entities out of your manager's mapping:
+
+```yaml
+doctrine:
+    orm:
+        default_entity_manager: default
+        entity_managers:
+            default:
+                connection: default
+                mappings:
+                    Domain: { type: xml, dir: '%kernel.project_dir%/config/doctrine', prefix: 'App\Domain', is_bundle: false }
+            seo:
+                connection: default      # or its own connection
+
+nowo_seo_kit:
+    persistence: { enabled: true }
+    doctrine: { entity_manager: seo }   # since 1.23.0; the SeoKit entities are mapped there only
+```
+
 **Feed it from your domain through ports** (all autoconfigured, implement them in your infrastructure layer):
 
-- `SitemapUrlProviderInterface` — sitemap entries for your published aggregates.
+- `SitemapEntryProviderInterface` — sitemap entries for your published aggregates.
 - `SeoAuditSubjectProviderInterface` — pages for `nowo:seo:audit`.
 - `SeoDefaultsProviderInterface`, `SiteIndexabilityProviderInterface`, `PageHeadDefaultsProviderInterface`,
   `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface` — defaults, indexability, site JSON-LD,
   title composition.
-- `SeoPathBuilderInterface` — replace or decorate URL building (RoutingKitBundle does this).
+- `SeoUrlBuilderInterface` — URL building without HTTP types. To replace or decorate URL building (RoutingKitBundle
+  does this), decorate the service `Nowo\SeoKitBundle\Service\SeoPathBuilder` (both interfaces alias it) and, until
+  2.0, implement both `SeoUrlBuilderInterface` and `SeoPathBuilderInterface`: the head and robots.txt code still
+  calls the request-typed method.
+- `SeoSurfaceStoreInterface` — read and write surface overrides as `SeoSurfaceData`.
 - `SeoKitAccessCheckerInterface` — admin access (`nowo_seo_kit.security.access_checker`).
 - Site name and logo can come from a `Nowo\Brand\Contract\BrandProviderInterface` service (`nowo_seo_kit.brand`).
 
 ```php
-final class ProductSitemapProvider implements SitemapUrlProviderInterface
+final readonly class ProductSitemapProvider implements SitemapEntryProviderInterface
 {
     public function __construct(
         private ProductCatalog $catalog,          // your domain/application port
-        private UrlGeneratorInterface $urls,
+        private SeoUrlBuilderInterface $urls,
     ) {}
 
-    public function getEntries(Request $request): array
+    public function getEntriesFor(SitemapContext $context): array
     {
         $entries = [];
         foreach ($this->catalog->publishedSlugs() as $slug) {
-            $entries[] = ['loc' => $this->urls->generate('product_show', ['slug' => $slug], UrlGeneratorInterface::ABSOLUTE_URL)];
+            $entries[] = ['loc' => $this->urls->absoluteUrlFor($context, '/' . ($context->locale ?? 'en') . '/products/' . $slug)];
         }
 
         return $entries;
@@ -122,15 +207,19 @@ final class ProductSitemapProvider implements SitemapUrlProviderInterface
 }
 ```
 
+`tests/Integration/Ddd/DddHostKernelTest.php` is this host: XML-mapped domain object on `default`, SeoKit on `seo`, a
+context-only sitemap provider, and a `SeoSurfaceStoreInterface` round trip that leaves a pending host insert unflushed.
+
 **Reacting to changes (since 1.22).** After a write is flushed the bundle dispatches id-only events (scalars only,
 with `actorId` = the security token's user identifier, or null, and `occurredAt`):
 `Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent` (`surfaceKey`, `locale`, `surfaceId`, `deleted` when the override
-was cleared) from the surfaces admin, the JSON API and `SeoSurfaceManagerInterface::saveOrClear()`, and
-`Nowo\SeoKitBundle\Event\SeoSiteSettingsChangedEvent` from the settings admin (after the config provider refresh).
-Use them to purge HTTP / CDN caches or update projections. They are sent on every successful save (also with
-unchanged values). `getOrCreate()` stores an empty row without an event, so `saveOrClear()` of an all-empty override
-may send `deleted: true` for a row no event announced: treat a delete of an unknown surface as a no-op. `actorId` is
-the user identifier (often the login email).
+was cleared) from the surfaces admin, the JSON API and `SeoSurfaceStoreInterface::save()` / `clear()` (and the
+deprecated `SeoSurfaceManagerInterface::saveOrClear()`), and `Nowo\SeoKitBundle\Event\SeoSiteSettingsChangedEvent`
+from the settings admin (after the config provider refresh). Use them to purge HTTP / CDN caches or update
+projections. They are sent on every successful save (also with unchanged values). The deprecated `getOrCreate()`
+stores an empty row without an event, so a later clear of that row may send `deleted: true` for a row no event
+announced: treat a delete of an unknown surface as a no-op. `SeoSurfaceStoreInterface::save()` never writes an empty
+row. `actorId` is the user identifier (often the login email).
 
 **Describe a page with DTOs, not entities.** In controllers, pass values through `SeoRuntime::set([...])` or build
 a `PageHeadInput` and call `PageHeadContext::describe()`; map your domain objects to these in the controller or a
@@ -138,12 +227,10 @@ presenter, never the other way round.
 
 **Known limitations.**
 
-- Surface overrides are only available as the bundle's Doctrine entity `SeoSurface` through
-  `SeoSurfaceManagerInterface` (since 1.22; Doctrine-backed implementation `SeoSurfaceManager`); there is no storage
-  port yet, so keep that call in an infrastructure adapter.
-- The bundle does not apply surface overrides to the head by itself: read them in your adapter and pass the values to
-  `SeoRuntime` / `PageHeadInput`.
-- The admin UI requires `persistence.enabled: true`; the entities use the default entity manager.
+- The bundle does not apply surface overrides to the head by itself: read them with `SeoSurfaceStoreInterface` in
+  your adapter and pass the values to `SeoRuntime` / `PageHeadInput`.
+- The admin UI and the JSON API work on the bundle's repositories (bundle-internal); they write through the private
+  manager, or through `doctrine.entity_manager` when it is set.
 
 ## Optional SEO admin
 

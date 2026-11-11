@@ -11,10 +11,14 @@ use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
 use Nowo\SeoKitBundle\DependencyInjection\Configuration;
 use Nowo\SeoKitBundle\DependencyInjection\SeoKitExtension;
+use Nowo\SeoKitBundle\Doctrine\PrivateEntityManagerMiddleware;
+use Nowo\SeoKitBundle\Doctrine\SeoKitEntityManager;
+use Nowo\SeoKitBundle\Doctrine\SeoKitManagerRegistry;
 use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
@@ -35,6 +39,9 @@ use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface;
+use Nowo\SeoKitBundle\Service\SeoSurfaceStoreInterface;
+use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
+use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
@@ -44,6 +51,7 @@ use Symfony\Component\Config\Definition\ArrayNode;
 use Symfony\Component\Config\Definition\BaseNode;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
+use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -70,6 +78,13 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(SeoMetadataResolver::class));
         self::assertTrue($container->hasDefinition(SeoAuditCommand::class));
         self::assertFalse($container->hasDefinition(SeoSiteSettingsRepository::class));
+
+        // Since 1.24.0: both sitemap ports are autoconfigured explicitly (host providers outside the host's resources).
+        $instanceof = $container->getAutoconfiguredInstanceof();
+        foreach ([SitemapEntryProviderInterface::class, SitemapUrlProviderInterface::class] as $port) {
+            self::assertArrayHasKey($port, $instanceof);
+            self::assertArrayHasKey('nowo_seo_kit.sitemap_url_provider', $instanceof[$port]->getTags());
+        }
     }
 
     public function testLoadRegistersPersistenceWhenEnabled(): void
@@ -94,6 +109,7 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(DoctrineSeoDefaultsProvider::class));
         self::assertTrue($container->hasDefinition(SeoSurfaceManager::class));
         self::assertSame(SeoSurfaceManager::class, (string) $container->getAlias(SeoSurfaceManagerInterface::class));
+        self::assertSame(SeoSurfaceManager::class, (string) $container->getAlias(SeoSurfaceStoreInterface::class));
         self::assertTrue($container->hasDefinition(SeoChangeNotifier::class));
         self::assertFalse($container->hasDefinition(SeoAuditCommand::class));
         self::assertSame(
@@ -772,5 +788,54 @@ final class SeoKitExtensionTest extends TestCase
     private function processed(array $raw): array
     {
         return (new Processor())->processConfiguration(new Configuration(), [$raw]);
+    }
+
+    /** 1.24.0 (rule 6): zero config wires the private entity manager; a dedicated manager or the escape hatch do not. */
+    public function testPrivateEntityManagerWiring(): void
+    {
+        $container = $this->persistenceContainer([]);
+        self::assertTrue($container->hasDefinition(SeoKitEntityManager::class));
+        self::assertSame([['method' => 'reset']], $container->getDefinition(SeoKitEntityManager::class)->getTag('kernel.reset'));
+        self::assertTrue($container->hasDefinition(PrivateEntityManagerMiddleware::class));
+        foreach ([SeoSurfaceRepository::class, SeoSiteSettingsRepository::class] as $repository) {
+            self::assertSame(SeoKitManagerRegistry::class, (string) $container->getDefinition($repository)->getArgument('$registry'));
+        }
+        $resettables = $container->getDefinition(SeoRuntimeClearSubscriber::class)->getArgument('$resettables');
+        self::assertInstanceOf(IteratorArgument::class, $resettables);
+        $ids = array_map(static fn (mixed $reference): string => (string) $reference, $resettables->getValues());
+        self::assertContains(SeoKitEntityManager::class, $ids, 'Dropped at the boundaries, behind the nested-command guard.');
+
+        self::assertFalse($this->persistenceContainer(['entity_manager' => 'seo'])->hasDefinition(SeoKitEntityManager::class));
+    }
+
+    public function testPrivateEntityManagerEscapeHatchIsDeprecated(): void
+    {
+        $tree = (new Configuration())->getConfigTreeBuilder()->buildTree();
+        self::assertInstanceOf(ArrayNode::class, $tree);
+        $doctrine = $tree->getChildren()['doctrine'];
+        self::assertInstanceOf(ArrayNode::class, $doctrine);
+        $hatch = $doctrine->getChildren()['private_entity_manager'];
+        self::assertInstanceOf(BaseNode::class, $hatch);
+        self::assertTrue($hatch->isDeprecated(), 'The escape hatch is deprecated (removed in 2.0).');
+
+        $container = @$this->persistenceContainer(['private_entity_manager' => false]);
+
+        self::assertFalse($container->hasDefinition(SeoKitEntityManager::class));
+        self::assertArrayNotHasKey('$registry', $container->getDefinition(SeoSurfaceRepository::class)->getArguments(), 'Pre-1.24 wiring: the application registry.');
+    }
+
+    /**
+     * @param array<string, mixed> $doctrine
+     */
+    private function persistenceContainer(array $doctrine): ContainerBuilder
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([[
+            'enabled'     => true,
+            'persistence' => ['enabled' => true, 'register_audit_command' => false],
+            'doctrine'    => $doctrine,
+        ]], $container);
+
+        return $container;
     }
 }

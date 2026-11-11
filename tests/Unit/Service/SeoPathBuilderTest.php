@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
+use Nowo\SeoKitBundle\Model\SitemapContext;
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,6 +36,23 @@ final class SeoPathBuilderTest extends TestCase
         $request = Request::create('https://app.test/en/home');
 
         $this->assertSame('https://app.test/en/home', $builder->absoluteUrl($request, '/en/home'));
+    }
+
+    /** Since 1.24.0: the framework-free twin gives the same URLs as the request-typed method. */
+    public function testAbsoluteUrlForMatchesTheRequestTypedMethod(): void
+    {
+        $context = new SitemapContext('https://app.test', 'en');
+        $builder = new SeoPathBuilder([]);
+
+        self::assertSame('https://app.test/en/home', $builder->absoluteUrlFor($context, '/en/home'));
+        self::assertSame('https://app.test/en/home', $builder->absoluteUrlFor($context, 'en/home'));
+        self::assertSame('https://cdn.example.com/a.png', $builder->absoluteUrlFor($context, 'https://cdn.example.com/a.png'));
+        self::assertSame('http://cdn.example.com/a.png', $builder->absoluteUrlFor($context, 'http://cdn.example.com/a.png'));
+        self::assertSame(
+            'https://example.com/about',
+            (new SeoPathBuilder(['base_url' => 'https://example.com/']))->absoluteUrlFor($context, '/about'),
+            'base_url wins over the context origin, as it wins over the request host.',
+        );
     }
 
     public function testPagePathReturnsLocaleSpecificPath(): void

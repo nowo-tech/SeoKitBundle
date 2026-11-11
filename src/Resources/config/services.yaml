@@ -13,7 +13,12 @@ services:
         arguments:
             $config: '%nowo_seo_kit.config%'
 
+    # Deprecated since 1.24.0 (request-typed); removed in 2.0.
     Nowo\SeoKitBundle\Service\SeoPathBuilderInterface:
+        alias: Nowo\SeoKitBundle\Service\SeoPathBuilder
+
+    # Since 1.24.0: framework-free twin (REQ-ARCH-001 rule 3).
+    Nowo\SeoKitBundle\Service\SeoUrlBuilderInterface:
         alias: Nowo\SeoKitBundle\Service\SeoPathBuilder
 
     Nowo\SeoKitBundle\Service\SeoMetadataResolver:

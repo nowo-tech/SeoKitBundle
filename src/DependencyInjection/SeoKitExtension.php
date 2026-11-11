@@ -13,10 +13,15 @@ use Nowo\SeoKitBundle\Controller\Admin\SeoSiteSettingsController;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\EntityManagerOptionPass;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\PrivateEntityManagerPass;
+use Nowo\SeoKitBundle\Doctrine\PrivateEntityManagerMiddleware;
+use Nowo\SeoKitBundle\Doctrine\SeoKitEntityManager;
+use Nowo\SeoKitBundle\Doctrine\SeoKitManagerRegistry;
 use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceType;
@@ -46,12 +51,16 @@ use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoPencilCatalogFactory;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface;
+use Nowo\SeoKitBundle\Service\SeoSurfaceStoreInterface;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
+use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
+use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
@@ -113,6 +122,12 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             ->addTag('nowo_seo_kit.page_head_site_graph_provider');
         $container->registerForAutoconfiguration(PageHeadTitleComposerInterface::class)
             ->addTag('nowo_seo_kit.page_head_title_composer');
+        // #[AutoconfigureTag] on a bundle interface is only read when the host loads that interface as a resource:
+        // register the sitemap ports explicitly so an autoconfigured host provider is always tagged.
+        $container->registerForAutoconfiguration(SitemapEntryProviderInterface::class)
+            ->addTag('nowo_seo_kit.sitemap_url_provider');
+        $container->registerForAutoconfiguration(SitemapUrlProviderInterface::class)
+            ->addTag('nowo_seo_kit.sitemap_url_provider');
 
         $baseUrl = $config['base_url'] ?? null;
         $origin  = is_string($baseUrl) && $baseUrl !== '' ? rtrim($baseUrl, '/') : null;
@@ -145,6 +160,9 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
         $container->setParameter(EntityManagerOptionPass::PARAMETER, ($config['persistence']['enabled'] ?? false) === true ? ($config['doctrine']['entity_manager'] ?? null) : null);
         if (($config['persistence']['enabled'] ?? false) === true) {
             $this->registerPersistence($container, $config['persistence']);
+            if (($config['doctrine']['entity_manager'] ?? null) === null && ($config['doctrine']['private_entity_manager'] ?? true) === true) {
+                $this->registerPrivateEntityManager($container);
+            }
             $this->registerTablePrefix(
                 $container,
                 (string) ($config['doctrine']['table_prefix'] ?? ''),
@@ -161,6 +179,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             $manager->setAutoconfigured(true);
             $container->setDefinition(SeoSurfaceManager::class, $manager);
             $container->setAlias(SeoSurfaceManagerInterface::class, SeoSurfaceManager::class);
+            // Since 1.24.0: entity-free twin of SeoSurfaceManagerInterface (REQ-ARCH-001 rules 1 and 3).
+            $container->setAlias(SeoSurfaceStoreInterface::class, SeoSurfaceManager::class);
         }
 
         if (($config['persistence']['register_audit_command'] ?? true) === true) {
@@ -370,6 +390,38 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             SeoSiteSettingsTranslation::class,
             SeoSurface::class,
         ]);
+    }
+
+    /**
+     * 1.24.0 (REQ-ARCH-001 rule 6): with `doctrine.entity_manager` null the repositories write through the bundle's
+     * private entity manager ({@see SeoKitEntityManager}), so a SeoKit write never flushes, and a failed one never
+     * resets, an application manager. The manager is dropped at every unit-of-work boundary through
+     * SeoRuntimeClearSubscriber (same nested-command guard) and at `kernel.reset`; the rollback middleware is attached
+     * to its connection by {@see PrivateEntityManagerPass} (doctrine/dbal 4 only).
+     */
+    private function registerPrivateEntityManager(ContainerBuilder $container): void
+    {
+        $container->register(SeoKitEntityManager::class, SeoKitEntityManager::class)
+            ->setArguments([new Reference('doctrine')])
+            ->addTag('kernel.reset', ['method' => 'reset']);
+        $container->register(SeoKitManagerRegistry::class, SeoKitManagerRegistry::class)
+            ->setArguments([new Reference('doctrine'), new Reference(SeoKitEntityManager::class)]);
+        foreach ([SeoSurfaceRepository::class, SeoSiteSettingsRepository::class] as $repository) {
+            $container->getDefinition($repository)->setArgument('$registry', new Reference(SeoKitManagerRegistry::class));
+        }
+        if (PrivateEntityManagerPass::supportsRollbackMiddleware()) {
+            $container->register(PrivateEntityManagerMiddleware::class, PrivateEntityManagerMiddleware::class)
+                ->setArguments([new Reference(SeoKitEntityManager::class)])
+                ->addTag('doctrine.middleware');
+        }
+
+        $subscriber  = $container->getDefinition(SeoRuntimeClearSubscriber::class);
+        $resettables = $subscriber->getArgument('$resettables');
+        if ($resettables instanceof IteratorArgument) {
+            $values   = $resettables->getValues();
+            $values[] = new Reference(SeoKitEntityManager::class, ContainerInterface::IGNORE_ON_UNINITIALIZED_REFERENCE);
+            $resettables->setValues($values);
+        }
     }
 
     /**
