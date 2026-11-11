@@ -3,6 +3,9 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.24.0](#to-1240)
+  - [Private entity manager (zero-config mode)](#private-entity-manager-zero-config-mode)
+  - [Framework-free ports](#framework-free-ports)
 - [To 1.23.1](#to-1231)
 - [To 1.23.0](#to-1230)
 - [To 1.22.0](#to-1220)
@@ -88,6 +91,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.24.0
+
+From **1.23.1**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 Next minor: 1.24.0. From **1.23.x**:
 
