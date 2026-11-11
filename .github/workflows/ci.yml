@@ -69,6 +69,7 @@ jobs:
             --no-interaction --no-update
           composer require --dev \
             symfony/browser-kit:^${{ matrix.symfony }} \
+            symfony/messenger:^${{ matrix.symfony }} \
             symfony/phpunit-bridge:^${{ matrix.symfony }} \
             --no-interaction --no-update
           composer update --no-interaction --prefer-dist

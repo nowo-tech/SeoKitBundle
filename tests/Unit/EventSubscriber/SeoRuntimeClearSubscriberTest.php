@@ -25,6 +25,10 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
+use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
+use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
+use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 
 final class SeoRuntimeClearSubscriberTest extends TestCase
 {
@@ -32,8 +36,14 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
     {
         self::assertSame(
             [
-                KernelEvents::REQUEST   => ['onRequest', 4096],
-                KernelEvents::TERMINATE => 'onTerminate',
+                KernelEvents::REQUEST             => ['onRequest', 4096],
+                KernelEvents::TERMINATE           => 'onTerminate',
+                WorkerMessageReceivedEvent::class => ['onMessageReceived', 4096],
+                WorkerMessageHandledEvent::class  => ['onMessageFinished', -4096],
+                WorkerMessageFailedEvent::class   => ['onMessageFinished', -4096],
+                WorkerStoppedEvent::class         => ['onWorkerStopped', -4096],
+                'console.command'                 => ['onConsoleCommand', 4096],
+                'console.terminate'               => ['onConsoleTerminate', -4096],
             ],
             SeoRuntimeClearSubscriber::getSubscribedEvents(),
         );
@@ -106,6 +116,50 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
         (new SeoRuntimeClearSubscriber($runtime))->onRequest($this->requestEvent(HttpKernelInterface::MAIN_REQUEST));
 
         self::assertSame([], $runtime->getOverrides());
+    }
+
+    public function testClearStateResetsEveryResettableDirectly(): void
+    {
+        $runtime = new SeoRuntime();
+        $context = $this->pageHeadContext();
+        $runtime->set(['title' => 'Order mail for tenant A']);
+        $runtime->setVariables(['slug' => 'tenant-a']);
+        $context->describe(new PageHeadInput(path: '/orders/a', locale: 'es'));
+
+        (new SeoRuntimeClearSubscriber(resettables: [$runtime, $context]))->clearState();
+
+        self::assertSame([], $runtime->getOverrides());
+        self::assertSame([], $runtime->getVariables());
+        self::assertFalse($context->isDescribed());
+    }
+
+    public function testTerminateAlsoClearsThePageHeadAndTheSiteSettingsMemo(): void
+    {
+        $runtime = new SeoRuntime();
+        $context = $this->pageHeadContext();
+        $first   = new SeoSiteSettings();
+        $first->setSiteName('Before admin edit');
+        $second = new SeoSiteSettings();
+        $second->setSiteName('After admin edit');
+        $repository = $this->createMock(SeoSiteSettingsRepository::class);
+        $repository->expects(self::exactly(2))->method('getOrCreate')->willReturnOnConsecutiveCalls($first, $second);
+        $siteConfig = new SeoSiteConfigProvider($repository);
+
+        self::assertSame('Before admin edit', $siteConfig->get()->siteName);
+        $context->describe(new PageHeadInput(path: '/', locale: 'es'));
+
+        (new SeoRuntimeClearSubscriber($runtime, $context, $siteConfig))
+            ->onTerminate(new TerminateEvent($this->createMock(HttpKernelInterface::class), Request::create('/'), new Response()));
+
+        self::assertFalse($context->isDescribed());
+        self::assertSame('After admin edit', $siteConfig->get()->siteName);
+    }
+
+    public function testWithoutAnyServiceNothingIsBuiltOrCleared(): void
+    {
+        (new SeoRuntimeClearSubscriber())->clearState();
+
+        $this->addToAssertionCount(1);
     }
 
     private function requestEvent(int $type): RequestEvent

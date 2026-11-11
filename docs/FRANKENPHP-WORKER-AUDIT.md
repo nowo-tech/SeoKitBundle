@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|-------|
 | Package | `nowo-tech/seo-kit-bundle` (`symfony-bundle`) |
-| Audited revision | `v1.10.1` |
-| Audit date | 2026-09-25 |
+| Audited revision | `v1.10.1`; boundaries re-audited for 1.23.1 (REQ-RUNTIME-002, 2026-11-11) |
+| Audit date | 2026-09-25 (Messenger / console boundaries: 2026-11-11) |
 | Method | Manual review of every file under `src/` (services, persistence providers, repositories, Twig extension, controllers, event subscriber, route loaders, form types, audit command), `src/Resources/config/*.yaml`, the DI extension and compiler pass |
-| **Verdict** | ✅ **Viable under scenario B** — `SeoRuntimeClearSubscriber` clears `SeoRuntime`, `PageHeadContext` and the site settings memo at the start of every main request; repository flushes recover a closed EntityManager. Clearing the application's EntityManager identity map between requests remains the application's responsibility |
+| **Verdict** | ✅ **Viable under scenario B** — `SeoRuntimeClearSubscriber` clears `SeoRuntime`, `PageHeadContext` and the site settings memo at every unit-of-work boundary (main request start, `kernel.terminate`, Messenger message received / handled / failed, console command start / terminate); repository flushes recover a closed EntityManager. Clearing the application's EntityManager identity map between requests remains the application's responsibility |
 | Original verdict | ⚠️ Viable with conditions — safe only when `services_resetter` runs (scenario A) |
-| Remediation | W-01…W-04 resolved in **v1.10.1**: request-start reset in `SeoRuntimeClearSubscriber` (`kernel.request` 4096, main only), `SeoRuntime implements ResetInterface`, `ResetsClosedEntityManagerTrait` + unique-violation recovery in both repositories, refresh of the managed settings row. Regression tests simulate consecutive requests on the same instances without `reset()`. 1.23.0: the reset only ever touches the manager of the SeoKit entities (optionally a dedicated one, `doctrine.entity_manager`), never a host manager; kept-alive kernel test `tests/Integration/Worker/WorkerEntityManagerRecoveryTest.php` |
+| Remediation | W-01…W-04 resolved in **v1.10.1**: request-start reset in `SeoRuntimeClearSubscriber` (`kernel.request` 4096, main only), `SeoRuntime implements ResetInterface`, `ResetsClosedEntityManagerTrait` + unique-violation recovery in both repositories, refresh of the managed settings row. Regression tests simulate consecutive requests on the same instances without `reset()`. 1.23.0: the reset only ever touches the manager of the SeoKit entities (optionally a dedicated one, `doctrine.entity_manager`), never a host manager; kept-alive kernel test `tests/Integration/Worker/WorkerEntityManagerRecoveryTest.php`. 1.23.1: W-05 (Messenger and console boundaries), one-kernel test `tests/Integration/Worker/WorkerBoundariesTest.php` |
 
 ## Table of contents
 
@@ -20,6 +20,10 @@
   - [W-02 — Site settings are memoized per worker (Medium)](#w-02--site-settings-are-memoized-per-worker-medium)
   - [W-03 — Failed `flush()` on the read path is swallowed and leaves a closed EntityManager (Medium, scenario B only)](#w-03--failed-flush-on-the-read-path-is-swallowed-and-leaves-a-closed-entitymanager-medium-scenario-b-only)
   - [W-04 — `SeoRuntime` is cleared on `kernel.terminate`, not by the resetter (Low)](#w-04--seoruntime-is-cleared-on-kernelterminate-not-by-the-resetter-low)
+  - [W-05 — No clear at the Messenger and console boundaries (Medium)](#w-05--no-clear-at-the-messenger-and-console-boundaries-medium)
+- [Boundary events](#boundary-events)
+- [Worker test](#worker-test)
+- [Host rule: entity managers](#host-rule-entity-managers)
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
 - [Igor findings triage (2026-11-11)](#igor-findings-triage-2026-11-11)
 - [Re-audit triggers](#re-audit-triggers)
@@ -33,11 +37,13 @@ FrankenPHP worker mode boots the Symfony kernel once per worker and serves many 
 
 A bundle that is safe under **B** is safe under **A** and under classic mode / PHP-FPM.
 
+**Precondition, precisely.** `FRANKENPHP_RESET_KERNEL=false` alone does not mean scenario B: with the stock Symfony kernel, `Kernel::handle()` → `boot()` still calls `services_resetter->reset()` before every request after the first. Scenario B happens where the resetter does not run: a host that removes, replaces or bypasses `services_resetter` (or drives `http_kernel` directly), Messenger consumers started with `messenger:consume --no-reset`, and long-running console processes. This bundle is correct in all of them.
+
 ## Summary
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Mutable state in shared services | ✅ | `PageHeadContext` (`$input`, `$resolved`), `SeoSiteConfigProvider` (`$config`), `SeoRuntime` (`$overrides`, `$variables`) are cleared at the start of every main request by the bundle (W-01, W-02, W-04); everything else is `readonly` or has no properties |
+| Mutable state in shared services | ✅ | `PageHeadContext` (`$input`, `$resolved`), `SeoSiteConfigProvider` (`$config`), `SeoRuntime` (`$overrides`, `$variables`) are cleared by the bundle at every unit-of-work boundary (W-01, W-02, W-04, W-05); everything else is `readonly` or has no properties |
 | Static properties / `static` locals | ✅ | None |
 | `ResetInterface` / `kernel.reset` coverage | ✅ | `PageHeadContext`, `SeoSiteConfigProvider` and now `SeoRuntime` implement `ResetInterface` (scenario A); the bundle does not depend on it (scenario B) |
 | Request / user / locale captured in services | ✅ | `RequestStack` is read at call time in `SeoMetadataResolver::resolve()`; nothing is captured in constructors |
@@ -56,10 +62,10 @@ Worker demo: `demo/symfony8/docker/frankenphp/Caddyfile` has the `worker` line c
 
 | Service | Shared | Mutable state | Scenario A | Scenario B |
 |---------|--------|---------------|------------|------------|
-| `Service\PageHeadContext` (only when `base_url` is set) | yes | `$input`, `$resolved`; `kernel.reset` + cleared on main `kernel.request` | ✅ | ✅ |
-| `Service\Persistence\SeoSiteConfigProvider` (persistence enabled) | yes | `$config` (request memo); `kernel.reset` + cleared on main `kernel.request`; cross-worker freshness via `cache.app` | ✅ | ✅ |
-| `Service\SeoRuntime` | yes (`shared: true`) | `$overrides`, `$variables`; `ResetInterface` + cleared on main `kernel.request` and `kernel.terminate` | ✅ | ✅ |
-| `EventSubscriber\SeoRuntimeClearSubscriber` (`kernel.request` 4096, `kernel.terminate`) | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\PageHeadContext` (only when `base_url` is set) | yes | `$input`, `$resolved`; `kernel.reset` + cleared at every boundary | ✅ | ✅ |
+| `Service\Persistence\SeoSiteConfigProvider` (persistence enabled) | yes | `$config` (request memo); `kernel.reset` + cleared at every boundary; cross-worker freshness via `cache.app` | ✅ | ✅ |
+| `Service\SeoRuntime` | yes (`shared: true`) | `$overrides`, `$variables`; `ResetInterface` + cleared at every boundary | ✅ | ✅ |
+| `EventSubscriber\SeoRuntimeClearSubscriber` (see [Boundary events](#boundary-events)) | yes | console nesting depth (bounded) and in-flight message flag, maintained at the boundaries; iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references | ✅ | ✅ |
 | `Service\SeoMetadataResolver` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\PageHeadResolver`, `HreflangSetBuilder`, `AbsoluteUrlBuilder`, `PageHeadRuntimeBridge` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\SeoPathBuilder`, `SeoTemplateRenderer`, `OriginUrlGuard`, `SeoPencilCatalogFactory`, `StructuredData\SiteStructuredDataFactory` | yes | none | ✅ | ✅ |
@@ -111,6 +117,12 @@ Models (`SeoMetadata`, `PageHead`, `PageHeadInput`, `SeoSiteConfig`, structured-
 - **Recommendation:** implement `ResetInterface` on `SeoRuntime` (delegating to `clear()`) as defense in depth, and keep the terminate subscriber.
 - **Status:** Resolved — `src/Service/SeoRuntime.php` implements `ResetInterface` (`reset()` → `clear()`), and the bag is also cleared at the start of every main request, so a skipped `terminate()` no longer leaks overrides. The terminate listener is kept. Tests: `SeoRuntimeTest`, `SeoRuntimeClearSubscriberTest`.
 
+### W-05 — No clear at the Messenger and console boundaries (Medium)
+
+- **Where:** `src/EventSubscriber/SeoRuntimeClearSubscriber.php` subscribed only to `kernel.request` (main) and `kernel.terminate` (1.0.0 to 1.23.0); `PageHeadContext` and the site settings memo were not cleared at `kernel.terminate` either.
+- **Worker impact:** a Messenger consumer has no `kernel.request`. With `messenger:consume --no-reset` (or a host without `services_resetter`), an e-mail rendered in a handler saw the previous message's `SeoRuntime` overrides (title, description, `noindex`, variables) and described page head, possibly another tenant's, and kept an old site settings snapshot after another worker edited them. The same between console commands run in one long-lived process.
+- **Status:** Resolved in 1.23.1 — the subscriber clears all three services at `kernel.terminate`, `WorkerMessageReceivedEvent`, `WorkerMessageHandledEvent`, `WorkerMessageFailedEvent`, `console.command` and `console.terminate` too. Tests: `tests/Integration/Worker/WorkerBoundariesTest.php`, `SeoRuntimeClearSubscriberTest`.
+
 Info / observations:
 
 - `SeoPathBuilder::absoluteUrl()` (`src/Service/SeoPathBuilder.php:25-37`) falls back to `$request->getSchemeAndHttpHost()` when `base_url` is not configured. This is computed per request and does not leak between requests, but canonical, hreflang, sitemap and robots URLs then follow the `Host` header, and `/sitemap.xml` is sent with `Cache-Control: public, max-age=3600` (`src/Controller/SeoKitController.php:36-39`). Configure `base_url` (and `framework.trusted_hosts`) in production. Not specific to worker mode.
@@ -120,12 +132,45 @@ Info / observations:
 ## Usage recommendations in worker mode
 
 - The bundle is safe with or without Symfony's `services_resetter`; keeping it active is still recommended for framework services (Doctrine identity map, security token).
-- Under scenario B the application must clear its own EntityManager between requests.
+- Under scenario B the application must clear its own EntityManager between requests (see [Host rule](#host-rule-entity-managers)).
+- One console command or one Messenger message is **one** unit of work: a command that renders pages or e-mails for several tenants in a loop must call `SeoRuntime::clear()` and `PageHeadContext::reset()` itself between tenants.
 - Call `SeoRuntime::set()` / `PageHeadContext::describe()` from controllers or from `kernel.request` listeners with priority < 4096.
 - Configure `nowo_seo_kit.base_url` so URLs never depend on the `Host` header.
 - Create the `SeoSiteSettings` singleton row during deployment (migration or fixture) so the page-render path never writes.
 - Custom `SeoDefaultsProviderInterface`, `PageHeadDefaultsProviderInterface`, `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface`, `SitemapUrlProviderInterface`, `SiteIndexabilityProviderInterface` and `SeoAuditSubjectProviderInterface` services must stay stateless or implement `ResetInterface`. Do not memoize per-page data in them.
 - Always set runtime overrides through `SeoRuntime` / `PageHeadContext` inside the request; never keep a `PageHead` or override array in your own service properties.
+
+## Boundary events
+
+| Boundary | Event (subscribed by name) | Priority | Cleared |
+|---|---|---|---|
+| HTTP main request start | `kernel.request` (main only) | 4096 | `SeoRuntime`, `PageHeadContext`, `SeoSiteConfigProvider` memo |
+| HTTP end | `kernel.terminate` | 0 | same |
+| Messenger message start | `Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent` | 4096 | same |
+| Messenger message end | `WorkerMessageHandledEvent`, `WorkerMessageFailedEvent` | -4096 | same |
+| Console command start / end | `console.command` / `console.terminate` | 4096 / -4096 | same, only for the outermost command (depth 0→1 / 1→0) and only while no Messenger message is in flight |
+| Messenger worker stopped | `WorkerStoppedEvent` | -4096 | clears the in-flight flag only |
+| Services resetter (when the host runs it) | `kernel.reset` | — | same (kept, not relied on) |
+
+A command run in-process from another command or from a message handler (`Application::doRun()`) fires `console.command` / `console.terminate` too; the subscriber counts the nesting depth and keeps an in-flight message flag (set on received, unset on handled / failed / worker stopped), so such a nested run never clears the outer unit's overrides and page head (audit MI-S-L2; same pattern as BeaconBundle 1.24.0). Tests: `WorkerBoundariesTest::testNestedCommandKeepsTheOuterCommandsState`, `testCommandRunFromAMessageHandlerKeepsTheHandlersState`.
+
+The services reach the subscriber through `$resettables`, an iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references (`'@!…'` in `services.yaml`): a boundary only clears what the unit of work built and never builds the Doctrine-backed provider itself.
+
+## Worker test
+
+`tests/Integration/Worker/WorkerBoundariesTest.php` boots **one** kernel (`BoundariesTestKernel`: Framework, Twig, Doctrine on in-memory SQLite, SeoKit with persistence and the page head) and never calls `services_resetter`:
+
+- **HTTP:** 500 requests through `http_kernel` (not `Kernel::handle()`, so no resetter) to two pages, `/page/A` and `/page/B`, each followed by `terminate()`;
+- **Messenger:** 500 messages through a real `Symfony\Component\Messenger\Worker` on the kernel's dispatcher, without `ResetServicesListener` (as `--no-reset`); every 7th handler fails;
+- **Console:** 500 `Symfony\Component\Console\Application::run()` calls on the kernel's dispatcher.
+
+Two tenants alternate. Each unit records what it found, then sets its own private overrides, variables and page head and leaves them in place. Before each unit "another worker" renames the site in the database and deletes the shared `cache.app` entry, as the admin's `refresh()` does. Each unit must start with no overrides, no described head and the current site name; memory margin: less than 1 MiB growth after a 50-unit warm-up. Without the 1.23.1 boundaries the Messenger and console cases fail (tenant B starts with tenant A's title, `noindex`, slug and page head, and with the old site name). `clearState()` and every `reset()` are also tested directly (`SeoRuntimeClearSubscriberTest`, `SeoRuntimeTest`, `PageHeadContextTest`, `SeoSiteConfigProviderTest`).
+
+Static checks: `composer igor` (93 service files, 0 KO, 0 WARN) and PHPStan with the FrankenPHP classic + worker rulesets pass.
+
+## Host rule: entity managers
+
+A host that disables or bypasses the services resetter must also clear its **own** entity managers at every boundary (main request start or end, each Messenger message, each console command); otherwise the identity map serves stale rows (for example a downgraded permission or a soft-deleted item) across requests (REQ-RUNTIME-002 rule 7). SeoKit's own rows are refreshed on read (`SeoSiteSettingsRepository::getOrCreate()`), and a closed manager of the SeoKit entities is recovered by the bundle.
 
 ## Igor findings triage (2026-11-11)
 
