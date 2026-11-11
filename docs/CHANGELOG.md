@@ -47,8 +47,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Next minor: 1.24.0. Framework-free twin ports for DDD / hexagonal hosts (REQ-ARCH-001 rules 1 and 3); the standard
-host needs no change. See [UPGRADING](UPGRADING.md#unreleased).
+Next minor: 1.24.0. Private entity manager in zero-config mode (REQ-ARCH-001 rule 6, audit MQ-S-M1) and
+framework-free twin ports for DDD / hexagonal hosts (rules 1 and 3); no configuration change. See
+[UPGRADING](UPGRADING.md#unreleased).
+
+### Changed
+
+- **SeoKit writes no longer flush the application's default entity manager (REQ-ARCH-001 rule 6).** With
+  `doctrine.entity_manager` unset, the repositories (admin, JSON API, `SeoSurfaceStoreInterface`,
+  `SeoSurfaceManagerInterface`, site settings) now write through `Doctrine\SeoKitEntityManager`, a private manager
+  created on the connection, configuration and event manager of the manager that maps the SeoKit entities (resolved
+  through `Doctrine\SeoKitManagerRegistry`). Before, a SeoKit save committed every change the application had left
+  pending on its default manager, and a failed SeoKit flush reset that manager. Now a SeoKit flush commits only SeoKit
+  rows, and a failed one closes only the private manager, which is created again on the next call. The tables, the
+  connection and the mapping do not change: no migration, no data move.
+  - Dropped at every unit-of-work boundary through `SeoRuntimeClearSubscriber` (same 1.23.1 nested-command and
+    in-flight-message guards) and at `kernel.reset` (REQ-RUNTIME-002).
+  - With doctrine/dbal 4, `Doctrine\PrivateEntityManagerMiddleware` (on that connection only) reports rolled-back
+    transactions and savepoints; the private manager is replaced before its next use, so a save repeated after the
+    application rolled back a transaction that included it is written again. A stale manager that still has scheduled
+    inserts, updates or deletes is kept, so a pending edit is never dropped (audit MQ-L-L1).
+  - The SQL filters enabled on the source manager are mirrored with their parameters on every call; a filter whose
+    parameters changed is disabled and enabled again before the copy, so a parameter the source no longer has never
+    survives, and a filter the source disabled is disabled (audits MQ-L-L3, MO-Y-D-L1).
+  - New option `doctrine.private_entity_manager` (default `true`). `false` restores the previous behaviour and is
+    deprecated (removed in 2.0). `doctrine.entity_manager` (dedicated manager) is unchanged.
+
+- `SitemapGenerator` builds URLs through `SeoUrlBuilderInterface::absoluteUrlFor()` when the injected path builder
+  implements it (the bundle's `SeoPathBuilder` does); a host builder that implements only `SeoPathBuilderInterface` is
+  still called through `absoluteUrl()`. Output is unchanged.
+- Docs: `docs/USAGE.md` splits the DDD section into "Standard host" and "DDD host", with the port / deprecated-form
+  table.
 
 ### Added
 
@@ -81,16 +110,18 @@ host needs no change. See [UPGRADING](UPGRADING.md#unreleased).
 - `SeoSurfaceManagerInterface` (entity-typed `find()`, `getOrCreate()`, `saveOrClear()`, `isEmpty()`): use
   `SeoSurfaceStoreInterface` with `SeoSurfaceData`. Removed in 2.0.
 
-### Changed
-
-- `SitemapGenerator` builds URLs through `SeoUrlBuilderInterface::absoluteUrlFor()` when the injected path builder
-  implements it (the bundle's `SeoPathBuilder` does); a host builder that implements only `SeoPathBuilderInterface` is
-  still called through `absoluteUrl()`. Output is unchanged.
-- Docs: `docs/USAGE.md` splits the DDD section into "Standard host" and "DDD host", with the port / deprecated-form
-  table.
-
 ### Tests
 
+- `tests/Integration/PrivateEntityManager/PrivateEntityManagerTest.php` (standard host: one default manager with an
+  XML-mapped host entity, a tenant SQL filter, no `doctrine.entity_manager`): a pending host insert stays pending and
+  unflushed across every write path (store save / update / clear, manager `getOrCreate` / `saveOrClear`, repository
+  save / remove, settings `getOrCreate` / `save`); a host transaction rollback and a host savepoint rollback followed by
+  the same save write the row (load, edit, savepoint, rollback, save); a stale manager with a pending edit is kept; a
+  failed SeoKit flush closes only the private manager, the host manager is neither closed nor reset and the next write
+  works; 300 requests through `http_kernel` without the resetter while another worker edits the row read the current
+  value, with no memory growth; a nested console command keeps the outer unit's manager; filters mirrored, a parameter
+  the source lost is not kept, a disabled filter is disabled. Unit tests for the registry, the middleware, the pass and
+  the wiring (including the escape-hatch deprecation).
 - `tests/Integration/Ddd/DddHostKernelTest.php`: DDD host kernel (domain object mapped in XML on the host's own
   manager, SeoKit entities on a dedicated manager, a sitemap provider that implements only the context port, no
   `base_url`): `/sitemap.xml` through `http_kernel`, `entriesFor()` without HTTP, and a `SeoSurfaceStoreInterface`

@@ -115,7 +115,7 @@ controllers that use the request are fine:
 ```yaml
 nowo_seo_kit:
     base_url: '%env(APP_URL)%'
-    persistence: { enabled: true }   # SeoKit entities on the default entity manager (doctrine.entity_manager: null)
+    persistence: { enabled: true }   # SeoKit tables on the default manager's connection, written through a private manager
 ```
 
 ```php
@@ -143,13 +143,17 @@ final class PageSitemapProvider implements SitemapEntryProviderInterface
 $store->save(new SeoSurfaceData(SeoSurfaceKeys::page('pricing'), 'en', metaTitle: 'Pricing'));
 ```
 
-With `doctrine.entity_manager: null` the SeoKit writes flush the default entity manager, as any Symfony
-repository does: flush your own pending changes first, or give SeoKit its own manager as below.
+Since 1.24.0, with `doctrine.entity_manager: null` the SeoKit writes go through a **private entity manager** built
+on the connection, configuration, event manager and SQL filters of your default manager (REQ-ARCH-001 rule 6). A
+SeoKit save never flushes your pending changes and a failed one never closes or resets your manager; the tables stay
+where they are. The connection is shared, so a transaction you open around a SeoKit call includes its rows. See
+[CONFIGURATION.md — doctrine](CONFIGURATION.md#doctrine).
 
 ### DDD host
 
 Use only the framework-free ports from your infrastructure layer, keep your domain mapped in XML (or attributes) on
-your own manager, and put the SeoKit entities on a dedicated manager so its writes never flush your unit of work:
+your own manager. The zero-config private manager already keeps SeoKit writes out of your unit of work; a dedicated
+manager (optionally on its own connection) also keeps the SeoKit entities out of your manager's mapping:
 
 ```yaml
 doctrine:
@@ -225,8 +229,8 @@ presenter, never the other way round.
 
 - The bundle does not apply surface overrides to the head by itself: read them with `SeoSurfaceStoreInterface` in
   your adapter and pass the values to `SeoRuntime` / `PageHeadInput`.
-- The admin UI and the JSON API work on the bundle's repositories (bundle-internal); they write to the manager that
-  maps the SeoKit entities.
+- The admin UI and the JSON API work on the bundle's repositories (bundle-internal); they write through the private
+  manager, or through `doctrine.entity_manager` when it is set.
 
 ## Optional SEO admin
 

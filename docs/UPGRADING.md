@@ -95,8 +95,34 @@ Next minor: 1.24.0. From **1.23.x**:
 composer update nowo-tech/seo-kit-bundle
 ```
 
-No configuration change and nothing to change for a standard host. The request- and entity-typed ports still work and
-are deprecated; they are removed in 2.0. Move to the framework-free twins when convenient:
+No configuration change and no migration.
+
+### Private entity manager (zero-config mode)
+
+With `nowo_seo_kit.doctrine.entity_manager` unset (the default), SeoKit now writes through its own private entity
+manager instead of your default manager (REQ-ARCH-001 rule 6). Your tables stay where they are: the private manager
+uses the same connection, mapping and table names, so there is **no schema change, no data move and nothing to
+drop**.
+
+What changes for you:
+
+- A SeoKit save (admin, JSON API, `SeoSurfaceStoreInterface`, `SeoSurfaceManagerInterface`, site settings) no longer
+  flushes the changes your code left pending on the default manager. If you relied on a SeoKit save to flush your own
+  entities, call `$entityManager->flush()` yourself.
+- A failed SeoKit flush no longer closes or resets your default manager.
+- `SeoSurface` / `SeoSiteSettings` objects returned by the deprecated entity API belong to the private manager: your
+  default manager does not contain them, and they are detached at the end of the request, message or command.
+- The connection is shared: a transaction you open around a SeoKit call includes its rows. Without an open transaction
+  each SeoKit save autocommits. If you roll back a transaction that included a SeoKit save, the next SeoKit call
+  reloads from the database (doctrine/dbal 4). With DBAL 3 reload yourself before saving the same values again.
+- Your enabled SQL filters (with their parameters) apply to SeoKit queries as before.
+- To keep the pre-1.24 behaviour for now, set `nowo_seo_kit.doctrine.private_entity_manager: false` (deprecated,
+  removed in 2.0). `doctrine.entity_manager` (a dedicated manager) works as in 1.23.
+
+### Framework-free ports
+
+The request- and entity-typed ports still work and are deprecated; they are removed in 2.0. Move to the
+framework-free twins when convenient:
 
 | Deprecated (removed in 2.0) | Replacement (since 1.24.0) |
 |---|---|
