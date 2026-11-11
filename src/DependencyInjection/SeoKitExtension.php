@@ -64,6 +64,7 @@ use function array_key_exists;
 use function array_keys;
 use function array_unique;
 use function array_values;
+use function implode;
 use function in_array;
 use function interface_exists;
 use function is_array;
@@ -212,12 +213,47 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             return;
         }
 
+        // Audit LD-SEO-L2: the prepend below declares entity_managers.<name> itself, so an undeclared (mistyped) name
+        // would silently become a new manager on the default connection. The host must declare it.
+        if (!$this->hostDeclaresEntityManager($container, $entityManager)) {
+            throw new InvalidConfigurationException(sprintf('nowo_seo_kit.doctrine.entity_manager is "%s", but the host Doctrine configuration does not declare that entity manager (declared: "%s"). Add it under doctrine.orm.entity_managers (with its own connection) or fix the name.', $entityManager, implode('", "', $this->hostEntityManagerNames($container))));
+        }
+
         // 1.23.0: doctrine.entity_manager maps the entities on that manager only (rule 6: the bundle's own manager;
         // EntityManagerOptionPass removes them from the others). The host's default manager stays the default.
         $container->prependExtensionConfig('doctrine', ['orm' => [
             'default_entity_manager' => $this->hostDefaultEntityManager($container),
             'entity_managers'        => [$entityManager => ['mappings' => $mappings]],
         ]]);
+    }
+
+    /**
+     * Whether the host's own `doctrine` configuration (read before the bundle prepends its manager) declares the
+     * entity manager under `orm.entity_managers`.
+     */
+    private function hostDeclaresEntityManager(ContainerBuilder $container, string $name): bool
+    {
+        return in_array($name, $this->hostEntityManagerNames($container), true);
+    }
+
+    /**
+     * @return list<string> the entity manager names the host declares under `doctrine.orm.entity_managers` (or `default` for the shorthand)
+     */
+    private function hostEntityManagerNames(ContainerBuilder $container): array
+    {
+        $names = [];
+        foreach ($container->getExtensionConfig('doctrine') as $config) {
+            if (!is_array($config['orm'] ?? null)) {
+                continue;
+            }
+            // The shorthand (no entity_managers key) configures the "default" manager.
+            $managers = is_array($config['orm']['entity_managers'] ?? null) ? $config['orm']['entity_managers'] : ['default' => []];
+            foreach (array_keys($managers) as $name) {
+                $names[] = (string) $name;
+            }
+        }
+
+        return array_values(array_unique($names));
     }
 
     /**
