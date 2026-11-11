@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.23.1](#to-1231)
 - [To 1.23.0](#to-1230)
 - [To 1.22.0](#to-1220)
 - [To 1.22.0](#to-1220-1)
@@ -87,6 +88,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.23.1
+
+From **1.23.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 Next patch: 1.23.1. No configuration change.
 
