@@ -21,6 +21,7 @@
   - [W-03 — Failed `flush()` on the read path is swallowed and leaves a closed EntityManager (Medium, scenario B only)](#w-03--failed-flush-on-the-read-path-is-swallowed-and-leaves-a-closed-entitymanager-medium-scenario-b-only)
   - [W-04 — `SeoRuntime` is cleared on `kernel.terminate`, not by the resetter (Low)](#w-04--seoruntime-is-cleared-on-kernelterminate-not-by-the-resetter-low)
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
+- [Igor findings triage (2026-11-11)](#igor-findings-triage-2026-11-11)
 - [Re-audit triggers](#re-audit-triggers)
 
 ## Execution model assumed
@@ -125,6 +126,15 @@ Info / observations:
 - Create the `SeoSiteSettings` singleton row during deployment (migration or fixture) so the page-render path never writes.
 - Custom `SeoDefaultsProviderInterface`, `PageHeadDefaultsProviderInterface`, `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface`, `SitemapUrlProviderInterface`, `SiteIndexabilityProviderInterface` and `SeoAuditSubjectProviderInterface` services must stay stateless or implement `ResetInterface`. Do not memoize per-page data in them.
 - Always set runtime overrides through `SeoRuntime` / `PageHeadContext` inside the request; never keep a `PageHead` or override array in your own service properties.
+
+## Igor findings triage (2026-11-11)
+
+`composer igor` (igor-php 0.10.1) reported 1 warning on `main` (2 properties of `SeoRuntime`); false positives. Igor now
+runs in CI (`igor` job) and reports 0 KO / 0 WARN.
+
+| Finding | Verdict | Resolution |
+|---------|---------|------------|
+| `SeoRuntime::$overrides` / `$variables` "mutated but not reset in reset()" | False positive | `reset()` already emptied both through `clear()`, and `SeoRuntimeClearSubscriber` clears them at the start of every main request and on `kernel.terminate` (scenario B); igor does not follow the call. `reset()` now assigns both directly. |
 
 ## Re-audit triggers
 
