@@ -326,6 +326,116 @@ final class SeoKitExtensionTest extends TestCase
         self::assertArrayHasKey('NowoSeoKitBundle', $doctrine[0]['orm']['mappings']);
     }
 
+    public function testPrependMapsTheEntitiesOnTheConfiguredEntityManager(): void
+    {
+        $container = new ContainerBuilder();
+        $container->registerExtension(new class extends Extension {
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getAlias(): string
+            {
+                return 'doctrine';
+            }
+        });
+        $container->loadFromExtension('doctrine', ['orm' => ['entity_managers' => ['default' => [], 'seo' => []]]]);
+        $container->prependExtensionConfig('nowo_seo_kit', [
+            'persistence' => ['enabled' => true],
+            'doctrine'    => ['entity_manager' => 'seo'],
+        ]);
+
+        (new SeoKitExtension())->prepend($container);
+
+        $doctrine = $container->getExtensionConfig('doctrine');
+        self::assertArrayNotHasKey('mappings', $doctrine[0]['orm']);
+        self::assertArrayHasKey('NowoSeoKitBundle', $doctrine[0]['orm']['entity_managers']['seo']['mappings']);
+        self::assertSame('default', $doctrine[0]['orm']['default_entity_manager']);
+    }
+
+    /**
+     * Audit LD-SEO-L2: a mistyped name must fail the build instead of creating a new manager on the default connection.
+     *
+     * @param list<array<string, mixed>> $hostConfigs
+     */
+    #[DataProvider('undeclaredEntityManagers')]
+    public function testPrependRejectsAnEntityManagerTheHostDoesNotDeclare(array $hostConfigs): void
+    {
+        $container = new ContainerBuilder();
+        $container->registerExtension(new class extends Extension {
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getAlias(): string
+            {
+                return 'doctrine';
+            }
+        });
+        foreach ($hostConfigs as $config) {
+            $container->loadFromExtension('doctrine', $config);
+        }
+        $container->prependExtensionConfig('nowo_seo_kit', [
+            'persistence' => ['enabled' => true],
+            'doctrine'    => ['entity_manager' => 'soe'],
+        ]);
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('nowo_seo_kit.doctrine.entity_manager is "soe", but the host Doctrine configuration does not declare that entity manager');
+
+        (new SeoKitExtension())->prepend($container);
+    }
+
+    /**
+     * @return iterable<string, array{list<array<string, mixed>>}>
+     */
+    public static function undeclaredEntityManagers(): iterable
+    {
+        yield 'no host doctrine config' => [[]];
+        yield 'flex shorthand' => [[['dbal' => ['url' => 'sqlite:///:memory:']], ['orm' => ['auto_mapping' => true]]]];
+        yield 'typo of a declared manager' => [[['orm' => ['entity_managers' => ['default' => [], 'seo' => []]]]]];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $hostConfigs
+     */
+    #[DataProvider('hostDefaults')]
+    public function testPrependKeepsTheHostDefaultEntityManager(array $hostConfigs, string $expected): void
+    {
+        $container = new ContainerBuilder();
+        $container->registerExtension(new class extends Extension {
+            public function load(array $configs, ContainerBuilder $container): void
+            {
+            }
+
+            public function getAlias(): string
+            {
+                return 'doctrine';
+            }
+        });
+        foreach ($hostConfigs as $config) {
+            $container->loadFromExtension('doctrine', $config);
+        }
+        $container->prependExtensionConfig('nowo_seo_kit', [
+            'persistence' => ['enabled' => true],
+            'doctrine'    => ['entity_manager' => 'seo'],
+        ]);
+
+        (new SeoKitExtension())->prepend($container);
+
+        self::assertSame($expected, $container->getExtensionConfig('doctrine')[0]['orm']['default_entity_manager']);
+    }
+
+    /**
+     * @return iterable<string, array{list<array<string, mixed>>, string}>
+     */
+    public static function hostDefaults(): iterable
+    {
+        yield 'flex shorthand plus a chunk declaring the bundle manager' => [[['dbal' => ['url' => 'sqlite:///:memory:']], ['orm' => ['auto_mapping' => true]], ['orm' => ['entity_managers' => ['seo' => []]]]], 'default'];
+        yield 'first host manager' => [[['orm' => ['entity_managers' => ['app' => [], 'seo' => []]]]], 'app'];
+        yield 'explicit default' => [[['orm' => ['default_entity_manager' => 'main', 'entity_managers' => ['app' => [], 'seo' => []]]]], 'main'];
+    }
+
     public function testPrependIsNoopWithoutDoctrineOrPersistence(): void
     {
         $container = new ContainerBuilder();

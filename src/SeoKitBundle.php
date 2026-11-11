@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle;
 
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\CsrfProtectionPass;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\EntityManagerOptionPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\WebUiSecurityPass;
 use Nowo\SeoKitBundle\DependencyInjection\SeoKitExtension;
@@ -23,6 +24,8 @@ final class SeoKitBundle extends Bundle
         $container->addCompilerPass(new CsrfProtectionPass());
         $container->addCompilerPass(new WebUiSecurityPass());
         $container->addCompilerPass(new TwigPathsPass());
+        // 1.23.0 (audit LD-SEO-L1): the entities on doctrine.entity_manager only, never also on an auto-mapped manager.
+        $container->addCompilerPass(new EntityManagerOptionPass());
     }
 
     public function getContainerExtension(): ExtensionInterface

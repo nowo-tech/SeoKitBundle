@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+  - [To 1.23.0](#to-1230)
 - [To 1.22.0](#to-1220)
 - [To 1.22.0](#to-1220-1)
 - [To 1.21.0](#to-1210)
@@ -86,6 +87,20 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+### To 1.23.0
+
+From **1.22.0**: `composer update nowo-tech/seo-kit-bundle`. No configuration change is needed.
+
+- Optional: `nowo_seo_kit.doctrine.entity_manager: <name>` maps the SeoKit entities on a dedicated entity manager. The
+  host must declare it in its own `doctrine.orm.entity_managers`, with its own connection and schema. Otherwise the
+  build fails, also for a mistyped name: SeoKit never creates the manager for you.
+  - The entities are mapped there only, also when the default manager uses `auto_mapping`.
+  - SeoKit writes then never flush the host's manager.
+  - The host's default manager (its `default_entity_manager`, or `default` when unset) stays the default and the
+    autowired `EntityManagerInterface`.
+
+  Default `null`: the default manager, as before.
 
 ## To 1.22.0
 
