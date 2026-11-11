@@ -21,7 +21,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
@@ -265,10 +265,10 @@ final class WorkerBoundariesTest extends KernelTestCase
         return $index % 2 === 0 ? 'A' : 'B';
     }
 
-    private function dispatcher(): EventDispatcher
+    private function dispatcher(): EventDispatcherInterface
     {
         $dispatcher = self::getContainer()->get('event_dispatcher');
-        self::assertInstanceOf(EventDispatcher::class, $dispatcher);
+        self::assertInstanceOf(EventDispatcherInterface::class, $dispatcher);
 
         return $dispatcher;
     }
