@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Tests\Unit\Service;
 
+use LogicException;
+use Nowo\SeoKitBundle\Model\SitemapContext;
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
+use Nowo\SeoKitBundle\Service\SeoPathBuilderInterface;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
+use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
 use Nowo\SeoKitBundle\Service\SitemapGenerator;
 use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
+
+use function array_column;
 
 final class SitemapGeneratorTest extends TestCase
 {
@@ -268,5 +274,132 @@ final class SitemapGeneratorTest extends TestCase
         $this->assertStringContainsString('href="https://example.com/es&quot; onload=&quot;x"', $xml);
         $this->assertStringNotContainsString('onload="x"', $xml);
         $this->assertNotFalse(simplexml_load_string($xml));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function providerOnlyConfig(): array
+    {
+        return [
+            'locales' => ['en', 'es'],
+            'sitemap' => ['enabled' => true, 'include_static_pages' => false, 'include_configured_slugs' => false],
+            'pages'   => [],
+            'slugs'   => [],
+        ];
+    }
+
+    /** Since 1.24.0: a provider of the framework-free port gets the context, from a request or without one. */
+    public function testEntryProviderReceivesTheContext(): void
+    {
+        $provider = new class implements SitemapEntryProviderInterface {
+            /** @var list<SitemapContext> */
+            public array $contexts = [];
+
+            public function getEntriesFor(SitemapContext $context): array
+            {
+                $this->contexts[] = $context;
+
+                return [['loc' => $context->baseUrl() . '/' . ($context->locale ?? 'x') . '/page', 'priority' => '0.7']];
+            }
+        };
+        $config    = $this->providerOnlyConfig();
+        $generator = new SitemapGenerator($config, new SeoPathBuilder($config), [$provider]);
+
+        $request = Request::create('https://shop.example.test/');
+        $request->setLocale('es');
+        $fromHttp = $generator->entries($request);
+        $fromCli  = $generator->entriesFor(new SitemapContext('https://cli.example.test', 'en'));
+
+        self::assertSame('https://shop.example.test/es/page', $fromHttp[0]['loc']);
+        self::assertSame('0.7', $fromHttp[0]['priority']);
+        self::assertSame('https://cli.example.test/en/page', $fromCli[0]['loc']);
+        self::assertCount(2, $provider->contexts);
+    }
+
+    /** A provider implementing both interfaces is tagged twice: it is called once, through the new port. */
+    public function testProviderImplementingBothPortsIsCalledOnceThroughTheNewOne(): void
+    {
+        $provider = new class implements SitemapEntryProviderInterface, SitemapUrlProviderInterface {
+            public int $newCalls = 0;
+
+            public function getEntriesFor(SitemapContext $context): array
+            {
+                ++$this->newCalls;
+
+                return [['loc' => 'https://example.test/new']];
+            }
+
+            public function getEntries(Request $request): array
+            {
+                throw new LogicException('The deprecated method must not be called.');
+            }
+        };
+        $config    = $this->providerOnlyConfig();
+        $generator = new SitemapGenerator($config, new SeoPathBuilder($config), [$provider, $provider]);
+
+        $entries = $generator->entriesFor(new SitemapContext('https://example.test'));
+
+        self::assertSame(['https://example.test/new'], array_column($entries, 'loc'));
+        self::assertSame(1, $provider->newCalls);
+    }
+
+    /** Deprecated providers keep working without HTTP: they get a synthetic request built from the context. */
+    public function testDeprecatedProviderGetsASyntheticRequestWithoutHttp(): void
+    {
+        $provider = new class implements SitemapUrlProviderInterface {
+            public function getEntries(Request $request): array
+            {
+                return [['loc' => $request->getSchemeAndHttpHost() . '/' . $request->getLocale() . '/legacy']];
+            }
+        };
+        $config    = $this->providerOnlyConfig();
+        $generator = new SitemapGenerator($config, new SeoPathBuilder($config), [$provider]);
+
+        $withLocale    = $generator->entriesFor(new SitemapContext('https://legacy.example.test', 'es'));
+        $withoutLocale = $generator->entriesFor(new SitemapContext('https://legacy.example.test'));
+
+        self::assertSame('https://legacy.example.test/es/legacy', $withLocale[0]['loc']);
+        self::assertSame('https://legacy.example.test/en/legacy', $withoutLocale[0]['loc']);
+    }
+
+    /** A host path builder that implements only the deprecated port keeps being used (request or synthetic one). */
+    public function testDeprecatedOnlyPathBuilderIsStillUsed(): void
+    {
+        $config = [
+            'locales' => ['en'],
+            'sitemap' => ['enabled' => true, 'include_configured_slugs' => false],
+            'pages'   => ['app_home' => ['path' => '/home']],
+        ];
+        $inner = new SeoPathBuilder($config);
+        $paths = new class($inner) implements SeoPathBuilderInterface {
+            public function __construct(private readonly SeoPathBuilder $inner)
+            {
+            }
+
+            public function absoluteUrl(Request $request, string $path): string
+            {
+                return 'legacy:' . $request->getSchemeAndHttpHost() . $path;
+            }
+
+            public function pagePath(string $route, string $locale, ?string $fallbackPath = null): ?string
+            {
+                return $this->inner->pagePath($route, $locale, $fallbackPath);
+            }
+
+            public function resolveCanonicalSlug(string $route, string $slug): string
+            {
+                return $this->inner->resolveCanonicalSlug($route, $slug);
+            }
+
+            public function slugPath(string $route, string $locale, string $slug): ?string
+            {
+                return $this->inner->slugPath($route, $locale, $slug);
+            }
+        };
+        $generator = new SitemapGenerator($config, $paths);
+
+        self::assertSame('legacy:https://a.example.test/home', $generator->entries(Request::create('https://a.example.test/'))[0]['loc']);
+        self::assertSame('legacy:https://b.example.test/home', $generator->entriesFor(new SitemapContext('https://b.example.test'))[0]['loc']);
     }
 }

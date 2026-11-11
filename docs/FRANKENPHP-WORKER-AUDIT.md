@@ -69,9 +69,10 @@ Worker demo: `demo/symfony8/docker/frankenphp/Caddyfile` has the `worker` line c
 | `Service\SeoMetadataResolver` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\PageHeadResolver`, `HreflangSetBuilder`, `AbsoluteUrlBuilder`, `PageHeadRuntimeBridge` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\SeoPathBuilder`, `SeoTemplateRenderer`, `OriginUrlGuard`, `SeoPencilCatalogFactory`, `StructuredData\SiteStructuredDataFactory` | yes | none | ✅ | ✅ |
-| `Service\SitemapGenerator`, `RobotsTxtGenerator` | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\SitemapGenerator`, `RobotsTxtGenerator` | yes | none (`final readonly`; the provider de-duplication set is a local variable per call) | ✅ | ✅ |
 | `Service\Persistence\DoctrineSeoDefaultsProvider` | yes | none (`final readonly`); reads `SeoSiteConfigProvider` | ✅ | ✅ |
-| `Service\SeoSurfaceManager` | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\SeoSurfaceManager` (also `SeoSurfaceStoreInterface` since 1.24.0) | yes | none (`final readonly`) | ✅ | ✅ |
+| `Service\SitemapContextFactory` (1.24.0, static), `Model\SitemapContext` / `Model\SeoSurfaceData` (1.24.0 value objects, built per call) | n/a | none (`readonly` VOs) | ✅ | ✅ |
 | `Service\SeoChangeNotifier` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\Audit\SeoAuditor`, `SeoAuditRules` | yes | none | ✅ | ✅ |
 | `Repository\SeoSiteSettingsRepository`, `SeoSurfaceRepository` | yes | none (only `readonly` fallback strings and the registry) | ✅ | ✅ |
@@ -137,7 +138,7 @@ Info / observations:
 - Call `SeoRuntime::set()` / `PageHeadContext::describe()` from controllers or from `kernel.request` listeners with priority < 4096.
 - Configure `nowo_seo_kit.base_url` so URLs never depend on the `Host` header.
 - Create the `SeoSiteSettings` singleton row during deployment (migration or fixture) so the page-render path never writes.
-- Custom `SeoDefaultsProviderInterface`, `PageHeadDefaultsProviderInterface`, `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface`, `SitemapUrlProviderInterface`, `SiteIndexabilityProviderInterface` and `SeoAuditSubjectProviderInterface` services must stay stateless or implement `ResetInterface`. Do not memoize per-page data in them.
+- Custom `SeoDefaultsProviderInterface`, `PageHeadDefaultsProviderInterface`, `PageHeadSiteGraphProviderInterface`, `PageHeadTitleComposerInterface`, `SitemapEntryProviderInterface` (and the deprecated `SitemapUrlProviderInterface`), `SiteIndexabilityProviderInterface` and `SeoAuditSubjectProviderInterface` services must stay stateless or implement `ResetInterface`. Do not memoize per-page data in them.
 - Always set runtime overrides through `SeoRuntime` / `PageHeadContext` inside the request; never keep a `PageHead` or override array in your own service properties.
 
 ## Boundary events

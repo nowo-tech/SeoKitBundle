@@ -46,7 +46,10 @@ use Nowo\SeoKitBundle\Service\SeoDefaultsProviderInterface;
 use Nowo\SeoKitBundle\Service\SeoPencilCatalogFactory;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface;
+use Nowo\SeoKitBundle\Service\SeoSurfaceStoreInterface;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
+use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
+use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
@@ -113,6 +116,12 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             ->addTag('nowo_seo_kit.page_head_site_graph_provider');
         $container->registerForAutoconfiguration(PageHeadTitleComposerInterface::class)
             ->addTag('nowo_seo_kit.page_head_title_composer');
+        // #[AutoconfigureTag] on a bundle interface is only read when the host loads that interface as a resource:
+        // register the sitemap ports explicitly so an autoconfigured host provider is always tagged.
+        $container->registerForAutoconfiguration(SitemapEntryProviderInterface::class)
+            ->addTag('nowo_seo_kit.sitemap_url_provider');
+        $container->registerForAutoconfiguration(SitemapUrlProviderInterface::class)
+            ->addTag('nowo_seo_kit.sitemap_url_provider');
 
         $baseUrl = $config['base_url'] ?? null;
         $origin  = is_string($baseUrl) && $baseUrl !== '' ? rtrim($baseUrl, '/') : null;
@@ -161,6 +170,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             $manager->setAutoconfigured(true);
             $container->setDefinition(SeoSurfaceManager::class, $manager);
             $container->setAlias(SeoSurfaceManagerInterface::class, SeoSurfaceManager::class);
+            // Since 1.24.0: entity-free twin of SeoSurfaceManagerInterface (REQ-ARCH-001 rules 1 and 3).
+            $container->setAlias(SeoSurfaceStoreInterface::class, SeoSurfaceManager::class);
         }
 
         if (($config['persistence']['register_audit_command'] ?? true) === true) {

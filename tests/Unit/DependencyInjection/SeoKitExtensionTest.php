@@ -35,6 +35,9 @@ use Nowo\SeoKitBundle\Service\SeoChangeNotifier;
 use Nowo\SeoKitBundle\Service\SeoMetadataResolver;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManager;
 use Nowo\SeoKitBundle\Service\SeoSurfaceManagerInterface;
+use Nowo\SeoKitBundle\Service\SeoSurfaceStoreInterface;
+use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
+use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
@@ -70,6 +73,13 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(SeoMetadataResolver::class));
         self::assertTrue($container->hasDefinition(SeoAuditCommand::class));
         self::assertFalse($container->hasDefinition(SeoSiteSettingsRepository::class));
+
+        // Since 1.24.0: both sitemap ports are autoconfigured explicitly (host providers outside the host's resources).
+        $instanceof = $container->getAutoconfiguredInstanceof();
+        foreach ([SitemapEntryProviderInterface::class, SitemapUrlProviderInterface::class] as $port) {
+            self::assertArrayHasKey($port, $instanceof);
+            self::assertArrayHasKey('nowo_seo_kit.sitemap_url_provider', $instanceof[$port]->getTags());
+        }
     }
 
     public function testLoadRegistersPersistenceWhenEnabled(): void
@@ -94,6 +104,7 @@ final class SeoKitExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(DoctrineSeoDefaultsProvider::class));
         self::assertTrue($container->hasDefinition(SeoSurfaceManager::class));
         self::assertSame(SeoSurfaceManager::class, (string) $container->getAlias(SeoSurfaceManagerInterface::class));
+        self::assertSame(SeoSurfaceManager::class, (string) $container->getAlias(SeoSurfaceStoreInterface::class));
         self::assertTrue($container->hasDefinition(SeoChangeNotifier::class));
         self::assertFalse($container->hasDefinition(SeoAuditCommand::class));
         self::assertSame(

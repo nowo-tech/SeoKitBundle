@@ -89,6 +89,38 @@
 
 ## Unreleased
 
+Next minor: 1.24.0. From **1.23.x**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
+
+No configuration change and nothing to change for a standard host. The request- and entity-typed ports still work and
+are deprecated; they are removed in 2.0. Move to the framework-free twins when convenient:
+
+| Deprecated (removed in 2.0) | Replacement (since 1.24.0) |
+|---|---|
+| `SitemapUrlProviderInterface::getEntries(Request $request)` | `SitemapEntryProviderInterface::getEntriesFor(SitemapContext $context)` |
+| `SeoPathBuilderInterface::absoluteUrl(Request $request, string $path)` | `SeoUrlBuilderInterface::absoluteUrlFor(SitemapContext $context, string $path)` |
+| `SeoSurfaceManagerInterface::find()` / `getOrCreate()` (return `SeoSurface`) | `SeoSurfaceStoreInterface::findData()` (returns `?SeoSurfaceData`) |
+| `SeoSurfaceManagerInterface::saveOrClear(SeoSurface)` | `SeoSurfaceStoreInterface::save(SeoSurfaceData)` / `clear($key, $locale)` |
+| `SeoSurfaceManagerInterface::isEmpty(SeoSurface)` | `SeoSurfaceData::isEmpty()` |
+
+- **Sitemap providers.** Replace `implements SitemapUrlProviderInterface` and `getEntries(Request $request)` with
+  `implements SitemapEntryProviderInterface` and `getEntriesFor(SitemapContext $context)`. Use `$context->origin`
+  (was `$request->getSchemeAndHttpHost()`), `$context->locale` (was `$request->getLocale()`) and `$context->basePath`
+  (was `$request->getBasePath()`). The tag is the same. During the move a class may implement both: only
+  `getEntriesFor()` is called.
+- **URL building decorators.** Decorate the service `Nowo\SeoKitBundle\Service\SeoPathBuilder` (both interfaces alias
+  it) and implement both `SeoUrlBuilderInterface` and `SeoPathBuilderInterface` until 2.0: the sitemap uses
+  `absoluteUrlFor()`, the head and robots.txt still call `absoluteUrl()`.
+- **Surface overrides.** `save(SeoSurfaceData)` replaces every override field (a null field clears it) and never writes
+  an empty row, unlike `getOrCreate()`. Build the data with named arguments:
+  `new SeoSurfaceData('page:pricing', 'en', metaTitle: 'Pricing')`.
+- **Outside HTTP.** `SitemapGenerator::entriesFor(new SitemapContext('https://www.example.com', 'en'))` builds the
+  sitemap in a console command or a Messenger handler.
+- Hosts that construct `SitemapGenerator` by hand need no change: the constructor is unchanged.
+
 ## To 1.23.1
 
 From **1.23.0**:

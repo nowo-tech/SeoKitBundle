@@ -47,6 +47,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Next minor: 1.24.0. Framework-free twin ports for DDD / hexagonal hosts (REQ-ARCH-001 rules 1 and 3); the standard
+host needs no change. See [UPGRADING](UPGRADING.md#unreleased).
+
+### Added
+
+- `Model\SitemapContext`: readonly value object with the site origin, the locale and the base path, built from the
+  request by `Service\SitemapContextFactory::fromRequest()` or by hand outside HTTP.
+- `Service\SitemapEntryProviderInterface::getEntriesFor(SitemapContext)`: framework-free sitemap provider port,
+  autoconfigured with the same `nowo_seo_kit.sitemap_url_provider` tag. A provider that implements both interfaces is
+  called once, through the new port.
+- `Service\SeoUrlBuilderInterface` (`absoluteUrlFor(SitemapContext, string)`, `pagePath`, `resolveCanonicalSlug`,
+  `slugPath`): framework-free twin of `SeoPathBuilderInterface`, implemented by `SeoPathBuilder` and aliased to it.
+  `base_url` still wins over the context origin.
+- `SitemapGenerator::entriesFor(SitemapContext)`: sitemap entries without an HTTP request (console, Messenger,
+  application services). Deprecated providers get a synthetic request built from the context.
+- `Model\SeoSurfaceData` (readonly DTO, normalised like the entity, `isEmpty()`) and
+  `Service\SeoSurfaceStoreInterface` (`findData()`, `save()`, `clear()`), implemented by `SeoSurfaceManager` and
+  aliased when `persistence.enabled`. `save()` never writes an all-empty row (it removes the stored one); `save()` and
+  `clear()` dispatch `SeoSurfaceChangedEvent` after the write, like `saveOrClear()`.
+
+### Fixed
+
+- Host sitemap providers are now always tagged: `SitemapUrlProviderInterface` relied on `#[AutoconfigureTag]` on the
+  interface only, which Symfony reads only when the host loads that interface from its own resources, so an
+  autoconfigured host provider could be left out of `/sitemap.xml` unless the host tagged it by hand. Both sitemap
+  ports are now registered with `registerForAutoconfiguration()`; a provider tagged twice is called once.
+
+### Deprecated
+
+- `SitemapUrlProviderInterface` (`getEntries(Request)`): implement `SitemapEntryProviderInterface`. Removed in 2.0.
+- `SeoPathBuilderInterface` (`absoluteUrl(Request, string)`): use `SeoUrlBuilderInterface`. Removed in 2.0.
+- `SeoSurfaceManagerInterface` (entity-typed `find()`, `getOrCreate()`, `saveOrClear()`, `isEmpty()`): use
+  `SeoSurfaceStoreInterface` with `SeoSurfaceData`. Removed in 2.0.
+
+### Changed
+
+- `SitemapGenerator` builds URLs through `SeoUrlBuilderInterface::absoluteUrlFor()` when the injected path builder
+  implements it (the bundle's `SeoPathBuilder` does); a host builder that implements only `SeoPathBuilderInterface` is
+  still called through `absoluteUrl()`. Output is unchanged.
+- Docs: `docs/USAGE.md` splits the DDD section into "Standard host" and "DDD host", with the port / deprecated-form
+  table.
+
+### Tests
+
+- `tests/Integration/Ddd/DddHostKernelTest.php`: DDD host kernel (domain object mapped in XML on the host's own
+  manager, SeoKit entities on a dedicated manager, a sitemap provider that implements only the context port, no
+  `base_url`): `/sitemap.xml` through `http_kernel`, `entriesFor()` without HTTP, and a `SeoSurfaceStoreInterface`
+  round trip that leaves a pending host insert unflushed (rule 6).
+- Unit tests for `SitemapContext`, `SitemapContextFactory`, `SeoSurfaceData`, `absoluteUrlFor()`, the generator with
+  new, deprecated and dual providers and with a deprecated-only path builder, and the store methods.
+
 ## [1.23.1] - 2026-11-11
 
 Next patch: 1.23.1.

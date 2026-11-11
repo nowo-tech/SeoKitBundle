@@ -54,7 +54,7 @@ Later layers override earlier ones:
 | --- | --- |
 | `nowo_seo_kit.defaults_provider` (`SeoDefaultsProviderInterface`) | Merge DB-driven site defaults (name, verification, OG image, organization JSON-LD) |
 | `nowo_seo_kit.indexability_provider` (`SiteIndexabilityProviderInterface`) | Site-wide indexability master switch |
-| `nowo_seo_kit.sitemap_url_provider` (`SitemapUrlProviderInterface`) | CMS / blog absolute URLs (optional `xhtml:link` alternates) |
+| `nowo_seo_kit.sitemap_url_provider` (`SitemapEntryProviderInterface` since 1.24.0; deprecated `SitemapUrlProviderInterface`) | CMS / blog absolute URLs (optional `xhtml:link` alternates) |
 | `nowo_seo_kit.audit_subject_provider` (`SeoAuditSubjectProviderInterface`) | Subjects for `nowo:seo:audit` |
 | `nowo_seo_kit.geo_robots_groups_provider` (`GeoRobotsGroupsProviderInterface`) | Extra robots.txt User-agent groups (omitted when not indexable). [`GenerativeSeoKitBundle`](https://github.com/nowo-tech/GenerativeSeoKitBundle) implements this tag. |
 

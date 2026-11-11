@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Service;
 
 use Nowo\SeoKitBundle\Enum\SitemapChangeFreq;
+use Nowo\SeoKitBundle\Model\SitemapContext;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\Request;
 
 use function is_array;
 use function is_string;
+use function spl_object_id;
 use function sprintf;
 use function str_contains;
 use function strtolower;
@@ -24,7 +26,9 @@ final readonly class SitemapGenerator
 {
     /**
      * @param array<string, mixed> $config
-     * @param iterable<SitemapUrlProviderInterface> $urlProviders
+     * @param SeoPathBuilderInterface $paths Since 1.24.0 its {@see SeoUrlBuilderInterface} side is used when it
+     *                                       implements it (the bundle's {@see SeoPathBuilder} does)
+     * @param iterable<SitemapEntryProviderInterface|SitemapUrlProviderInterface> $urlProviders
      * @param iterable<SiteIndexabilityProviderInterface> $indexabilityProviders
      */
     public function __construct(
@@ -49,9 +53,31 @@ final readonly class SitemapGenerator
     }
 
     /**
+     * Entries for an HTTP request (the sitemap controller).
+     *
      * @return list<array{loc: string, changefreq: string, priority: string, lastmod?: string, alternates?: list<array{hreflang: string, href: string}>}>
      */
     public function entries(Request $request): array
+    {
+        return $this->build(SitemapContextFactory::fromRequest($request), $request);
+    }
+
+    /**
+     * Entries without an HTTP request (since 1.24.0): console commands, Messenger handlers, DDD application services.
+     *
+     * @return list<array{loc: string, changefreq: string, priority: string, lastmod?: string, alternates?: list<array{hreflang: string, href: string}>}>
+     */
+    public function entriesFor(SitemapContext $context): array
+    {
+        return $this->build($context, null);
+    }
+
+    /**
+     * @param Request|null $request Only for the deprecated request-typed ports; rebuilt from the context when null
+     *
+     * @return list<array{loc: string, changefreq: string, priority: string, lastmod?: string, alternates?: list<array{hreflang: string, href: string}>}>
+     */
+    private function build(SitemapContext $context, ?Request $request): array
     {
         if (!$this->isIndexable()) {
             return [];
@@ -79,7 +105,7 @@ final readonly class SitemapGenerator
                         continue;
                     }
                     $entries[] = [
-                        'loc'        => $this->paths->absoluteUrl($request, $path),
+                        'loc'        => $this->absoluteUrl($context, $request, $path),
                         'changefreq' => (string) ($page['sitemap_changefreq'] ?? SitemapChangeFreq::Weekly->value),
                         'priority'   => number_format((float) ($page['sitemap_priority'] ?? 0.8), 1, '.', ''),
                     ];
@@ -106,7 +132,7 @@ final readonly class SitemapGenerator
                             continue;
                         }
                         $entries[] = [
-                            'loc'        => $this->paths->absoluteUrl($request, $path),
+                            'loc'        => $this->absoluteUrl($context, $request, $path),
                             'changefreq' => (string) ($slugRoute['sitemap_changefreq'] ?? SitemapChangeFreq::Weekly->value),
                             'priority'   => number_format((float) ($slugRoute['sitemap_priority'] ?? 0.6), 1, '.', ''),
                         ];
@@ -115,9 +141,18 @@ final readonly class SitemapGenerator
             }
         }
 
+        $seen = [];
         foreach ($this->urlProviders as $provider) {
+            // A provider that implements both interfaces is autoconfigured with the tag twice: call it once.
+            $providerId = spl_object_id($provider);
+            if (isset($seen[$providerId])) {
+                continue;
+            }
+            $seen[$providerId] = true;
             /** @var list<array<string, mixed>> $providerEntries */
-            $providerEntries = $provider->getEntries($request);
+            $providerEntries = $provider instanceof SitemapEntryProviderInterface
+                ? $provider->getEntriesFor($context)
+                : $provider->getEntries($request ?? $this->requestFor($context));
             foreach ($providerEntries as $entry) {
                 if (!isset($entry['loc']) || !is_string($entry['loc']) || $entry['loc'] === '') {
                     continue;
@@ -153,6 +188,29 @@ final readonly class SitemapGenerator
         }
 
         return $entries;
+    }
+
+    private function absoluteUrl(SitemapContext $context, ?Request $request, string $path): string
+    {
+        if ($this->paths instanceof SeoUrlBuilderInterface) {
+            return $this->paths->absoluteUrlFor($context, $path);
+        }
+
+        // A host builder that implements only the deprecated request-typed port (removed in 2.0).
+        return $this->paths->absoluteUrl($request ?? $this->requestFor($context), $path);
+    }
+
+    /**
+     * Synthetic request for the deprecated request-typed ports when entries are built without HTTP (removed in 2.0).
+     */
+    private function requestFor(SitemapContext $context): Request
+    {
+        $request = Request::create($context->baseUrl() . '/');
+        if ($context->locale !== null) {
+            $request->setLocale($context->locale);
+        }
+
+        return $request;
     }
 
     /**

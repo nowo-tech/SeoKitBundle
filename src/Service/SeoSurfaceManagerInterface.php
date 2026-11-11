@@ -6,10 +6,14 @@ namespace Nowo\SeoKitBundle\Service;
 
 use Nowo\SeoKitBundle\Entity\SeoSurface;
 use Nowo\SeoKitBundle\Event\SeoSurfaceChangedEvent;
+use Nowo\SeoKitBundle\Model\SeoSurfaceData;
 
 /**
  * Load / save / clear surface overrides (since 1.22 as an interface; {@see SeoSurfaceManager} is the implementation,
  * registered with `persistence.enabled`). Type-hint this interface in host code instead of the final class.
+ *
+ * @deprecated since 1.24.0, use {@see SeoSurfaceStoreInterface} with {@see SeoSurfaceData}
+ *             (no Doctrine entity in the port, REQ-ARCH-001 rules 1 and 3); removed in 2.0
  */
 interface SeoSurfaceManagerInterface
 {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle\Service;
 
+use Nowo\SeoKitBundle\Model\SitemapContext;
 use Symfony\Component\HttpFoundation\Request;
 
 use function is_array;
@@ -11,8 +12,12 @@ use function is_string;
 
 /**
  * Builds absolute/relative SEO paths and locale alternates.
+ *
+ * Implements the framework-free {@see SeoUrlBuilderInterface} (since 1.24.0) and, until 2.0, the deprecated
+ * request-typed {@see SeoPathBuilderInterface}. To decorate URL building, decorate this service id (both interfaces
+ * alias it) and implement both interfaces until 2.0.
  */
-final readonly class SeoPathBuilder implements SeoPathBuilderInterface
+final readonly class SeoPathBuilder implements SeoPathBuilderInterface, SeoUrlBuilderInterface
 {
     /**
      * @param array<string, mixed> $config Full processed nowo_seo_kit config
@@ -22,7 +27,23 @@ final readonly class SeoPathBuilder implements SeoPathBuilderInterface
     ) {
     }
 
+    /**
+     * @deprecated since 1.24.0, use {@see self::absoluteUrlFor()} with a {@see SitemapContext}; removed in 2.0
+     */
     public function absoluteUrl(Request $request, string $path): string
+    {
+        return $this->absolute($path, static fn (): string => $request->getSchemeAndHttpHost());
+    }
+
+    public function absoluteUrlFor(SitemapContext $context, string $path): string
+    {
+        return $this->absolute($path, static fn (): string => $context->origin);
+    }
+
+    /**
+     * @param callable(): string $origin Only called when the path is relative and no base_url is configured
+     */
+    private function absolute(string $path, callable $origin): string
     {
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return $path;
@@ -33,7 +54,7 @@ final readonly class SeoPathBuilder implements SeoPathBuilderInterface
             return rtrim($base, '/') . '/' . ltrim($path, '/');
         }
 
-        return $request->getSchemeAndHttpHost() . '/' . ltrim($path, '/');
+        return $origin() . '/' . ltrim($path, '/');
     }
 
     /**
