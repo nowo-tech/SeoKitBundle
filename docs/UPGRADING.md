@@ -3,7 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
-  - [To 1.23.0](#to-1230)
+- [To 1.23.0](#to-1230)
 - [To 1.22.0](#to-1220)
 - [To 1.22.0](#to-1220-1)
 - [To 1.21.0](#to-1210)
@@ -88,7 +88,7 @@
 
 ## Unreleased
 
-### To 1.23.0
+## To 1.23.0
 
 From **1.22.0**: `composer update nowo-tech/seo-kit-bundle`. No configuration change is needed.
 
