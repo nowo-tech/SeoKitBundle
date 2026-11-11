@@ -65,7 +65,7 @@ Worker demo: `demo/symfony8/docker/frankenphp/Caddyfile` has the `worker` line c
 | `Service\PageHeadContext` (only when `base_url` is set) | yes | `$input`, `$resolved`; `kernel.reset` + cleared at every boundary | ✅ | ✅ |
 | `Service\Persistence\SeoSiteConfigProvider` (persistence enabled) | yes | `$config` (request memo); `kernel.reset` + cleared at every boundary; cross-worker freshness via `cache.app` | ✅ | ✅ |
 | `Service\SeoRuntime` | yes (`shared: true`) | `$overrides`, `$variables`; `ResetInterface` + cleared at every boundary | ✅ | ✅ |
-| `EventSubscriber\SeoRuntimeClearSubscriber` (see [Boundary events](#boundary-events)) | yes | none (`final readonly`; iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references) | ✅ | ✅ |
+| `EventSubscriber\SeoRuntimeClearSubscriber` (see [Boundary events](#boundary-events)) | yes | console nesting depth (bounded) and in-flight message flag, maintained at the boundaries; iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references | ✅ | ✅ |
 | `Service\SeoMetadataResolver` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\PageHeadResolver`, `HreflangSetBuilder`, `AbsoluteUrlBuilder`, `PageHeadRuntimeBridge` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\SeoPathBuilder`, `SeoTemplateRenderer`, `OriginUrlGuard`, `SeoPencilCatalogFactory`, `StructuredData\SiteStructuredDataFactory` | yes | none | ✅ | ✅ |
@@ -148,8 +148,11 @@ Info / observations:
 | HTTP end | `kernel.terminate` | 0 | same |
 | Messenger message start | `Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent` | 4096 | same |
 | Messenger message end | `WorkerMessageHandledEvent`, `WorkerMessageFailedEvent` | -4096 | same |
-| Console command start / end | `console.command` / `console.terminate` | 4096 / -4096 | same |
+| Console command start / end | `console.command` / `console.terminate` | 4096 / -4096 | same, only for the outermost command (depth 0→1 / 1→0) and only while no Messenger message is in flight |
+| Messenger worker stopped | `WorkerStoppedEvent` | -4096 | clears the in-flight flag only |
 | Services resetter (when the host runs it) | `kernel.reset` | — | same (kept, not relied on) |
+
+A command run in-process from another command or from a message handler (`Application::doRun()`) fires `console.command` / `console.terminate` too; the subscriber counts the nesting depth and keeps an in-flight message flag (set on received, unset on handled / failed / worker stopped), so such a nested run never clears the outer unit's overrides and page head (audit MI-S-L2; same pattern as BeaconBundle 1.24.0). Tests: `WorkerBoundariesTest::testNestedCommandKeepsTheOuterCommandsState`, `testCommandRunFromAMessageHandlerKeepsTheHandlersState`.
 
 The services reach the subscriber through `$resettables`, an iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references (`'@!…'` in `services.yaml`): a boundary only clears what the unit of work built and never builds the Doctrine-backed provider itself.
 

@@ -28,6 +28,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
+use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 
 final class SeoRuntimeClearSubscriberTest extends TestCase
 {
@@ -37,11 +38,12 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
             [
                 KernelEvents::REQUEST             => ['onRequest', 4096],
                 KernelEvents::TERMINATE           => 'onTerminate',
-                WorkerMessageReceivedEvent::class => ['clearState', 4096],
-                WorkerMessageHandledEvent::class  => ['clearState', -4096],
-                WorkerMessageFailedEvent::class   => ['clearState', -4096],
-                'console.command'                 => ['clearState', 4096],
-                'console.terminate'               => ['clearState', -4096],
+                WorkerMessageReceivedEvent::class => ['onMessageReceived', 4096],
+                WorkerMessageHandledEvent::class  => ['onMessageFinished', -4096],
+                WorkerMessageFailedEvent::class   => ['onMessageFinished', -4096],
+                WorkerStoppedEvent::class         => ['onWorkerStopped', -4096],
+                'console.command'                 => ['onConsoleCommand', 4096],
+                'console.terminate'               => ['onConsoleTerminate', -4096],
             ],
             SeoRuntimeClearSubscriber::getSubscribedEvents(),
         );

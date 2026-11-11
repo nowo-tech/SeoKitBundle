@@ -6,6 +6,7 @@ namespace Nowo\SeoKitBundle\Tests\Integration\Worker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use Nowo\SeoKitBundle\Model\PageHeadInput;
 use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Service\PageHeadContext;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
@@ -174,6 +175,100 @@ final class WorkerBoundariesTest extends KernelTestCase
         }
 
         $this->assertNoLeakAndFlatMemory('console command runs');
+    }
+
+    /**
+     * MI-S-L2: a command run in-process from another command (Application::doRun()) fires console.command /
+     * console.terminate, but must not clear the overrides and page head of the outer command; the outermost command
+     * still starts and ends clean.
+     */
+    public function testNestedCommandKeepsTheOuterCommandsState(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $application          = $this->application();
+
+        $seenAfterInner = [];
+        $inner          = (new Command('app:inner'))->setCode(static fn (): int => Command::SUCCESS);
+        $outer          = (new Command('app:outer'))->setCode(static function (InputInterface $input, OutputInterface $output) use ($application, $runtime, $pageHead, &$seenAfterInner): int {
+            $runtime->set(['title' => 'Outer command mail']);
+            $pageHead->describe(new PageHeadInput(path: '/outer', locale: 'en', templateTitle: 'Outer'));
+            $application->doRun(new ArrayInput(['command' => 'app:inner']), $output);
+            $application->doRun(new ArrayInput(['command' => 'app:inner']), $output);
+            $seenAfterInner = [$runtime->getOverrides(), $pageHead->isDescribed()];
+
+            return Command::SUCCESS;
+        });
+        $application->setCommandLoader(new FactoryCommandLoader([
+            'app:outer' => static fn (): Command => $outer,
+            'app:inner' => static fn (): Command => $inner,
+        ]));
+
+        for ($i = 0; $i < 2; ++$i) {
+            self::assertSame(Command::SUCCESS, $application->run(new ArrayInput(['command' => 'app:outer']), new NullOutput()));
+            self::assertSame([['title' => 'Outer command mail'], true], $seenAfterInner, 'A nested command cleared the outer command\'s state.');
+            $this->assertCleared($runtime, $pageHead, 'after the outermost console.terminate');
+        }
+    }
+
+    /**
+     * MI-S-L2: a command run in-process from a Messenger handler must not clear the handler's state; the message
+     * boundaries still clear it.
+     */
+    public function testCommandRunFromAMessageHandlerKeepsTheHandlersState(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $dispatcher           = $this->dispatcher();
+        $application          = $this->application();
+        $inner                = (new Command('app:inner'))->setCode(static fn (): int => Command::SUCCESS);
+        $application->setCommandLoader(new FactoryCommandLoader(['app:inner' => static fn (): Command => $inner]));
+
+        $seenAfterCommand = [];
+        $bus              = new MessageBus([new HandleMessageMiddleware(new HandlersLocator([
+            TenantPageMessage::class => [static function (TenantPageMessage $message) use ($application, $runtime, &$seenAfterCommand): void {
+                $runtime->set(['title' => 'Mail for tenant ' . $message->tenant]);
+                $application->doRun(new ArrayInput(['command' => 'app:inner']), new NullOutput());
+                $seenAfterCommand[] = $runtime->getOverrides();
+            }],
+        ]))]);
+
+        $worker     = new Worker(['async' => new TenantPageReceiver(4)], $bus, $dispatcher);
+        $stopOnIdle = static function (WorkerRunningEvent $event): void {
+            if ($event->isWorkerIdle()) {
+                $event->getWorker()->stop();
+            }
+        };
+        $dispatcher->addListener(WorkerRunningEvent::class, $stopOnIdle);
+
+        try {
+            $worker->run(['sleep' => 0]);
+        } finally {
+            $dispatcher->removeListener(WorkerRunningEvent::class, $stopOnIdle);
+        }
+
+        self::assertSame([
+            ['title' => 'Mail for tenant A'],
+            ['title' => 'Mail for tenant B'],
+            ['title' => 'Mail for tenant A'],
+            ['title' => 'Mail for tenant B'],
+        ], $seenAfterCommand, 'A command run from the handler cleared its state.');
+        $this->assertCleared($runtime, $pageHead, 'after the last message');
+
+        // After the worker stopped, a standalone command clears again.
+        $runtime->set(['title' => 'Left over']);
+        $application->run(new ArrayInput(['command' => 'app:inner']), new NullOutput());
+        $this->assertCleared($runtime, $pageHead, 'after a standalone command once the worker stopped');
+    }
+
+    private function application(): Application
+    {
+        $application = new Application('worker-test');
+        $application->setAutoExit(false);
+        $application->setCatchExceptions(false);
+        $application->setDispatcher($this->dispatcher());
+
+        return $application;
     }
 
     private function boot(): void

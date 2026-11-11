@@ -62,8 +62,12 @@ Next patch: 1.23.1.
   `WorkerMessageHandledEvent`, `WorkerMessageFailedEvent`, `console.command` and `console.terminate` as well (Messenger
   and console events subscribed by name; both components stay optional). The bundle wires the services through a new
   `$resettables` iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references, so a boundary never builds a service the
-  unit of work did not use. `ResetInterface` / `kernel.reset` are kept. Affected: 1.0.0 to 1.23.0, only on those paths;
-  the stock `messenger:consume` (without `--no-reset`) already reset these services per message.
+  unit of work did not use. The console boundaries clear only when the outermost command starts or ends and no
+  Messenger message is in flight, so a command run in-process from another command or from a handler
+  (`Application::doRun()`) keeps the outer unit's overrides and page head (audit MI-S-L2). `ResetInterface` /
+  `kernel.reset` are kept. Affected: 1.0.0 to 1.23.0, on those paths. Since 1.10.1 the stock `messenger:consume`
+  (without `--no-reset`) already reset these services per message; in 1.0.0–1.10.0 `SeoRuntime` was not resettable,
+  so stock consumers also carried overrides over (fixed in 1.10.1).
 
 ### Tests
 
@@ -71,7 +75,8 @@ Next patch: 1.23.1.
   requests to two pages through `http_kernel`, 500 messages through a real Messenger `Worker` without
   `ResetServicesListener` (every 7th fails) and 500 console `Application` runs, alternating two tenants, with a site
   rename by "another worker" before each unit; asserts each unit starts with no overrides, no described head and the
-  current site name, and memory grows less than 1 MiB after a 50-unit warm-up. Direct `clearState()` test.
+  current site name, and memory grows less than 1 MiB after a 50-unit warm-up. Nested `doRun()` tests (from a
+  command and from a Messenger handler) keep the outer unit's state. Direct `clearState()` test.
 - `symfony/messenger` added to `require-dev` (tests only) and to the CI matrix install.
 
 ### Changed
