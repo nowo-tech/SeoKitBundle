@@ -65,6 +65,7 @@ final class SeoRuntime implements ResetInterface
     #[Override]
     public function reset(): void
     {
-        $this->clear();
+        $this->overrides = [];
+        $this->variables = [];
     }
 }

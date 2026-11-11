@@ -46,6 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Changed
+
+- FrankenPHP worker audit (igor): `SeoRuntime::reset()` empties the overrides and variables directly; the igor warning was a false positive (they were already cleared through `clear()` and at every main request / `kernel.terminate`). See `docs/FRANKENPHP-WORKER-AUDIT.md`.
+- CI: new standalone `igor` job runs `composer igor` (REQ-CS-008).
+
 ## [1.23.0] - 2026-11-11
 
 New doctrine.entity_manager maps SeoKit entities on a host-declared dedicated manager only; the host default entity manager stays the default; recovery never touches host managers. See [UPGRADING](https://github.com/nowo-tech/SeoKitBundle/blob/v1.23.0/docs/UPGRADING.md#to-1230).
