@@ -46,6 +46,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Next patch: 1.23.1.
+
+### Fixed
+
+- **SEO overrides and page head carried over between Messenger messages and console runs (REQ-RUNTIME-002).**
+  `SeoRuntimeClearSubscriber` cleared `SeoRuntime`, `PageHeadContext` and the `SeoSiteConfigProvider` memo only at the
+  start of a main HTTP request (and `SeoRuntime` at `kernel.terminate`); on the Messenger and console paths only
+  `kernel.reset` did it. Where the services resetter does not run between units of work (a host that removes,
+  replaces or bypasses `services_resetter` or drives `http_kernel` directly, a consumer started with
+  `messenger:consume --no-reset`, or a long-running process that runs several console commands), an e-mail rendered in
+  a handler saw the previous message's runtime overrides (title, description, `noindex`, variables) and described page
+  head, possibly another tenant's, and kept the site settings read by an earlier message after another worker edited
+  them. The subscriber now clears all three at `kernel.terminate`, `WorkerMessageReceivedEvent`,
+  `WorkerMessageHandledEvent`, `WorkerMessageFailedEvent`, `console.command` and `console.terminate` as well (Messenger
+  and console events subscribed by name; both components stay optional). The bundle wires the services through a new
+  `$resettables` iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references, so a boundary never builds a service the
+  unit of work did not use. `ResetInterface` / `kernel.reset` are kept. Affected: 1.0.0 to 1.23.0, only on those paths;
+  the stock `messenger:consume` (without `--no-reset`) already reset these services per message.
+
+### Tests
+
+- `tests/Integration/Worker/WorkerBoundariesTest.php`: one booted kernel, services resetter never called; 500 HTTP
+  requests to two pages through `http_kernel`, 500 messages through a real Messenger `Worker` without
+  `ResetServicesListener` (every 7th fails) and 500 console `Application` runs, alternating two tenants, with a site
+  rename by "another worker" before each unit; asserts each unit starts with no overrides, no described head and the
+  current site name, and memory grows less than 1 MiB after a 50-unit warm-up. Direct `clearState()` test.
+- `symfony/messenger` added to `require-dev` (tests only) and to the CI matrix install.
 
 ### Changed
 

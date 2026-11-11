@@ -47,10 +47,17 @@ services:
             $templates: '%nowo_seo_kit.templates%'
         tags: ['twig.extension']
 
+    # Only already-built services are cleared at a boundary ('@!' = IGNORE_ON_UNINITIALIZED_REFERENCE): nothing is
+    # built per request, Messenger message or console command.
     Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber:
         arguments:
-            $pageHeadContext: '@?Nowo\SeoKitBundle\Service\PageHeadContext'
-            $siteConfigProvider: '@?Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider'
+            $runtime: null
+            $pageHeadContext: null
+            $siteConfigProvider: null
+            $resettables: !iterator
+                - '@!Nowo\SeoKitBundle\Service\SeoRuntime'
+                - '@!Nowo\SeoKitBundle\Service\PageHeadContext'
+                - '@!Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider'
         tags: ['kernel.event_subscriber']
 
     Nowo\SeoKitBundle\EventSubscriber\XRobotsTagSubscriber:

@@ -108,7 +108,7 @@ final class SeoKitPagesTest extends TestCase
         self::assertNull($nav->areaNav(SeoKitAreaNav::AREA, ['current' => ''])?->active());
 
         $surfacesOnly = (new SeoKitAreaNav(AdminPageFixtures::urls(), false, true))->areaNav(SeoKitAreaNav::AREA);
-        self::assertSame(['/admin/seo/surfaces'], array_map(static fn ($item): string => $item->href, $surfacesOnly->items ?? []));
+        self::assertSame(['/admin/seo/surfaces'], array_map(static fn (AreaNavItem $item): string => $item->href, $surfacesOnly->items ?? []));
     }
 
     public function testAreaNavIsHiddenFromUsersTheAccessCheckerRefuses(): void

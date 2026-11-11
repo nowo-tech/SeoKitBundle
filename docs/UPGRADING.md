@@ -88,6 +88,18 @@
 
 ## Unreleased
 
+Next patch: 1.23.1. No configuration change.
+
+- `SeoRuntime` overrides and variables, the described `PageHeadContext` and the site settings memo are now also
+  cleared at `kernel.terminate`, when a Messenger message is received and after it is handled or failed, and when a
+  console command starts and terminates. Inside one unit of work nothing changes. A Messenger handler or console
+  command that relied on overrides set by a previous message or command must set them again for each unit of work.
+- `SeoRuntimeClearSubscriber` has a new optional fourth constructor argument `$resettables` (the bundle's own wiring
+  passes the services there); direct construction with the positional arguments keeps working, and `$runtime` is now
+  nullable.
+- Hosts that disable or bypass the services resetter must also clear their own entity managers at every boundary
+  (see `docs/FRANKENPHP-WORKER-AUDIT.md`, "Host rule").
+
 ## To 1.23.0
 
 From **1.22.0**: `composer update nowo-tech/seo-kit-bundle`. No configuration change is needed.
