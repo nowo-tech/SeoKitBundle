@@ -19,6 +19,13 @@ use Nowo\SeoKitBundle\Service\PageHeadSiteGraphProviderInterface;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoRuntime;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Event\ConsoleErrorEvent;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -28,7 +35,10 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
+use Symfony\Component\Messenger\Event\WorkerMessageSkipEvent;
 use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
+
+use const PHP_INT_MAX;
 
 final class SeoRuntimeClearSubscriberTest extends TestCase
 {
@@ -38,12 +48,14 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
             [
                 KernelEvents::REQUEST             => ['onRequest', 4096],
                 KernelEvents::TERMINATE           => 'onTerminate',
-                WorkerMessageReceivedEvent::class => ['onMessageReceived', 4096],
-                WorkerMessageHandledEvent::class  => ['onMessageFinished', -4096],
-                WorkerMessageFailedEvent::class   => ['onMessageFinished', -4096],
-                WorkerStoppedEvent::class         => ['onWorkerStopped', -4096],
-                'console.command'                 => ['onConsoleCommand', 4096],
-                'console.terminate'               => ['onConsoleTerminate', -4096],
+                WorkerMessageReceivedEvent::class => [['onMessageReceivedStarted', PHP_INT_MAX], ['onMessageReceived', 4096]],
+                WorkerMessageHandledEvent::class  => [['onMessageFinishedStarted', PHP_INT_MAX], ['onMessageFinished', -4096]],
+                WorkerMessageFailedEvent::class   => [['onMessageFinishedStarted', PHP_INT_MAX], ['onMessageFinished', -4096]],
+                WorkerMessageSkipEvent::class     => ['onMessageFinishedStarted', PHP_INT_MAX],
+                WorkerStoppedEvent::class         => ['onWorkerStopped', PHP_INT_MAX],
+                'console.command'                 => ['onConsoleCommand', PHP_INT_MAX],
+                'console.error'                   => ['onConsoleError', PHP_INT_MAX],
+                'console.terminate'               => [['onConsoleTerminateStarted', PHP_INT_MAX], ['onConsoleTerminate', -4096]],
             ],
             SeoRuntimeClearSubscriber::getSubscribedEvents(),
         );
@@ -190,5 +202,34 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
             null,
             ['es' => 'ES', 'en' => 'GB'],
         ));
+    }
+
+    public function testUnknownTerminateNeverClearsARunningUnitAndResetForgetsTheFrames(): void
+    {
+        $runtime    = new SeoRuntime();
+        $subscriber = new SeoRuntimeClearSubscriber($runtime);
+        $outer      = new ConsoleCommandEvent(new Command('app:outer'), new ArrayInput([]), new NullOutput());
+
+        $subscriber->onConsoleCommand($outer);
+        $runtime->set(['title' => 'Outer command mail']);
+
+        // A terminate of a run without a frame (its console.command was skipped) never ends the running outer unit.
+        $unknown = new ConsoleTerminateEvent(new Command('app:unknown'), new ArrayInput([]), new NullOutput(), 0);
+        $subscriber->onConsoleTerminateStarted($unknown);
+        $subscriber->onConsoleTerminate($unknown);
+        self::assertSame(['title' => 'Outer command mail'], $runtime->getOverrides());
+
+        // A failing run is marked until its own terminate; Messenger bookkeeping; reset() forgets everything.
+        $subscriber->onConsoleError(new ConsoleErrorEvent($outer->getInput(), $outer->getOutput(), new RuntimeException('failed'), $outer->getCommand()));
+        $subscriber->onMessageReceivedStarted();
+        $subscriber->onMessageFinishedStarted();
+        $subscriber->onWorkerStopped();
+        self::assertSame(['title' => 'Outer command mail'], $runtime->getOverrides());
+        $subscriber->reset();
+
+        // After reset() nothing runs: an unknown terminate is the outermost unit.
+        $subscriber->onConsoleTerminateStarted($unknown);
+        $subscriber->onConsoleTerminate($unknown);
+        self::assertSame([], $runtime->getOverrides());
     }
 }

@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.24.1](#to-1241)
 - [To 1.24.0](#to-1240)
   - [Private entity manager (zero-config mode)](#private-entity-manager-zero-config-mode)
   - [Framework-free ports](#framework-free-ports)
@@ -91,6 +92,20 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.24.1
+
+From **1.24.0**: patch, no configuration change.
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
+
+- The outermost console command now always clears the SEO state when it ends, even when another console listener
+  throws or stops propagation, and a nested command never clears the outer command's state or drops the private
+  entity manager mid-run. `SeoRuntimeClearSubscriber` is not autoconfigured any more (wired explicitly); it now also
+  listens to `console.error` and `WorkerMessageSkipEvent`, and its console methods take the console event. New internal
+  `Worker\UnitOfWorkFrames` (not a service).
 
 ## To 1.24.0
 

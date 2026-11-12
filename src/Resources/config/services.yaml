@@ -54,7 +54,9 @@ services:
 
     # Only already-built services are cleared at a boundary ('@!' = IGNORE_ON_UNINITIALIZED_REFERENCE): nothing is
     # built per request, Messenger message or console command.
+    # autoconfigure off: it implements ResetInterface, but its console bookkeeping must survive kernel.reset (1.24.1).
     Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber:
+        autoconfigure: false
         arguments:
             $runtime: null
             $pageHeadContext: null
