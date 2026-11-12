@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Package | `nowo-tech/seo-kit-bundle` (`symfony-bundle`) |
-| Audited revision | `v1.10.1`; boundaries re-audited for 1.23.1 (REQ-RUNTIME-002, 2026-11-11) |
+| Audited revision | `v1.10.1`; boundaries re-audited for 1.23.1 (REQ-RUNTIME-002, 2026-11-11); console bookkeeping for 1.24.1 (audit NM, 2026-11-12) |
 | Audit date | 2026-09-25 (Messenger / console boundaries: 2026-11-11) |
 | Method | Manual review of every file under `src/` (services, persistence providers, repositories, Twig extension, controllers, event subscriber, route loaders, form types, audit command), `src/Resources/config/*.yaml`, the DI extension and compiler pass |
 | **Verdict** | ✅ **Viable under scenario B** — `SeoRuntimeClearSubscriber` clears `SeoRuntime`, `PageHeadContext` and the site settings memo at every unit-of-work boundary (main request start, `kernel.terminate`, Messenger message received / handled / failed, console command start / terminate); repository flushes recover a closed EntityManager. Clearing the application's EntityManager identity map between requests remains the application's responsibility |
@@ -65,7 +65,7 @@ Worker demo: `demo/symfony8/docker/frankenphp/Caddyfile` has the `worker` line c
 | `Service\PageHeadContext` (only when `base_url` is set) | yes | `$input`, `$resolved`; `kernel.reset` + cleared at every boundary | ✅ | ✅ |
 | `Service\Persistence\SeoSiteConfigProvider` (persistence enabled) | yes | `$config` (request memo); `kernel.reset` + cleared at every boundary; cross-worker freshness via `cache.app` | ✅ | ✅ |
 | `Service\SeoRuntime` | yes (`shared: true`) | `$overrides`, `$variables`; `ResetInterface` + cleared at every boundary | ✅ | ✅ |
-| `EventSubscriber\SeoRuntimeClearSubscriber` (see [Boundary events](#boundary-events)) | yes | console nesting depth (bounded) and in-flight message flag, maintained at the boundaries; iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references | ✅ | ✅ |
+| `EventSubscriber\SeoRuntimeClearSubscriber` (see [Boundary events](#boundary-events)) | yes | running-command stack (`list<Command>`, bounded by the nesting depth, pushed / popped at `PHP_INT_MAX` since 1.24.1), the outermost command being terminated and the in-flight message flag, maintained at the boundaries (`reset()` exists, not tagged `kernel.reset`); iterator of `IGNORE_ON_UNINITIALIZED_REFERENCE` references | ✅ | ✅ |
 | `Service\SeoMetadataResolver` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\PageHeadResolver`, `HreflangSetBuilder`, `AbsoluteUrlBuilder`, `PageHeadRuntimeBridge` | yes | none (`final readonly`) | ✅ | ✅ |
 | `Service\SeoPathBuilder`, `SeoTemplateRenderer`, `OriginUrlGuard`, `SeoPencilCatalogFactory`, `StructuredData\SiteStructuredDataFactory` | yes | none | ✅ | ✅ |
@@ -125,6 +125,7 @@ Models (`SeoMetadata`, `PageHead`, `PageHeadInput`, `SeoSiteConfig`, structured-
 - **Where:** `src/EventSubscriber/SeoRuntimeClearSubscriber.php` subscribed only to `kernel.request` (main) and `kernel.terminate` (1.0.0 to 1.23.0); `PageHeadContext` and the site settings memo were not cleared at `kernel.terminate` either.
 - **Worker impact:** a Messenger consumer has no `kernel.request`. With `messenger:consume --no-reset` (or a host without `services_resetter`), an e-mail rendered in a handler saw the previous message's `SeoRuntime` overrides (title, description, `noindex`, variables) and described page head, possibly another tenant's, and kept an old site settings snapshot after another worker edited them. The same between console commands run in one long-lived process.
 - **Status:** Resolved in 1.23.1 — the subscriber clears all three services at `kernel.terminate`, `WorkerMessageReceivedEvent`, `WorkerMessageHandledEvent`, `WorkerMessageFailedEvent`, `console.command` and `console.terminate` too. Tests: `tests/Integration/Worker/WorkerBoundariesTest.php`, `SeoRuntimeClearSubscriberTest`.
+- **Audit NM (1.24.1, Low):** the console depth counter (`++` at 4096, `--` at -4096) leaked when a console listener in between threw or stopped propagation, so the outermost command of a long-lived process stopped clearing; reverse case: a nested command whose `console.command` was stopped above 4096 cleared the outer command's state and dropped the private entity manager mid-run. Now a running-command stack pushed / popped at `PHP_INT_MAX`; a terminate of a command not on the stack changes nothing. Tests run a real console `Application` (throwing terminate listener, unknown nested command, `console.command` stopped above 4096).
 
 Info / observations:
 
@@ -151,7 +152,7 @@ Info / observations:
 | HTTP end | `kernel.terminate` | 0 | same |
 | Messenger message start | `Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent` | 4096 | same |
 | Messenger message end | `WorkerMessageHandledEvent`, `WorkerMessageFailedEvent` | -4096 | same |
-| Console command start / end | `console.command` / `console.terminate` | 4096 / -4096 | same, only for the outermost command (depth 0→1 / 1→0) and only while no Messenger message is in flight |
+| Console command start / end | `console.command` / `console.terminate` | `PHP_INT_MAX` / `PHP_INT_MAX` (stack pop) + -4096 (clear) | same, only for the outermost command (first on the running-command stack, since 1.24.1) and only while no Messenger message is in flight |
 | Messenger worker stopped | `WorkerStoppedEvent` | -4096 | clears the in-flight flag only |
 | Services resetter (when the host runs it) | `kernel.reset` | — | same (kept, not relied on) |
 

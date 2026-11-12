@@ -48,6 +48,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Next patch: 1.24.1.
+
+### Fixed
+
+- **Console boundary counter could leak or underflow in long-lived console processes (REQ-RUNTIME-002, audit NM,
+  Low).** `SeoRuntimeClearSubscriber` counted commands with `++` on `console.command` (4096) and `--` on
+  `console.terminate` (-4096). A `console.terminate` listener in between that threw or stopped propagation (or a
+  throwing `console.error` listener, so Symfony skipped `console.terminate`) left the depth above zero for the rest of
+  the process, so the outermost command never cleared the SEO state again. Reverse case: a `console.command` listener
+  above 4096 that threw or stopped propagation skipped the `++` while the `--` still ran, so a nested command cleared
+  the outer command's overrides and page head and dropped the private entity manager (zero-config mode, 1.24.0) in the
+  middle of the outer command, losing its unflushed SeoKit changes. The running commands are now a stack pushed and
+  popped at `PHP_INT_MAX` (a terminate pops its own command and every command started after it; a command that is not
+  on the stack changes nothing); the outermost command clears right after the push and at -4096 on terminate.
+  HTTP and Messenger clears were already unconditional. New `reset()` for the bookkeeping only; the service is no
+  longer autoconfigured (explicit tags), so it is not tagged `kernel.reset`.
+
+### Tests
+
+- `WorkerBoundariesTest`: real console `Application` runs in the kept-alive kernel with a throwing terminate listener
+  of a nested command, an unknown nested command and a nested `console.command` stopped above 4096; unit test for an
+  unknown terminate and `reset()`.
+
 ## [1.24.0] - 2026-11-11
 
 Next minor: 1.24.0. Private entity manager in zero-config mode (REQ-ARCH-001 rule 6, audit MQ-S-M1) and

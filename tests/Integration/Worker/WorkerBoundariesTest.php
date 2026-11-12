@@ -17,6 +17,9 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
+use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,6 +35,7 @@ use Symfony\Component\Messenger\Handler\HandlersLocator;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\Messenger\Worker;
+use Throwable;
 
 use function is_array;
 use function json_decode;
@@ -259,6 +263,103 @@ final class WorkerBoundariesTest extends KernelTestCase
         $runtime->set(['title' => 'Left over']);
         $application->run(new ArrayInput(['command' => 'app:inner']), new NullOutput());
         $this->assertCleared($runtime, $pageHead, 'after a standalone command once the worker stopped');
+    }
+
+    /**
+     * Audit NM (a): a console.terminate listener of a nested command that throws no longer leaves the console
+     * bookkeeping unbalanced: the outer command and every later outermost command still end clean.
+     */
+    public function testThrowingTerminateListenerOfANestedCommandKeepsTheOuterBoundary(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $dispatcher           = $this->dispatcher();
+        $throwing             = static function (ConsoleTerminateEvent $event): void {
+            if ($event->getCommand()?->getName() === 'app:inner') {
+                throw new RuntimeException('terminate listener failed');
+            }
+        };
+        $dispatcher->addListener(ConsoleEvents::TERMINATE, $throwing, 0);
+
+        try {
+            for ($i = 0; $i < 2; ++$i) {
+                self::assertSame([['title' => 'Outer command mail'], true], $this->runOuterWithNestedRun('app:inner'), 'A nested command cleared the outer command\'s state.');
+                $this->assertCleared($runtime, $pageHead, 'after the outermost console.terminate');
+            }
+        } finally {
+            $dispatcher->removeListener(ConsoleEvents::TERMINATE, $throwing);
+        }
+    }
+
+    /**
+     * Audit NM (c): an unknown nested command (only console.error, no command / terminate) never ends the outer unit.
+     */
+    public function testUnknownNestedCommandKeepsTheOuterUnit(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+
+        self::assertSame([['title' => 'Outer command mail'], true], $this->runOuterWithNestedRun('app:does-not-exist'), 'An unknown nested command cleared the outer state.');
+        $this->assertCleared($runtime, $pageHead, 'after the outermost console.terminate');
+    }
+
+    /**
+     * Audit NM (d): a console.command listener above 4096 that stops propagation in a nested command no longer lets
+     * that command's terminate clear the outer unit (overrides, page head, private entity manager) mid-run.
+     */
+    public function testStoppedNestedCommandEventKeepsTheOuterUnit(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $dispatcher           = $this->dispatcher();
+        $stopping             = static function (ConsoleCommandEvent $event): void {
+            if ($event->getCommand()?->getName() === 'app:inner') {
+                $event->stopPropagation();
+            }
+        };
+        $dispatcher->addListener(ConsoleEvents::COMMAND, $stopping, 10000);
+
+        try {
+            self::assertSame([['title' => 'Outer command mail'], true], $this->runOuterWithNestedRun('app:inner'), 'A nested command cleared the outer state mid-run.');
+            $this->assertCleared($runtime, $pageHead, 'after the outermost console.terminate');
+        } finally {
+            $dispatcher->removeListener(ConsoleEvents::COMMAND, $stopping);
+        }
+    }
+
+    /**
+     * Runs app:outer through a real console Application: it sets overrides and a page head, runs $nested in-process
+     * (a failure of the nested run is swallowed) and returns what it sees right after the nested run.
+     *
+     * @return list<array<string, mixed>|bool>
+     */
+    private function runOuterWithNestedRun(string $nested): array
+    {
+        [$runtime, $pageHead] = $this->services();
+        $application          = $this->application();
+
+        $seen  = [];
+        $inner = (new Command('app:inner'))->setCode(static fn (): int => Command::SUCCESS);
+        $outer = (new Command('app:outer'))->setCode(static function (InputInterface $input, OutputInterface $output) use ($application, $runtime, $pageHead, $nested, &$seen): int {
+            $runtime->set(['title' => 'Outer command mail']);
+            $pageHead->describe(new PageHeadInput(path: '/outer', locale: 'en', templateTitle: 'Outer'));
+            try {
+                $application->doRun(new ArrayInput(['command' => $nested]), $output);
+            } catch (Throwable) {
+                // The nested run failed (throwing listener, unknown command); the outer command goes on.
+            }
+            $seen = [$runtime->getOverrides(), $pageHead->isDescribed()];
+
+            return Command::SUCCESS;
+        });
+        $application->setCommandLoader(new FactoryCommandLoader([
+            'app:outer' => static fn (): Command => $outer,
+            'app:inner' => static fn (): Command => $inner,
+        ]));
+
+        self::assertSame(Command::SUCCESS, $application->run(new ArrayInput(['command' => 'app:outer']), new NullOutput()));
+
+        return $seen;
     }
 
     private function application(): Application

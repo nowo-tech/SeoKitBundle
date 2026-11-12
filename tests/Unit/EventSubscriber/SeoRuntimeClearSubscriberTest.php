@@ -19,6 +19,11 @@ use Nowo\SeoKitBundle\Service\PageHeadSiteGraphProviderInterface;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoRuntime;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -29,6 +34,8 @@ use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
+
+use const PHP_INT_MAX;
 
 final class SeoRuntimeClearSubscriberTest extends TestCase
 {
@@ -42,8 +49,8 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
                 WorkerMessageHandledEvent::class  => ['onMessageFinished', -4096],
                 WorkerMessageFailedEvent::class   => ['onMessageFinished', -4096],
                 WorkerStoppedEvent::class         => ['onWorkerStopped', -4096],
-                'console.command'                 => ['onConsoleCommand', 4096],
-                'console.terminate'               => ['onConsoleTerminate', -4096],
+                'console.command'                 => ['onConsoleCommand', PHP_INT_MAX],
+                'console.terminate'               => [['onConsoleTerminateStart', PHP_INT_MAX], ['onConsoleTerminate', -4096]],
             ],
             SeoRuntimeClearSubscriber::getSubscribedEvents(),
         );
@@ -190,5 +197,33 @@ final class SeoRuntimeClearSubscriberTest extends TestCase
             null,
             ['es' => 'ES', 'en' => 'GB'],
         ));
+    }
+
+    public function testUnknownTerminateNeverClearsAndResetForgetsTheStack(): void
+    {
+        $runtime    = new SeoRuntime();
+        $subscriber = new SeoRuntimeClearSubscriber($runtime);
+        $outer      = new Command('app:outer');
+        $input      = new ArrayInput([]);
+        $output     = new NullOutput();
+
+        $subscriber->onConsoleCommand(new ConsoleCommandEvent($outer, $input, $output));
+        $runtime->set(['title' => 'Outer command mail']);
+
+        // A terminate of a command that never started (its console.command was skipped) changes nothing.
+        $unknown = new ConsoleTerminateEvent(new Command('app:unknown'), $input, $output, 0);
+        $subscriber->onConsoleTerminateStart($unknown);
+        $subscriber->onConsoleTerminate($unknown);
+        self::assertSame(['title' => 'Outer command mail'], $runtime->getOverrides());
+
+        // A console.command event without a command is ignored.
+        $subscriber->onConsoleCommand(new ConsoleCommandEvent(null, $input, $output));
+        self::assertSame(['title' => 'Outer command mail'], $runtime->getOverrides());
+
+        $subscriber->reset();
+        $terminate = new ConsoleTerminateEvent($outer, $input, $output, 0);
+        $subscriber->onConsoleTerminateStart($terminate);
+        $subscriber->onConsoleTerminate($terminate);
+        self::assertSame(['title' => 'Outer command mail'], $runtime->getOverrides(), 'After reset() the outer command is not on the stack any more.');
     }
 }

@@ -7,6 +7,9 @@ namespace Nowo\SeoKitBundle\EventSubscriber;
 use Nowo\SeoKitBundle\Service\PageHeadContext;
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProvider;
 use Nowo\SeoKitBundle\Service\SeoRuntime;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
@@ -17,7 +20,10 @@ use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 use Symfony\Contracts\Service\ResetInterface;
 
-use function max;
+use function array_slice;
+use function count;
+
+use const PHP_INT_MAX;
 
 /**
  * Keeps the bundle's request-scoped state (runtime overrides, described page head, site settings memo) bound to one
@@ -30,16 +36,22 @@ use function max;
  *   handler never see the previous message's overrides);
  * - console: when the OUTERMOST command starts and when it terminates, and only while no Messenger message is in
  *   flight. A command run in-process from another command or from a message handler (`Application::doRun()`) must
- *   not clear the outer unit's overrides and page head: the nesting depth is counted on console.command /
- *   console.terminate, and the in-flight flag is set when a message is received and unset when it is handled, failed
- *   or the worker stops (audit MI-S-L2; same pattern as BeaconBundle 1.24.0).
+ *   not clear the outer unit's overrides, page head and private entity manager: the in-flight flag is set when a
+ *   message is received and unset when it is handled, failed or the worker stops (audit MI-S-L2; same pattern as
+ *   BeaconBundle 1.24.0).
+ *
+ * Console bookkeeping (1.24.1, audit NM): the running commands are a stack pushed on console.command and popped on
+ * console.terminate, both at PHP_INT_MAX, so another listener that throws or stops propagation cannot skip it. A
+ * terminate pops its own command and every command started after it (a nested run whose terminate was skipped); a
+ * terminate of a command that is not on the stack changes nothing (never a blind decrement). The outermost command
+ * clears at its start (PHP_INT_MAX, right after the push) and at its end (-4096, decided by the early terminate).
  *
  * The Messenger and console events are subscribed by name, so symfony/messenger and symfony/console stay optional.
  * The bundle wires the services through `$resettables` with IGNORE_ON_UNINITIALIZED_REFERENCE references, so a
  * boundary only resets what the unit of work built and never builds anything itself. The positional arguments are
  * kept for direct construction.
  */
-final class SeoRuntimeClearSubscriber implements EventSubscriberInterface
+final class SeoRuntimeClearSubscriber implements EventSubscriberInterface, ResetInterface
 {
     /** Messenger event names (class names), subscribed without requiring symfony/messenger. */
     public const MESSENGER_WORKER_MESSAGE_RECEIVED = WorkerMessageReceivedEvent::class;
@@ -52,10 +64,15 @@ final class SeoRuntimeClearSubscriber implements EventSubscriberInterface
     public const CONSOLE_TERMINATE = 'console.terminate';
 
     /**
-     * Console commands currently running in this process (nested in-process runs count). Process-lifetime counter,
-     * bounded by the nesting depth; intentionally not reset by kernel.reset.
+     * Console commands currently running in this process, outermost first (nested in-process runs count). Bounded by
+     * the nesting depth; deliberately not tagged kernel.reset (the service is not autoconfigured).
+     *
+     * @var list<Command>
      */
-    private int $consoleDepth = 0;
+    private array $runningCommands = [];
+
+    /** The outermost command whose console.terminate is under way: cleared at the late priority. */
+    private ?Command $terminatingOutermost = null;
 
     /** A Messenger message is being handled (between received and handled / failed / worker stopped). */
     private bool $messageInFlight = false;
@@ -71,6 +88,9 @@ final class SeoRuntimeClearSubscriber implements EventSubscriberInterface
     ) {
     }
 
+    /**
+     * @return array<string, array{0: string, 1: int}|list<array{0: string, 1: int}>|string>
+     */
     public static function getSubscribedEvents(): array
     {
         return [
@@ -80,8 +100,9 @@ final class SeoRuntimeClearSubscriber implements EventSubscriberInterface
             self::MESSENGER_WORKER_MESSAGE_HANDLED  => ['onMessageFinished', -4096],
             self::MESSENGER_WORKER_MESSAGE_FAILED   => ['onMessageFinished', -4096],
             self::MESSENGER_WORKER_STOPPED          => ['onWorkerStopped', -4096],
-            self::CONSOLE_COMMAND                   => ['onConsoleCommand', 4096],
-            self::CONSOLE_TERMINATE                 => ['onConsoleTerminate', -4096],
+            // Bookkeeping first (PHP_INT_MAX), the end-of-command clear late: a listener in between cannot skip it.
+            self::CONSOLE_COMMAND   => ['onConsoleCommand', PHP_INT_MAX],
+            self::CONSOLE_TERMINATE => [['onConsoleTerminateStart', PHP_INT_MAX], ['onConsoleTerminate', -4096]],
         ];
     }
 
@@ -129,26 +150,72 @@ final class SeoRuntimeClearSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * Start of a command: clears only when the outermost command starts outside a Messenger message.
+     * Start of a command: pushed on the running-command stack; clears only when the outermost command starts outside a
+     * Messenger message.
      */
-    public function onConsoleCommand(): void
+    public function onConsoleCommand(ConsoleCommandEvent $event): void
     {
-        // @igor-ignore - Nesting counter of the running commands (no request data).
-        if (++$this->consoleDepth === 1 && !$this->messageInFlight) {
+        $command = $event->getCommand();
+        if (!$command instanceof Command) {
+            return;
+        }
+
+        // @igor-ignore - Nesting stack of the running commands (no request data).
+        $this->runningCommands[] = $command;
+        if (count($this->runningCommands) === 1 && !$this->messageInFlight) {
             $this->clearState();
         }
     }
 
     /**
+     * End of a command: pops it and every command started after it, and remembers whether it was the outermost unit
+     * (outside a Messenger message). A command that is not on the stack changes nothing.
+     */
+    public function onConsoleTerminateStart(ConsoleTerminateEvent $event): void
+    {
+        $command = $event->getCommand();
+        $index   = null;
+        for ($i = count($this->runningCommands) - 1; $i >= 0; --$i) {
+            if ($this->runningCommands[$i] === $command) {
+                $index = $i;
+
+                break;
+            }
+        }
+
+        if ($index === null) {
+            return;
+        }
+
+        // @igor-ignore - Nesting stack of the running commands (no request data).
+        $this->runningCommands = array_slice($this->runningCommands, 0, $index);
+        // @igor-ignore - Outermost command whose terminate is under way (cleared at the late priority).
+        $this->terminatingOutermost = $index === 0 && !$this->messageInFlight ? $command : null;
+    }
+
+    /**
      * End of a command: clears only when the outermost command ends outside a Messenger message.
      */
-    public function onConsoleTerminate(): void
+    public function onConsoleTerminate(ConsoleTerminateEvent $event): void
     {
-        // @igor-ignore - Nesting counter of the running commands (no request data).
-        $this->consoleDepth = max(0, $this->consoleDepth - 1);
-        if ($this->consoleDepth === 0 && !$this->messageInFlight) {
-            $this->clearState();
+        if (!$this->terminatingOutermost instanceof Command || $this->terminatingOutermost !== $event->getCommand()) {
+            return;
         }
+
+        // @igor-ignore - Outermost command whose terminate is under way (cleared at the late priority).
+        $this->terminatingOutermost = null;
+        $this->clearState();
+    }
+
+    /**
+     * Forgets the console and Messenger bookkeeping (not the SEO state: see clearState()). Not tagged kernel.reset and
+     * not relied on in worker mode.
+     */
+    public function reset(): void
+    {
+        $this->runningCommands      = [];
+        $this->terminatingOutermost = null;
+        $this->messageInFlight      = false;
     }
 
     /**
