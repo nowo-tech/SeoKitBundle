@@ -59,17 +59,26 @@ Next patch: 1.24.1.
   the process, so the outermost command never cleared the SEO state again. Reverse case: a `console.command` listener
   above 4096 that threw or stopped propagation skipped the `++` while the `--` still ran, so a nested command cleared
   the outer command's overrides and page head and dropped the private entity manager (zero-config mode, 1.24.0) in the
-  middle of the outer command, losing its unflushed SeoKit changes. The running commands are now a stack pushed and
-  popped at `PHP_INT_MAX` (a terminate pops its own command and every command started after it; a command that is not
-  on the stack changes nothing); the outermost command clears right after the push and at -4096 on terminate.
+  middle of the outer command, losing its unflushed SeoKit changes. The units of work are now tracked by the new
+  internal `Worker\UnitOfWorkFrames`, fed at `PHP_INT_MAX` (audits NM, NL2-v and NL2-v2, same design as
+  PageBuilderKitBundle): one frame per console run keyed by the Command AND its input (a command that runs itself
+  in-process is two frames), saving the outer Messenger state and restoring it when the frame is removed; a terminate
+  removes its own frame and the nested frames above it, a terminate without a frame never removes another run's frame;
+  `console.error` marks the frame as failing and a frame still failing (its error listener threw, so Symfony skipped
+  `console.terminate`) is dropped at the next message, command or worker stop, always before the handler writes its
+  own flag. The outermost command clears right after its frame is pushed and at -4096 on terminate.
+  `WorkerMessageSkipEvent` (only dispatched by `messenger:failed:retry`) also ends the message in flight.
   HTTP and Messenger clears were already unconditional. New `reset()` for the bookkeeping only; the service is no
   longer autoconfigured (explicit tags), so it is not tagged `kernel.reset`.
 
 ### Tests
 
 - `WorkerBoundariesTest`: real console `Application` runs in the kept-alive kernel with a throwing terminate listener
-  of a nested command, an unknown nested command and a nested `console.command` stopped above 4096; unit test for an
-  unknown terminate and `reset()`.
+  of a nested command, an unknown nested command, a nested `console.command` stopped above 4096, a self-recursive
+  command whose error listener throws, an error listener at `PHP_INT_MIN` that throws, a throwing
+  `WorkerMessageReceivedEvent` listener inside a command and a failing command with a throwing error listener inside a
+  message followed by the message failure and the worker stop; unit tests for `UnitOfWorkFrames`, an unknown terminate
+  and `reset()`.
 
 ## [1.24.0] - 2026-11-11
 

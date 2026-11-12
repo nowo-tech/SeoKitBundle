@@ -29,7 +29,11 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
+use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
+use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 use Symfony\Component\Messenger\EventListener\ResetServicesListener;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
 use Symfony\Component\Messenger\MessageBus;
@@ -41,6 +45,8 @@ use function is_array;
 use function json_decode;
 use function json_encode;
 use function sprintf;
+
+use const PHP_INT_MIN;
 
 /**
  * Kept-alive kernel, services resetter never called (a host that removes or bypasses services_resetter,
@@ -325,6 +331,147 @@ final class WorkerBoundariesTest extends KernelTestCase
         } finally {
             $dispatcher->removeListener(ConsoleEvents::COMMAND, $stopping);
         }
+    }
+
+    /**
+     * Audit NL2-v: a command that runs itself in-process (same Command object, new input) whose inner run fails and
+     * whose error listener throws: the outer run keeps its state until it ends clean, and so does the next command.
+     */
+    public function testSelfRecursiveCommandWithAThrowingErrorListener(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $dispatcher           = $this->dispatcher();
+        $application          = $this->application();
+        $throwing             = static function (): never {
+            throw new RuntimeException('error listener failed');
+        };
+        $depth     = 0;
+        $seen      = [];
+        $recursive = (new Command('app:rec'))->setCode(static function (InputInterface $input, OutputInterface $output) use ($application, $runtime, $dispatcher, $throwing, &$depth, &$seen): int {
+            if (++$depth > 1) {
+                throw new RuntimeException('inner run failed');
+            }
+            $runtime->set(['title' => 'Outer command mail']);
+            $dispatcher->addListener(ConsoleEvents::ERROR, $throwing);
+            try {
+                $application->run(new ArrayInput(['command' => 'app:rec']), $output);
+            } catch (Throwable) {
+                // The inner run failed and its error listener threw.
+            } finally {
+                $dispatcher->removeListener(ConsoleEvents::ERROR, $throwing);
+            }
+            $seen = $runtime->getOverrides();
+
+            return Command::SUCCESS;
+        });
+        $application->setCommandLoader(new FactoryCommandLoader(['app:rec' => static fn (): Command => $recursive]));
+
+        self::assertSame(Command::SUCCESS, $application->run(new ArrayInput(['command' => 'app:rec']), new NullOutput()));
+        self::assertSame(['title' => 'Outer command mail'], $seen, 'The failed inner run cleared the outer state.');
+        $this->assertCleared($runtime, $pageHead, 'after the outer run');
+
+        self::assertSame([['title' => 'Outer command mail'], true], $this->runOuterWithNestedRun('app:inner'));
+        $this->assertCleared($runtime, $pageHead, 'after the next outermost command');
+    }
+
+    /**
+     * Audit NL2-v: an error listener at PHP_INT_MIN throws, so the failing outermost command never terminates; its
+     * frame is dropped at the next command, which is the outermost unit again (clears at its start and end).
+     */
+    public function testErrorListenerAtIntMinThrowingNeverKeepsTheProcessInsideACommand(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $dispatcher           = $this->dispatcher();
+        $application          = $this->application();
+        $throwing             = static function (): never {
+            throw new RuntimeException('error listener failed');
+        };
+        $failing = (new Command('app:fail'))->setCode(static function () use ($runtime): never {
+            $runtime->set(['title' => 'Failed command mail']);
+
+            throw new RuntimeException('command failed');
+        });
+        $application->setCommandLoader(new FactoryCommandLoader(['app:fail' => static fn (): Command => $failing]));
+        $dispatcher->addListener(ConsoleEvents::ERROR, $throwing, PHP_INT_MIN);
+
+        try {
+            $application->run(new ArrayInput(['command' => 'app:fail']), new NullOutput());
+            self::fail('The error listener throws.');
+        } catch (RuntimeException) {
+        } finally {
+            $dispatcher->removeListener(ConsoleEvents::ERROR, $throwing);
+        }
+
+        self::assertSame([['title' => 'Outer command mail'], true], $this->runOuterWithNestedRun('app:inner'), 'The next command starts clean.');
+        $this->assertCleared($runtime, $pageHead, 'after the next outermost command');
+    }
+
+    /**
+     * Audit NL2-v: a WorkerMessageReceivedEvent listener throws inside an in-process consume command (no handled /
+     * failed / stopped follows); the command's frame restores the "no message" state when it ends.
+     */
+    public function testThrowingMessageReceivedListenerInsideACommandDoesNotLeakTheMessageFlag(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $dispatcher           = $this->dispatcher();
+        $application          = $this->application();
+        $throwing             = static function (): never {
+            throw new RuntimeException('received listener failed');
+        };
+        $consume = (new Command('app:consume'))->setCode(static function () use ($dispatcher, $throwing): int {
+            $dispatcher->addListener(WorkerMessageReceivedEvent::class, $throwing);
+            try {
+                $dispatcher->dispatch(new WorkerMessageReceivedEvent(new Envelope(new TenantPageMessage('A', 0, false)), 'async'));
+            } catch (RuntimeException) {
+            } finally {
+                $dispatcher->removeListener(WorkerMessageReceivedEvent::class, $throwing);
+            }
+
+            return Command::SUCCESS;
+        });
+        $application->setCommandLoader(new FactoryCommandLoader(['app:consume' => static fn (): Command => $consume]));
+
+        self::assertSame(Command::SUCCESS, $application->run(new ArrayInput(['command' => 'app:consume']), new NullOutput()));
+        self::assertSame([['title' => 'Outer command mail'], true], $this->runOuterWithNestedRun('app:inner'));
+        $this->assertCleared($runtime, $pageHead, 'after the next outermost command (no message in flight)');
+    }
+
+    /**
+     * Audit NL2-v2: a message handler runs a command that fails and whose console.error listener throws (no
+     * terminate); the message fails and the worker stops: no message is stuck in flight, the next command clears.
+     */
+    public function testFailedCommandInsideAMessageNeverLeavesTheMessageInFlight(): void
+    {
+        $this->boot();
+        [$runtime, $pageHead] = $this->services();
+        $dispatcher           = $this->dispatcher();
+        $application          = $this->application();
+        $envelope             = new Envelope(new TenantPageMessage('A', 0, true));
+        $throwing             = static function (): never {
+            throw new RuntimeException('error listener failed');
+        };
+        $failing = (new Command('app:fail'))->setCode(static function (): never {
+            throw new RuntimeException('command failed');
+        });
+        $application->setCommandLoader(new FactoryCommandLoader(['app:fail' => static fn (): Command => $failing]));
+
+        $dispatcher->dispatch(new WorkerMessageReceivedEvent($envelope, 'async'));
+        $dispatcher->addListener(ConsoleEvents::ERROR, $throwing);
+        try {
+            $application->run(new ArrayInput(['command' => 'app:fail']), new NullOutput());
+            self::fail('The error listener throws.');
+        } catch (RuntimeException) {
+        } finally {
+            $dispatcher->removeListener(ConsoleEvents::ERROR, $throwing);
+        }
+        $dispatcher->dispatch(new WorkerMessageFailedEvent($envelope, 'async', new RuntimeException('handler failed')));
+        $dispatcher->dispatch(new WorkerStoppedEvent($this->createStub(Worker::class)));
+
+        self::assertSame([['title' => 'Outer command mail'], true], $this->runOuterWithNestedRun('app:inner'));
+        $this->assertCleared($runtime, $pageHead, 'after the next outermost command (no message stuck in flight)');
     }
 
     /**

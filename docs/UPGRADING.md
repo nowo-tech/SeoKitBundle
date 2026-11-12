@@ -103,8 +103,9 @@ composer update nowo-tech/seo-kit-bundle
 
 - The outermost console command now always clears the SEO state when it ends, even when another console listener
   throws or stops propagation, and a nested command never clears the outer command's state or drops the private
-  entity manager mid-run. `SeoRuntimeClearSubscriber` is not autoconfigured any more (wired explicitly); its console
-  methods now take the console event.
+  entity manager mid-run. `SeoRuntimeClearSubscriber` is not autoconfigured any more (wired explicitly); it now also
+  listens to `console.error` and `WorkerMessageSkipEvent`, and its console methods take the console event. New internal
+  `Worker\UnitOfWorkFrames` (not a service).
 
 ## To 1.24.0
 
