@@ -8,7 +8,6 @@ use Doctrine\Common\EventManager;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Repository\DefaultRepositoryFactory;
 use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
@@ -94,8 +93,9 @@ final class SeoKitEntityManager extends EntityManagerDecorator implements ResetI
             // Same mapping, caches and proxies, but a repository factory owned by this manager (audit NX): the shared
             // factory (DoctrineBundle's ContainerRepositoryFactory) keeps one repository per manager instance for the
             // life of the process, so every replaced private manager would stay in memory in worker mode.
+            // Service repositories (ServiceEntityRepositoryInterface) still come from the source factory (audit NZ-M1).
             $configuration = clone $source->getConfiguration();
-            $configuration->setRepositoryFactory(new DefaultRepositoryFactory());
+            $configuration->setRepositoryFactory(new PrivateManagerRepositoryFactory($configuration->getRepositoryFactory()));
             // @igor-ignore - Bundle-owned unit of work: dropped at every boundary, replaced when closed, stale or on another connection.
             $current = $this->current = new EntityManager($source->getConnection(), $configuration, $eventManager instanceof EventManager ? $eventManager : null);
             // @igor-ignore - Bundle-owned flag of the private manager, reset when the manager is replaced.
@@ -200,17 +200,21 @@ final class SeoKitEntityManager extends EntityManagerDecorator implements ResetI
             }
         }
         foreach ($wanted as $name => $filter) {
+            // A filter registered (or registered again with another class) on the source configuration after this
+            // manager was created is unknown to its copy: register it, and drop an instance of the previous class.
+            $class = $source->getConfiguration()->getFilterClassName($name);
+            if ($class !== null && $target->getConfiguration()->getFilterClassName($name) !== $class) {
+                if ($filters->isEnabled($name)) {
+                    $filters->disable($name);
+                }
+                $target->getConfiguration()->addFilter($name, $class);
+            }
             $state = (string) $filter;
             if ($filters->isEnabled($name)) {
                 if ((string) $filters->getFilter($name) === $state) {
                     continue;
                 }
                 $filters->disable($name);
-            }
-            // A filter registered on the source configuration after this manager was created is unknown to its copy.
-            $class = $source->getConfiguration()->getFilterClassName($name);
-            if ($class !== null && $target->getConfiguration()->getFilterClassName($name) === null) {
-                $target->getConfiguration()->addFilter($name, $class);
             }
             $copy = $filters->enable($name);
             /** @var array<string, array{value: mixed, type: int|string|null, is_list?: bool}> $parameters */
