@@ -4,6 +4,7 @@
 
 - [Unreleased](#unreleased)
 - [To 1.24.1](#to-1241)
+- [To 1.24.1](#to-1241-1)
 - [To 1.24.0](#to-1240)
   - [Private entity manager (zero-config mode)](#private-entity-manager-zero-config-mode)
   - [Framework-free ports](#framework-free-ports)
@@ -92,6 +93,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.24.1
+
+From **1.24.0**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 ## To 1.24.1
 
