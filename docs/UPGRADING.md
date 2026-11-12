@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.24.2](#to-1242)
 - [To 1.24.1](#to-1241)
 - [To 1.24.0](#to-1240)
   - [Private entity manager (zero-config mode)](#private-entity-manager-zero-config-mode)
@@ -92,6 +93,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.24.2
+
+From **1.24.1**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 - The bundle's private entity manager has its own repository factory. A `repository_factory` you configured on the
   Doctrine entity manager is used by it only for service repositories (repositories implementing
