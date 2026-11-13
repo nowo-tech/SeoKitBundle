@@ -139,7 +139,7 @@ jobs:
           COVERED=$(echo "$METRICS_LINE" | awk -F'coveredstatements="' '{print $2}' | awk -F'"' '{print $1}')
           COVERAGE_PERCENT=$(echo "scale=2; ($COVERED / $STATEMENTS) * 100" | bc | cut -d. -f1)
           echo "Code coverage: ${COVERAGE_PERCENT}%"
-          MIN_COVERAGE=75
+          MIN_COVERAGE=100
           if [ "$COVERAGE_PERCENT" -lt "$MIN_COVERAGE" ]; then
             echo "ERROR: Code coverage is ${COVERAGE_PERCENT}%, expected at least ${MIN_COVERAGE}%"
             exit 1
