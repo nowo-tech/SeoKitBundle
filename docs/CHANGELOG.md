@@ -50,6 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI: the coverage job fails below **100%** statement coverage (the minimum was 75%). The suite is already at 100%; the gate only stops a regression from merging.
+
 ### Fixed
 
 - **SQL filter mirroring (audit NZ-I6):** the private manager registers the class of each enabled source filter
