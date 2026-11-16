@@ -23,6 +23,9 @@ nowo_seo_kit:
             organization:
                 name: 'SEO Kit Demo'
                 url: '%env(DEFAULT_URI)%'
+    templates:
+        # the demo layout (UiKit) owns the <title>, fed by the SEO metadata
+        head_includes_title: false
     pages:
         app_home:
             title: Home

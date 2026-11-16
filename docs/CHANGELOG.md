@@ -51,6 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Demo
+
+- The demo site-settings preview now renders through a demo-owned template (it returned a 500 because the bundle page needs the UiKit page contract view model). The demo is built on UiKit and FormKit (REQ-DEMO-014/015): the base and admin templates extend the UiKit admin layout with UiKit's default theme (no hand-written HTML shell or inline CSS), the five demo Form Types are FormKit types (`#[FormKitConfig('demo')]` + `FormOptionsTrait`, profile `demo`, UiKit form theme) and the delete actions use FormKit's `CsrfOnlyType`. The demo requires `nowo-tech/ui-kit-bundle` and `nowo-tech/form-kit-bundle`.
+
 ## [1.24.3] - 2026-11-16
 
 ### Security

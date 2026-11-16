@@ -3,9 +3,9 @@
 {% block title %}SEO Admin · {{ is_new ? 'New slug route' : 'Edit slug route' }}{% endblock %}
 
 {% block body %}
-    <p class="note">Defines <code>path_pattern</code> / title templates used by slug SEO URLs.</p>
+    <p class="nowo-ui-muted">Defines <code>path_pattern</code> / title templates used by slug SEO URLs.</p>
 
-    {{ form_start(form, {attr: {class: 'stack'}}) }}
+    {{ form_start(form) }}
         {% for child in form %}
             {% if not child.rendered %}
                 {% if child.vars.name == 'locales' %}
@@ -26,9 +26,9 @@
             {% endif %}
         {% endfor %}
 
-        <div class="actions" style="margin-top:1.25rem;">
-            <button class="btn btn-primary" type="submit">Save</button>
-            <a class="btn" href="{{ path('admin_seo_slug_routes') }}">Cancel</a>
+        <div class="nowo-ui-form__actions">
+            <button class="nowo-ui-btn nowo-ui-btn--primary" type="submit">Save</button>
+            <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_slug_routes') }}">Cancel</a>
         </div>
     {{ form_end(form) }}
 {% endblock %}

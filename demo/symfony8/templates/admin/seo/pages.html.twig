@@ -3,11 +3,11 @@
 {% block title %}SEO Admin · Pages{% endblock %}
 
 {% block body %}
-    <div class="toolbar">
-        <p class="note" style="margin:0;">Static route SEO (<code>pages.*</code>) with locale paths for hreflang / sitemap.</p>
-        <a class="btn btn-primary" href="{{ path('admin_seo_page_new') }}">New page</a>
+    <div class="nowo-ui-toolbar">
+        <p class="nowo-ui-muted">Static route SEO (<code>pages.*</code>) with locale paths for hreflang / sitemap.</p>
+        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_page_new') }}">New page</a>
     </div>
-    <table>
+    <table class="nowo-ui-table">
         <thead>
             <tr>
                 <th>Route</th>
@@ -21,27 +21,27 @@
                 <tr>
                     <td>
                         <code>{{ route }}</code><br>
-                        <span class="meta">{{ page.title|default('') }}</span>
+                        <span class="nowo-ui-muted">{{ page.title|default('') }}</span>
                     </td>
                     <td><code>{{ page.path|default('—') }}</code></td>
                     <td>
-                        <ul class="urls">
+                        <ul class="nowo-ui-list">
                             {% for locale, url in page_urls[route]|default({}) %}
-                                <li><span class="mono">{{ locale }}</span>:
+                                <li><code>{{ locale }}</code>:
                                     {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
                                 </li>
                             {% endfor %}
                         </ul>
                     </td>
-                    <td class="actions">
-                        <a class="btn" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
+                    <td class="nowo-ui-table__actions">
+                        <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
                         {{ form_start(delete_forms[route], {attr: {onsubmit: 'return confirm(\'Delete page ' ~ route ~ '?\');'}}) }}
                             {% for child in delete_forms[route] %}
                                 {% if not child.rendered %}
                                     {{ form_row(child) }}
                                 {% endif %}
                             {% endfor %}
-                            <button class="btn btn-danger" type="submit">Delete</button>
+                            <button class="nowo-ui-btn nowo-ui-btn--danger" type="submit">Delete</button>
                         {{ form_end(delete_forms[route]) }}
                     </td>
                 </tr>

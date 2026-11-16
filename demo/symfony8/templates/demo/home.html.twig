@@ -1,7 +1,13 @@
 {% extends 'base.html.twig' %}
 
+{% block nowo_ui_page_header %}
+    {{ include(nowo_ui_partial('page_header'), {title: 'SEO Kit Demo', intro: 'Multilingual SEO with pages, slug routes, and configured slugs.'}) }}
+{% endblock %}
+
 {% block body %}
-    <h1>SEO Kit Demo</h1>
-    <p>Multilingual SEO with pages, slug routes, and configured slugs.</p>
-    <p>Use the language switch (EN / ES / FR) to change <code>_locale</code> and the localized path for the current page.</p>
+    <section class="nowo-ui-card">
+        <div class="nowo-ui-card__body">
+            <p>Use the language switch (EN / ES / FR) to change <code>_locale</code> and the localized path for the current page.</p>
+        </div>
+    </section>
 {% endblock %}

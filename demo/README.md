@@ -12,6 +12,8 @@
 
 Demo sources: [`symfony8/`](symfony8/).
 
+The pages render on the UiKit admin layout with UiKit's default theme and the admin forms are FormKit forms.
+
 SEO Admin (demo CRUD for `pages` / `slug_routes` / `slugs`): [http://localhost:8050/admin/seo](http://localhost:8050/admin/seo).
 
 Documentation: [docs/DEMO-FRANKENPHP.md](../docs/DEMO-FRANKENPHP.md).

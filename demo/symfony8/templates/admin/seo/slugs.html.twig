@@ -3,11 +3,11 @@
 {% block title %}SEO Admin · Slugs / URLs{% endblock %}
 
 {% block body %}
-    <div class="toolbar">
-        <p class="note" style="margin:0;">Per-slug SEO + translated URL slugs (<code>slugs.*</code>).</p>
-        <a class="btn btn-primary" href="{{ path('admin_seo_slug_new') }}">New slug</a>
+    <div class="nowo-ui-toolbar">
+        <p class="nowo-ui-muted">Per-slug SEO + translated URL slugs (<code>slugs.*</code>).</p>
+        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_slug_new') }}">New slug</a>
     </div>
-    <table>
+    <table class="nowo-ui-table">
         <thead>
             <tr>
                 <th>Route / slug</th>
@@ -26,29 +26,29 @@
                         </td>
                         <td>
                             {{ cfg.title|default('—') }}<br>
-                            <span class="meta">
+                            <span class="nowo-ui-muted">
                                 sitemap: {{ cfg.in_sitemap|default(true) ? 'yes' : 'no' }}
                                 · noindex: {{ cfg.noindex|default(false) ? 'yes' : 'no' }}
                             </span>
                         </td>
                         <td>
-                            <ul class="urls">
+                            <ul class="nowo-ui-list">
                                 {% for locale, url in slug_urls[route][slug]|default({}) %}
-                                    <li><span class="mono">{{ locale }}</span>:
+                                    <li><code>{{ locale }}</code>:
                                         {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
                                     </li>
                                 {% endfor %}
                             </ul>
                         </td>
-                        <td class="actions">
-                            <a class="btn" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
+                        <td class="nowo-ui-table__actions">
+                            <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
                             {{ form_start(delete_forms[route][slug], {attr: {onsubmit: 'return confirm(\'Delete slug ' ~ slug ~ '?\');'}}) }}
                                 {% for child in delete_forms[route][slug] %}
                                     {% if not child.rendered %}
                                         {{ form_row(child) }}
                                     {% endif %}
                                 {% endfor %}
-                                <button class="btn btn-danger" type="submit">Delete</button>
+                                <button class="nowo-ui-btn nowo-ui-btn--danger" type="submit">Delete</button>
                             {{ form_end(delete_forms[route][slug]) }}
                         </td>
                     </tr>
