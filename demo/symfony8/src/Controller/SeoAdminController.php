@@ -8,10 +8,10 @@ use App\Form\PageFormType;
 use App\Form\SlugFormType;
 use App\Form\SlugRouteFormType;
 use App\Service\SeoConfigStore;
+use Nowo\FormKitBundle\Form\Type\CsrfOnlyType;
 use Nowo\SeoKitBundle\Attribute\Seo;
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\Request;
@@ -349,13 +349,12 @@ final class SeoAdminController extends AbstractController
     }
 
     /**
-     * POST-only delete with a Symfony Form CSRF token (REQ-SEC-005 / REQ-TWIG-005 in the demo).
+     * POST-only delete with a FormKit CsrfOnlyType token (REQ-SEC-005 / REQ-TWIG-005 / REQ-DEMO-015).
      */
     private function deleteForm(string $action): FormInterface
     {
         return $this->container->get('form.factory')
-            ->createNamedBuilder('delete', FormType::class, null, ['action' => $action])
-            ->getForm();
+            ->createNamed('delete', CsrfOnlyType::class, null, ['action' => $action, 'csrf_token_id' => 'delete']);
     }
 
     private function deleteSubmitted(Request $request, string $action): bool

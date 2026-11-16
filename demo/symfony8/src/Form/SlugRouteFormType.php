@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Form;
 
+use Nowo\FormKitBundle\Attribute\FormKitConfig;
+use Nowo\FormKitBundle\Form\FormOptionsTrait;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
@@ -12,36 +14,38 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Demo admin form for a `slug_routes.<route>` SEO entry (path pattern + title templates).
+ * REQ-DEMO-015: a FormKit form (profile `demo`). Demo admin form for a `slug_routes.<route>` SEO entry (path pattern + title templates).
  */
+#[FormKitConfig('demo')]
 final class SlugRouteFormType extends AbstractType
 {
+    use FormOptionsTrait;
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('route', TextType::class, [
-                'label'    => 'Route name',
-                'disabled' => !$options['is_new'],
-                'attr'     => ['placeholder' => 'app_blog_show'],
-            ])
-            ->add('slug_parameter', TextType::class, ['label' => 'Slug parameter', 'required' => false])
-            ->add('sitemap_priority', NumberType::class, [
-                'label' => 'Sitemap priority',
-                'scale' => 1,
-                'html5' => true,
-                'attr'  => ['min' => 0, 'max' => 1, 'step' => 0.1],
-            ])
-            ->add('path_pattern', TextType::class, ['label' => 'Default path pattern', 'required' => false, 'attr' => ['placeholder' => '/en/blog/{slug}']])
-            ->add('title_template', TextType::class, ['label' => 'Title template', 'required' => false, 'attr' => ['placeholder' => '{title} — Blog']])
-            ->add('description_template', TextType::class, ['label' => 'Description template', 'required' => false, 'attr' => ['placeholder' => 'Article: {slug}']])
-            ->add('in_sitemap', CheckboxType::class, ['label' => 'In sitemap', 'required' => false])
-            ->add('locales', LocalesType::class, [
-                'locales' => $options['locales'],
-                'fields'  => [
-                    'path_pattern'   => ['label' => 'Path pattern'],
-                    'title_template' => ['label' => 'Title template'],
-                ],
-            ]);
+        $this->addWithDefaults($builder, 'route', TextType::class, [
+            'label'    => 'Route name',
+            'disabled' => !$options['is_new'],
+            'attr'     => ['placeholder' => 'app_blog_show'],
+        ]);
+        $this->addWithDefaults($builder, 'slug_parameter', TextType::class, ['label' => 'Slug parameter', 'required' => false]);
+        $this->addWithDefaults($builder, 'sitemap_priority', NumberType::class, [
+            'label' => 'Sitemap priority',
+            'scale' => 1,
+            'html5' => true,
+            'attr'  => ['min' => 0, 'max' => 1, 'step' => 0.1],
+        ]);
+        $this->addWithDefaults($builder, 'path_pattern', TextType::class, ['label' => 'Default path pattern', 'required' => false, 'attr' => ['placeholder' => '/en/blog/{slug}']]);
+        $this->addWithDefaults($builder, 'title_template', TextType::class, ['label' => 'Title template', 'required' => false, 'attr' => ['placeholder' => '{title} — Blog']]);
+        $this->addWithDefaults($builder, 'description_template', TextType::class, ['label' => 'Description template', 'required' => false, 'attr' => ['placeholder' => 'Article: {slug}']]);
+        $this->addWithDefaults($builder, 'in_sitemap', CheckboxType::class, ['label' => 'In sitemap', 'required' => false]);
+        $this->addWithDefaults($builder, 'locales', LocalesType::class, [
+            'locales' => $options['locales'],
+            'fields'  => [
+                'path_pattern'   => ['label' => 'Path pattern'],
+                'title_template' => ['label' => 'Title template'],
+            ],
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

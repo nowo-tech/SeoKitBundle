@@ -1,6 +1,7 @@
 {% extends 'base.html.twig' %}
 
-{% block body %}
-    <h1>About</h1>
-    <p>This page uses the <code>#[Seo]</code> attribute for metadata.</p>
+{% block nowo_ui_page_header %}
+    {{ include(nowo_ui_partial('page_header'), {title: 'About', intro: 'This page uses the #[Seo] attribute for metadata.'}) }}
 {% endblock %}
+
+{% block body %}{% endblock %}

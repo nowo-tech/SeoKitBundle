@@ -44,4 +44,15 @@ test.describe('SeoKit demo', () => {
     await page.locator('tr', { hasText: 'app_about' }).first().getByRole('link', { name: 'Edit' }).click();
     await expect(page.getByText('Resolved SEO URLs')).toBeVisible();
   });
+
+  test('the demo shell is UiKit and the admin forms are FormKit forms (REQ-DEMO-014/015)', async ({ page }) => {
+    await page.goto('/admin/seo/pages/new');
+    await expect(page.getByTestId('demo-masthead')).toBeVisible();
+    await expect(page.locator('link[href*="bootstrap"]')).toHaveCount(0);
+    await expect(page.getByLabel('Route name')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    const settings = await page.goto('/admin/seo/settings-preview');
+    expect(settings?.ok()).toBeTruthy();
+    await expect(page.getByTestId('demo-masthead')).toBeVisible();
+  });
 });

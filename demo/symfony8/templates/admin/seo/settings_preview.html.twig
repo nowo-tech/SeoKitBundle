@@ -1,0 +1,14 @@
+{% extends 'admin/seo/layout.html.twig' %}
+
+{% block title %}SEO Admin · Site settings{% endblock %}
+
+{% block body %}
+    <p class="nowo-ui-muted">Preview of the bundle's <code>SeoSiteSettingsType</code> (site name + per-locale titles); nothing is persisted in this demo.</p>
+
+    {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <div class="nowo-ui-form__actions">
+            <button class="nowo-ui-btn nowo-ui-btn--primary" type="submit">Save</button>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

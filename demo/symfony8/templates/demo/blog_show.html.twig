@@ -1,7 +1,14 @@
 {% extends 'base.html.twig' %}
 
+{% block nowo_ui_page_header %}
+    {{ include(nowo_ui_partial('page_header'), {title: title}) }}
+{% endblock %}
+
 {% block body %}
-    <h1>{{ title }}</h1>
-    <p>Slug: <code>{{ slug }}</code></p>
-    <p>SEO layers: slug_routes + slugs configuration.</p>
+    <section class="nowo-ui-card">
+        <div class="nowo-ui-card__body">
+            <p>Slug: <code>{{ slug }}</code></p>
+            <p>SEO layers: slug_routes + slugs configuration.</p>
+        </div>
+    </section>
 {% endblock %}

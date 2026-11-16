@@ -3,20 +3,20 @@
 {% block title %}SEO Admin · {{ is_new ? 'New slug' : 'Edit slug' }}{% endblock %}
 
 {% block body %}
-    <p class="note">Canonical slug key + per-locale translated <code>slug</code> / optional absolute <code>path</code>.</p>
+    <p class="nowo-ui-muted">Canonical slug key + per-locale translated <code>slug</code> / optional absolute <code>path</code>.</p>
 
     {% if slug_urls is not empty %}
         <fieldset>
             <legend>Resolved SEO URLs</legend>
-            <ul class="urls">
+            <ul class="nowo-ui-list">
                 {% for locale, url in slug_urls %}
-                    <li><span class="mono">{{ locale }}</span>: {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}</li>
+                    <li><code>{{ locale }}</code>: {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}</li>
                 {% endfor %}
             </ul>
         </fieldset>
     {% endif %}
 
-    {{ form_start(form, {attr: {class: 'stack'}}) }}
+    {{ form_start(form) }}
         {% for child in form %}
             {% if not child.rendered %}
                 {% if child.vars.name == 'locales' %}
@@ -37,9 +37,9 @@
             {% endif %}
         {% endfor %}
 
-        <div class="actions" style="margin-top:1.25rem;">
-            <button class="btn btn-primary" type="submit">Save</button>
-            <a class="btn" href="{{ path('admin_seo_slugs') }}">Cancel</a>
+        <div class="nowo-ui-form__actions">
+            <button class="nowo-ui-btn nowo-ui-btn--primary" type="submit">Save</button>
+            <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_slugs') }}">Cancel</a>
         </div>
     {{ form_end(form) }}
 {% endblock %}

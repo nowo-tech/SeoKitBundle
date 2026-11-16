@@ -37,7 +37,7 @@ final class SiteSettingsPreviewController extends AbstractController
             return $this->redirectToRoute('admin_seo_settings_preview');
         }
 
-        return $this->render('@NowoSeoKitBundle/admin/settings.html.twig', [
+        return $this->render('admin/seo/settings_preview.html.twig', [
             'form'            => $form,
             'settings'        => $settings,
             'enabled_locales' => ['en', 'es', 'fr'],
