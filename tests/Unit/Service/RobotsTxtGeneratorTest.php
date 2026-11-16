@@ -9,7 +9,11 @@ use Nowo\SeoKitBundle\Service\RobotsTxtGenerator;
 use Nowo\SeoKitBundle\Service\SeoPathBuilder;
 use Nowo\SeoKitBundle\Service\SiteIndexabilityProviderInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
+
+use function in_array;
+use function is_int;
 
 final class RobotsTxtGeneratorTest extends TestCase
 {
@@ -165,5 +169,58 @@ final class RobotsTxtGeneratorTest extends TestCase
 
         $this->assertStringContainsString('User-agent: *', $output);
         $this->assertStringNotContainsString('nope', $output);
+    }
+
+    /**
+     * RI3-L1 sink: a host groups provider (e.g. fed from a database) must not add its own robots.txt lines.
+     */
+    public function testGenerateDropsValuesWithLineBreaksOrControlCharacters(): void
+    {
+        $config = [
+            'robots' => [
+                'user_agent'   => "*\nDisallow: /",
+                'allow'        => ['/', "/a\r\nDisallow: /"],
+                'disallow'     => ['/admin', "/b\x00"],
+                'sitemap_link' => false,
+            ],
+            'sitemap' => ['enabled' => false],
+        ];
+        $provider = new class implements GeoRobotsGroupsProviderInterface {
+            public function groups(): array
+            {
+                return [
+                    ['user_agent' => "GPTBot\nUser-agent: *\nDisallow: /", 'allow' => ['/'], 'disallow' => []],
+                    ['user_agent' => "Evil\u{2028}Bot", 'allow' => ['/'], 'disallow' => []],
+                    ['user_agent' => "Bad\xC3", 'allow' => ['/'], 'disallow' => []],
+                    ['user_agent' => 'GoodBot', 'allow' => ['/docs', "/x\rDisallow: /"], 'disallow' => ["/y\nAllow: /", '/private']],
+                ];
+            }
+        };
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->exactly(8))
+            ->method('warning')
+            ->with($this->stringContains('line break or control character'), $this->callback(
+                static fn (array $context): bool => in_array($context['kind'] ?? null, ['user agent', 'path'], true) && is_int($context['length'] ?? null),
+            ));
+
+        $output = (new RobotsTxtGenerator($config, new SeoPathBuilder($config), [], [$provider], $logger))
+            ->generate(Request::create('https://example.com/'));
+
+        $this->assertSame(
+            "User-agent: *\nAllow: /\nDisallow: /admin\n\nUser-agent: GoodBot\nAllow: /docs\nDisallow: /private\n",
+            $output,
+        );
+    }
+
+    public function testGenerateDropsInvalidValuesWithoutALogger(): void
+    {
+        $config = [
+            'robots'  => ['user_agent' => "Bot\nDisallow: /", 'allow' => ['/'], 'sitemap_link' => false],
+            'sitemap' => ['enabled' => false],
+        ];
+
+        $output = (new RobotsTxtGenerator($config, new SeoPathBuilder($config)))->generate(Request::create('/'));
+
+        $this->assertSame("User-agent: *\nAllow: /\n", $output);
     }
 }

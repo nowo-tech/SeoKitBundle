@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- robots.txt: user agents and `Allow` / `Disallow` paths that contain a line break or another control character
+  (C0/C1, Unicode line or paragraph separator, or invalid UTF-8) are no longer written. An extra group
+  (`robots.groups` or a `GeoRobotsGroupsProviderInterface` provider) with such a user agent is skipped, such a path is
+  skipped, and such a main `robots.user_agent` falls back to `*`; each drop logs a warning. A provider value can no
+  longer add its own robots.txt lines (RI3-L1). `RobotsTxtGenerator` takes an optional PSR-3 logger as last
+  constructor argument.
+
 ### Changed
 
 - CI: the coverage job fails below **100%** statement coverage (the minimum was 75%). The suite is already at 100%; the gate only stops a regression from merging.
