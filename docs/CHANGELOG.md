@@ -60,6 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   *instance* (not the class named in the source configuration), so the mirror is exact, also when a filter is
   registered again under the same name with another class.
 
+### Documentation
+
+- Spec Kit baseline (REQ-SPECKIT-003): `specs/001-baseline` maps the 1.22 change events, the 1.23-1.24 private entity manager classes and framework-free ports, `UnitOfWorkFrames` and `SeoKitBrand` (120/120 units; FR-SEO-013 to FR-SEO-017).
+
 ## [1.24.2] - 2026-11-12
 
 ### Fixed

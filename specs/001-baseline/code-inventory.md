@@ -2,7 +2,7 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/seo-kit-bundle`  
-**Last audited**: 2026-10-30 (admin UI on the UiKit page contract, access checker, CSRF / security compile passes)
+**Last audited**: 2026-11-16 (1.22 change events, 1.23-1.24 private entity manager and framework-free ports; 2026-10-30 admin UI on the UiKit page contract)
 
 Every production artifact under `src/` is listed below.
 
@@ -86,6 +86,26 @@ Every production artifact under `src/` is listed below.
 | `Service/SeoPencilCatalogFactory.php` | Public pencil JSON catalog | FR-SEO-001 |
 | `Service/SeoSurfaceKeys.php` | Conventional surface keys | FR-SEO-001 |
 | `Service/SeoSurfaceManager.php` | Surface persistence helper | FR-SEO-001 |
+| `Brand/SeoKitBrand.php` | Brand provider bridge (spec 220 S6) | FR-SEO-017 |
+| `DependencyInjection/Compiler/EntityManagerOptionPass.php` | Validates `doctrine.entity_manager` (1.23) | FR-SEO-015 |
+| `DependencyInjection/Compiler/PrivateEntityManagerPass.php` | Rollback middleware on the private manager's connection only | FR-SEO-015 |
+| `Doctrine/PrivateEntityManagerConnection.php` | Reports rollbacks / failed commits | FR-SEO-015 |
+| `Doctrine/PrivateEntityManagerDriver.php` | Wraps the private connection's driver | FR-SEO-015 |
+| `Doctrine/PrivateEntityManagerMiddleware.php` | DBAL middleware of the private manager | FR-SEO-015 |
+| `Doctrine/PrivateManagerRepositoryFactory.php` | Repository factory of the private manager | FR-SEO-015, FR-SEO-016 |
+| `Doctrine/SeoKitEntityManager.php` | Private entity manager (1.24, rule 6) | FR-SEO-015 |
+| `Doctrine/SeoKitManagerRegistry.php` | Registry seen by the SeoKit repositories | FR-SEO-015 |
+| `Event/SeoSiteSettingsChangedEvent.php` | Site settings saved (id-only event) | FR-SEO-013 |
+| `Event/SeoSurfaceChangedEvent.php` | Surface override saved / cleared (id-only event) | FR-SEO-013 |
+| `Model/SeoSurfaceData.php` | Surface override as plain data | FR-SEO-014 |
+| `Model/SitemapContext.php` | Framework-free sitemap request view | FR-SEO-014 |
+| `Service/SeoChangeNotifier.php` | Dispatches the change events after a write | FR-SEO-013 |
+| `Service/SeoSurfaceManagerInterface.php` | Surface manager port (1.22) | FR-SEO-014 |
+| `Service/SeoSurfaceStoreInterface.php` | Surface store port, plain data (1.24) | FR-SEO-014 |
+| `Service/SeoUrlBuilderInterface.php` | URL builder port without HTTP types (1.24) | FR-SEO-004, FR-SEO-014 |
+| `Service/SitemapContextFactory.php` | HTTP edge adapter: Request to SitemapContext | FR-SEO-014 |
+| `Service/SitemapEntryProviderInterface.php` | Host sitemap URLs port (1.24) | FR-SEO-005, FR-SEO-014 |
+| `Worker/UnitOfWorkFrames.php` | Outermost unit-of-work tracking | FR-SEO-016 |
 | `Service/OriginUrlGuard.php` | Admin/API origin guard | FR-SEO-001 |
 | `Service/Persistence/DoctrineSeoDefaultsProvider.php` | DB-backed defaults | FR-SEO-001, FR-SEO-011 |
 | `Service/Persistence/SeoSiteConfigProvider.php` | Cached site config snapshot | FR-SEO-001 |
@@ -130,10 +150,10 @@ Every production artifact under `src/` is listed below.
 
 | Category | Files | Mapped |
 | --- | ---: | ---: |
-| PHP classes | 86 | 86 |
+| PHP classes | 106 | 106 |
 | Symfony config | 3 | 3 |
 | Twig views | 4 | 4 |
 | Translations | 7 | 7 |
-| **Total production sources** | **100** | **100** |
+| **Total production sources** | **120** | **120** |
 
 Audit command (production count): `git ls-files src | wc -l` → **100** (2026-10-30).

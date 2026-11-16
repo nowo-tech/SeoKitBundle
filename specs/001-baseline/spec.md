@@ -97,6 +97,11 @@ As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`Organizat
 | FR-SEO-010 | Optional PageHead pipeline (`PageHeadResolver`, SPI, `PageHeadContext`) for CMS hosts; `ConfigPageHeadDefaultsProvider` maps YAML `defaults` when `base_url` is set |
 | FR-SEO-011 | Site settings social profiles accept the `none` sentinel (`SeoSiteConfig::NO_SOCIAL_PROFILES`, `hasNoSocialProfiles()`); `sameAs` uses `SeoSiteConfig::socialProfileUrls()` (http/https only), so the sentinel never reaches JSON-LD |
 | FR-SEO-012 | The default `seo/head.html.twig` JSON-LD fallbacks (`jsonLd.document` / `jsonLd.graph`) encode with `JSON_HEX_TAG`, `JSON_HEX_AMP`, `JSON_HEX_APOS`, `JSON_HEX_QUOT` (same flags as `StructuredDataGraph::toJson()`); editor text cannot close the `<script>` block |
+| FR-SEO-013 | Change events (1.22): `SeoChangeNotifier` dispatches id-only `SeoSiteSettingsChangedEvent` / `SeoSurfaceChangedEvent` after the flush (admin, JSON API, `SeoSurfaceManagerInterface::saveOrClear()`); no dispatcher, no-op |
+| FR-SEO-014 | Framework-free ports (1.24, REQ-ARCH-001 rules 1 and 3): `SeoSurfaceManagerInterface`, `SeoSurfaceStoreInterface` with the plain `SeoSurfaceData`, `SeoUrlBuilderInterface` (replaces `SeoPathBuilderInterface`), `SitemapEntryProviderInterface` with the framework-free `SitemapContext` (replaces `SitemapUrlProviderInterface`); `SitemapContextFactory` is the only HTTP edge adapter |
+| FR-SEO-015 | Private entity manager (1.24, REQ-ARCH-001 rule 6): without `doctrine.entity_manager`, `SeoKitEntityManager` + `SeoKitManagerRegistry` + `PrivateManagerRepositoryFactory` keep the SeoKit entities off the application's manager; `PrivateEntityManagerMiddleware` / `Driver` / `Connection` (attached by `PrivateEntityManagerPass` to that connection only) report rollbacks so a stale identity map is dropped; `EntityManagerOptionPass` fails the build when a configured manager does not exist or does not map the entities (1.23) |
+| FR-SEO-016 | Worker boundaries (REQ-RUNTIME-002): `UnitOfWorkFrames` lets the boundary listener act only at the outermost request, Messenger message or console command |
+| FR-SEO-017 | Brand bridge (spec 220 S6, 1.21): `SeoKitBrand` reads a `nowo-tech/brand-contracts` provider for the head tags when installed |
 | FR-I18N-001 | Translation files with key parity across en, es, fr, de, it, pt, nl |
 
 ---
@@ -111,7 +116,7 @@ As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`Organizat
 
 ## Success Criteria
 
-- **SC-001**: **88/88** production files under `src/` mapped in [`code-inventory.md`](code-inventory.md) (audited 2026-10-20; `git ls-files src | wc -l`).
+- **SC-001**: **120/120** production files under `src/` mapped in [`code-inventory.md`](code-inventory.md) (audited 2026-11-16; `git ls-files src | wc -l`).
 - **SC-002**: Configuration keys match `DependencyInjection/Configuration.php` and [`docs/CONFIGURATION.md`](../../docs/CONFIGURATION.md).
 - **SC-003**: PHPUnit passes with the project coverage floor; PHPStan (including the FrankenPHP rulesets) and PHP-CS-Fixer report no errors.
 - **SC-004**: Translation key parity across the 7 locales (FR-I18N-001).
