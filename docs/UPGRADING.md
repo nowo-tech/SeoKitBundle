@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.24.3](#to-1243)
 - [To 1.24.2](#to-1242)
 - [To 1.24.1](#to-1241)
 - [To 1.24.0](#to-1240)
@@ -93,6 +94,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.24.3
+
+From **1.24.2**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 ## To 1.24.2
 
