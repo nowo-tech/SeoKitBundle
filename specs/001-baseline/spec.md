@@ -102,6 +102,7 @@ As an integrator, I compose CSP-safe JSON-LD graphs with typed nodes (`Organizat
 | FR-SEO-015 | Private entity manager (1.24, REQ-ARCH-001 rule 6): without `doctrine.entity_manager`, `SeoKitEntityManager` + `SeoKitManagerRegistry` + `PrivateManagerRepositoryFactory` keep the SeoKit entities off the application's manager; `PrivateEntityManagerMiddleware` / `Driver` / `Connection` (attached by `PrivateEntityManagerPass` to that connection only) report rollbacks so a stale identity map is dropped; `EntityManagerOptionPass` fails the build when a configured manager does not exist or does not map the entities (1.23) |
 | FR-SEO-016 | Worker boundaries (REQ-RUNTIME-002): `UnitOfWorkFrames` lets the boundary listener act only at the outermost request, Messenger message or console command |
 | FR-SEO-017 | Brand bridge (spec 220 S6, 1.21): `SeoKitBrand` reads a `nowo-tech/brand-contracts` provider for the head tags when installed |
+| FR-SEO-018 | Concurrency (1.25, REQ-RUNTIME-003): lock conflicts on the bundle's routes answer 409 (configurable 503) with `CONFLICT_001` + `Retry-After` or `CONFLICT_002` (`SeoKitConflictListener`, commit ledger scoped by `CommitTrackingPass`); the surface (key, locale) insert race is written to the stored row (`SeoSurfaceRepository::upsert()`); a duplicate settings translation is a domain 409 `SEO_KIT_DUPLICATE_KEY`; see docs/CONCURRENCY.md |
 | FR-I18N-001 | Translation files with key parity across en, es, fr, de, it, pt, nl |
 
 ---

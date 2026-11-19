@@ -52,8 +52,9 @@ final readonly class SeoSurfaceManager implements SeoSurfaceManagerInterface, Se
             return false;
         }
 
-        $this->surfaces->save($surface);
-        $this->notifier->surfaceChanged($surface->getSurfaceKey(), $surface->getLocale(), $surface->getId(), false);
+        // 1.25: a new row inserted by a concurrent request first is updated instead (SeoSurfaceRepository::upsert()).
+        $stored = $this->surfaces->upsert($surface);
+        $this->notifier->surfaceChanged($stored->getSurfaceKey(), $stored->getLocale(), $stored->getId(), false);
 
         return true;
     }

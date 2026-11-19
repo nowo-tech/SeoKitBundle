@@ -15,6 +15,7 @@ use Nowo\SeoKitBundle\Repository\SeoSiteSettingsRepository;
 use Nowo\SeoKitBundle\Repository\SeoSurfaceRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use RuntimeException;
 
 final class SeoRepositoriesTest extends TestCase
@@ -159,6 +160,54 @@ final class SeoRepositoriesTest extends TestCase
 
         $this->expectException(UniqueConstraintViolationException::class);
         $this->surfaceRepository($em, null)->getOrCreate('page:home', 'en');
+    }
+
+    /** 1.25 (REQ-RUNTIME-003 rule 4): a new surface inserted first by another request updates the stored row. */
+    public function testSurfaceUpsertWritesTheOverridesToTheRowInsertedConcurrently(): void
+    {
+        $winner = (new SeoSurface())->setSurfaceKey('page:home')->setLocale('en')->setMetaTitle('Winner');
+        (new ReflectionClass($winner))->getProperty('id')->setValue($winner, 7);
+        $em    = $this->entityManager(SeoSurface::class);
+        $calls = 0;
+        $em->method('isOpen')->willReturn(true);
+        $em->expects(self::exactly(2))->method('flush')->willReturnCallback(function () use (&$calls): void {
+            if ($calls++ === 0) {
+                throw $this->uniqueViolation();
+            }
+        });
+        $mine = (new SeoSurface())->setSurfaceKey('page:home')->setLocale('en')->setMetaTitle('Mine')->setMetaDescription('D')
+            ->setMetaRobots('noindex')->setCanonicalOverride('/c')->setOpenGraphImage('/og.png')->setStructuredDataExtra(['@type' => 'WebPage']);
+
+        $stored = $this->surfaceRepository($em, $winner)->upsert($mine);
+
+        self::assertSame($winner, $stored);
+        self::assertSame(7, $stored->getId());
+        self::assertSame(['Mine', 'D', 'noindex', '/c', '/og.png', ['@type' => 'WebPage']], [
+            $stored->getMetaTitle(), $stored->getMetaDescription(), $stored->getMetaRobots(), $stored->getCanonicalOverride(),
+            $stored->getOpenGraphImage(), $stored->getStructuredDataExtra(),
+        ]);
+    }
+
+    public function testSurfaceUpsertRethrowsWhenNoRowWasInsertedConcurrently(): void
+    {
+        $em = $this->entityManager(SeoSurface::class);
+        $em->method('isOpen')->willReturn(true);
+        $em->method('flush')->willThrowException($this->uniqueViolation());
+
+        $this->expectException(UniqueConstraintViolationException::class);
+        $this->surfaceRepository($em, null)->upsert((new SeoSurface())->setSurfaceKey('page:home')->setLocale('en'));
+    }
+
+    public function testSurfaceUpsertOfAStoredRowRethrowsAUniqueViolation(): void
+    {
+        $stored = (new SeoSurface())->setSurfaceKey('page:home')->setLocale('en');
+        (new ReflectionClass($stored))->getProperty('id')->setValue($stored, 3);
+        $em = $this->entityManager(SeoSurface::class);
+        $em->method('isOpen')->willReturn(true);
+        $em->method('flush')->willThrowException($this->uniqueViolation());
+
+        $this->expectException(UniqueConstraintViolationException::class);
+        $this->surfaceRepository($em, $stored)->upsert($stored);
     }
 
     public function testSurfaceRemoveFlushes(): void

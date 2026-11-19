@@ -9,6 +9,8 @@ use Nowo\SeoKitBundle\Command\SeoAuditCommand;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSiteSettingsController;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\CommitTrackingPass;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\PrivateEntityManagerPass;
 use Nowo\SeoKitBundle\DependencyInjection\Configuration;
 use Nowo\SeoKitBundle\DependencyInjection\SeoKitExtension;
 use Nowo\SeoKitBundle\Doctrine\PrivateEntityManagerMiddleware;
@@ -18,6 +20,7 @@ use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\EventSubscriber\SeoKitConflictListener;
 use Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
@@ -44,6 +47,7 @@ use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
 use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
+use Nowo\TransactionDoctrine\Symfony\Conflict\ConflictResponsePolicy;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -55,9 +59,11 @@ use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\ParameterBag\EnvPlaceholderParameterBag;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 use function explode;
 use function str_repeat;
@@ -120,6 +126,52 @@ final class SeoKitExtensionTest extends TestCase
             ],
             $container->getParameter(Configuration::ALIAS . '.persistence.entities'),
         );
+    }
+
+    /** 1.25 (REQ-RUNTIME-003 rule 6): the conflict answer and the bundle's commit tracking. */
+    public function testLoadRegistersTheConflictAnswerWithPersistence(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true]]], $container);
+
+        $listener = $container->getDefinition(SeoKitConflictListener::class);
+        self::assertEquals(new Reference(ConflictResponsePolicy::class, ContainerInterface::NULL_ON_INVALID_REFERENCE), $listener->getArgument(0), 'Unset: follow transaction-doctrine.');
+        self::assertEquals(new Reference(CommitTrackingPass::LEDGER), $listener->getArgument(1));
+        self::assertTrue($container->hasDefinition(CommitTrackingPass::MIDDLEWARE));
+        self::assertSame([
+            ['event' => KernelEvents::REQUEST, 'method' => 'onRequest', 'priority' => SeoKitConflictListener::REQUEST_PRIORITY],
+            ['event' => KernelEvents::EXCEPTION, 'method' => 'onException', 'priority' => SeoKitConflictListener::PRIORITY],
+        ], $listener->getTag('kernel.event_listener'));
+
+        $without = new ContainerBuilder();
+        (new SeoKitExtension())->load([[]], $without);
+        self::assertFalse($without->hasDefinition(SeoKitConflictListener::class));
+    }
+
+    public function testConflictAnswerStatusAndTrackingAreConfigurable(): void
+    {
+        $container = new ContainerBuilder();
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true], 'conflict_response' => ['status' => 503, 'commit_tracking' => 'off']]], $container);
+
+        $listener = $container->getDefinition(SeoKitConflictListener::class);
+        $policy   = $listener->getArgument(0);
+        self::assertInstanceOf(Definition::class, $policy);
+        self::assertSame([503, ConflictResponsePolicy::DEFAULT_RETRY_AFTER], $policy->getArguments());
+        self::assertNull($listener->getArgument(1));
+        self::assertFalse($container->hasDefinition(CommitTrackingPass::MIDDLEWARE));
+        self::assertFalse($container->hasDefinition(CommitTrackingPass::LEDGER));
+
+        $retry = new ContainerBuilder();
+        (new SeoKitExtension())->load([['persistence' => ['enabled' => true], 'conflict_response' => ['retry_after' => 4]]], $retry);
+        $policy = $retry->getDefinition(SeoKitConflictListener::class)->getArgument(0);
+        self::assertInstanceOf(Definition::class, $policy);
+        self::assertSame([ConflictResponsePolicy::STATUS_CONFLICT, 4], $policy->getArguments());
+    }
+
+    public function testConflictStatusMustBe409Or503(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        (new SeoKitExtension())->load([['conflict_response' => ['status' => 500]]], new ContainerBuilder());
     }
 
     public function testLoadRegistersAdminWhenEnabledWithPersistence(): void
@@ -796,7 +848,8 @@ final class SeoKitExtensionTest extends TestCase
         $container = $this->persistenceContainer([]);
         self::assertTrue($container->hasDefinition(SeoKitEntityManager::class));
         self::assertSame([['method' => 'reset']], $container->getDefinition(SeoKitEntityManager::class)->getTag('kernel.reset'));
-        self::assertTrue($container->hasDefinition(PrivateEntityManagerMiddleware::class));
+        // The rollback middleware only with doctrine/dbal 4 (the DBAL 3 cells of the "Real databases" job).
+        self::assertSame(PrivateEntityManagerPass::supportsRollbackMiddleware(), $container->hasDefinition(PrivateEntityManagerMiddleware::class));
         foreach ([SeoSurfaceRepository::class, SeoSiteSettingsRepository::class] as $repository) {
             self::assertSame(SeoKitManagerRegistry::class, (string) $container->getDefinition($repository)->getArgument('$registry'));
         }

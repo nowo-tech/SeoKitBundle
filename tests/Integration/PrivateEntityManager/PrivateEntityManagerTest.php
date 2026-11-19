@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Persistence\ManagerRegistry;
 use InvalidArgumentException;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\PrivateEntityManagerPass;
 use Nowo\SeoKitBundle\Doctrine\SeoKitEntityManager;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
@@ -105,6 +106,7 @@ final class PrivateEntityManagerTest extends KernelTestCase
 
     public function testHostTransactionRollbackThenTheSameSaveWritesTheRow(): void
     {
+        $this->requireRollbackMiddleware();
         $store = $this->store();
         $store->save(new SeoSurfaceData('page:home', 'en', 'A'));
 
@@ -121,6 +123,7 @@ final class PrivateEntityManagerTest extends KernelTestCase
 
     public function testLoadEditSavepointRollbackSaveWritesTheRow(): void
     {
+        $this->requireRollbackMiddleware();
         $manager = $this->manager();
         $manager->saveOrClear($manager->getOrCreate('page:home', 'en')->setMetaTitle('A'));
 
@@ -156,6 +159,7 @@ final class PrivateEntityManagerTest extends KernelTestCase
     /** Audit MQ-L-L1: a stale manager with scheduled work is kept, so a pending edit is not dropped. */
     public function testStaleManagerWithPendingWorkIsKept(): void
     {
+        $this->requireRollbackMiddleware();
         $manager = $this->manager();
         $manager->saveOrClear($manager->getOrCreate('page:home', 'en')->setMetaTitle('A'));
         $surface = $manager->find('page:home', 'en');
@@ -321,5 +325,16 @@ final class PrivateEntityManagerTest extends KernelTestCase
         $title = $this->connection->fetchOne(sprintf('SELECT %s FROM nowo_seo_surface WHERE surface_key = ?', $this->titleColumn()), [$key]);
 
         return $title === false ? null : (string) $title;
+    }
+
+    /**
+     * The rollback middleware (stale private manager after a rollback) is written against the doctrine/dbal 4 driver
+     * API; with DBAL 3 (the DBAL 3 cells of the "Real databases" job) it is not registered (docs/CONFIGURATION.md).
+     */
+    private function requireRollbackMiddleware(): void
+    {
+        if (!PrivateEntityManagerPass::supportsRollbackMiddleware()) {
+            self::markTestSkipped('doctrine/dbal 4 only: the rollback middleware is not registered with DBAL 3.');
+        }
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Service\Audit;
 
 use Nowo\SeoKitBundle\Service\Persistence\SeoSiteConfigProviderInterface;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**
  * Builds audit rows from host subject providers + shared rules.
@@ -17,7 +17,7 @@ final readonly class SeoAuditor
      */
     public function __construct(
         private SeoAuditRules $rules,
-        #[TaggedIterator('nowo_seo_kit.audit_subject_provider')]
+        #[AutowireIterator('nowo_seo_kit.audit_subject_provider')]
         private iterable $subjectProviders = [],
         private ?SeoSiteConfigProviderInterface $configProvider = null,
         private bool $fallbackSiteIndexable = true,

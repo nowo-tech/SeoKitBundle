@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\SeoKitBundle;
 
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\CommitTrackingPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\EntityManagerOptionPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\PrivateEntityManagerPass;
@@ -30,6 +31,8 @@ final class SeoKitBundle extends Bundle
         $container->addCompilerPass(new EntityManagerOptionPass());
         // 1.24.0 (rule 6): the private entity manager's rollback middleware only on its own connection.
         $container->addCompilerPass(new PrivateEntityManagerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 10);
+        // 1.25 (REQ-RUNTIME-003 rule 6, audit UE-CF-1): commit tracking only on that connection, or transaction-doctrine's ledger.
+        $container->addCompilerPass(new CommitTrackingPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 10);
     }
 
     public function getContainerExtension(): ExtensionInterface

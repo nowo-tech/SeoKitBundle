@@ -51,6 +51,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- REQ-RUNTIME-003 (concurrency): a lock conflict (deadlock, lock wait timeout, serialization failure) on a route of the bundle answers **409** with a conflict code in `X-Conflict-Code` instead of a 500: `CONFLICT_001` with `Retry-After` when nothing of the request was committed, `CONFLICT_002` without `Retry-After` when part of it was (for example the settings page seeded the settings row before its save hit the lock). The JSON surface API keeps its shape and adds `code`. New options `conflict_response.status` (409 or 503), `retry_after` and `commit_tracking` (`bundle`: transaction-doctrine's commit-tracking middleware on the connection of the SeoKit entities only, or transaction-doctrine's own ledger when its `commit_detection` is on; `off`). Host routes and host calls of the repositories and stores are never answered by the bundle. See [docs/CONCURRENCY.md](CONCURRENCY.md).
+- `SeoSurfaceRepository::upsert()`: saves a surface and returns the stored row. A new surface whose key and locale another request inserted first is written to that row (last writer wins) instead of failing on `uniq_nowo_seo_surface_key_locale`; `save()` delegates to it.
+- CI: "Real databases" job (two-connection race tests on MySQL 8.4, MariaDB 11.4 and PostgreSQL 16, with doctrine/dbal 4 and 3) and "Dependency floor" job (lowest nowo-tech/transaction-* versions, demo lock freshness via `.scripts/check-demo-lock.py`). PHPUnit suites `unit`, `integration` and `database`.
+- `docs/CONCURRENCY.md`: write paths, conflict codes, host options and residual risks.
+
+### Changed
+
+- Requires `nowo-tech/transaction-doctrine` ^1.6, `nowo-tech/transaction-contract` ^1.0 and `doctrine/dbal` ^3.8.2 || ^4.0 (the conflict codes and the commit ledger).
+- A settings save refused by the one-translation-per-locale key (two admins adding the same missing translation at once) answers 409 with the domain code `SEO_KIT_DUPLICATE_KEY` in `X-Error-Code`, never a `CONFLICT_*` code. Unique violations on the bundle's other routes are not mapped.
+
+### Fixed
+
+- `#[TaggedIterator]` (removed in Symfony 8) replaced by `#[AutowireIterator]` on `SitemapGenerator`, `RobotsTxtGenerator`, `SeoAuditor` and `SeoMetadataResolver`; `services.yaml` keeps its explicit `!tagged_iterator` arguments.
+- Two concurrent first saves of the same surface override (admin, JSON API, `SeoSurfaceStoreInterface::save()`, `SeoSurfaceManagerInterface::saveOrClear()`) no longer fail the second one with a 500 on the unique key: its overrides are written to the row the first one inserted.
+
 ### Demo
 
 - The demo site-settings preview now renders through a demo-owned template (it returned a 500 because the bundle page needs the UiKit page contract view model). The demo is built on UiKit and FormKit (REQ-DEMO-014/015): the base and admin templates extend the UiKit admin layout with UiKit's default theme (no hand-written HTML shell or inline CSS), the five demo Form Types are FormKit types (`#[FormKitConfig('demo')]` + `FormOptionsTrait`, profile `demo`, UiKit form theme) and the delete actions use FormKit's `CsrfOnlyType`. The demo requires `nowo-tech/ui-kit-bundle` and `nowo-tech/form-kit-bundle`.

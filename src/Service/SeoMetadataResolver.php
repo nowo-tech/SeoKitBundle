@@ -11,7 +11,7 @@ use Nowo\SeoKitBundle\Brand\SeoKitBrand;
 use Nowo\SeoKitBundle\Model\SeoMetadata;
 use ReflectionClass;
 use ReflectionMethod;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -54,7 +54,7 @@ final readonly class SeoMetadataResolver
         private SeoTemplateRenderer $templates,
         private SeoPathBuilderInterface $paths,
         private UrlGeneratorInterface $urlGenerator,
-        #[TaggedIterator('nowo_seo_kit.defaults_provider')]
+        #[AutowireIterator('nowo_seo_kit.defaults_provider')]
         private iterable $defaultsProviders = [],
         private ?SeoKitBrand $brand = null,
     ) {

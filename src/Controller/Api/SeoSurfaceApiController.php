@@ -131,10 +131,11 @@ final class SeoSurfaceApiController extends AbstractController
             return $this->json(['ok' => true, 'cleared' => true]);
         }
 
-        $this->surfaces->save($surface);
-        $this->notifier->surfaceChanged($surfaceKey, $locale, $surface->getId(), false);
+        // 1.25: a new row inserted by a concurrent request first is updated instead (upsert()).
+        $stored = $this->surfaces->upsert($surface);
+        $this->notifier->surfaceChanged($surfaceKey, $locale, $stored->getId(), false);
 
-        return $this->json(['ok' => true, 'cleared' => false, 'id' => $surface->getId()]);
+        return $this->json(['ok' => true, 'cleared' => false, 'id' => $stored->getId()]);
     }
 
     /**

@@ -40,7 +40,7 @@ final class SeoSurfaceManagerTest extends TestCase
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->expects(self::once())->method('remove')->with($surface);
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
 
         $manager = new SeoSurfaceManager($repo);
 
@@ -55,7 +55,7 @@ final class SeoSurfaceManagerTest extends TestCase
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->expects(self::never())->method('remove');
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
 
         self::assertFalse((new SeoSurfaceManager($repo))->saveOrClear($surface));
     }
@@ -68,7 +68,7 @@ final class SeoSurfaceManagerTest extends TestCase
         $surface->setMetaTitle('About');
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->expects(self::once())->method('save')->with($surface);
+        $repo->expects(self::once())->method('upsert')->with($surface)->willReturnArgument(0);
         $repo->expects(self::never())->method('remove');
 
         self::assertTrue((new SeoSurfaceManager($repo))->saveOrClear($surface));
@@ -84,8 +84,10 @@ final class SeoSurfaceManagerTest extends TestCase
         });
         $surface = (new SeoSurface())->setSurfaceKey('page:about')->setLocale('es')->setMetaTitle('About');
         $repo    = $this->createMock(SeoSurfaceRepository::class);
-        $repo->method('save')->willReturnCallback(static function (SeoSurface $saved): void {
+        $repo->method('upsert')->willReturnCallback(static function (SeoSurface $saved): SeoSurface {
             (new ReflectionClass($saved))->getProperty('id')->setValue($saved, 9);
+
+            return $saved;
         });
         $manager = new SeoSurfaceManager($repo, new SeoChangeNotifier($dispatcher));
 
@@ -121,8 +123,10 @@ final class SeoSurfaceManagerTest extends TestCase
         $repo  = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturnMap([['page:home', 'en', $stored], ['page:new', 'es', null]]);
         $repo->expects(self::never())->method('getOrCreate');
-        $repo->expects(self::exactly(2))->method('save')->willReturnCallback(static function (SeoSurface $surface) use (&$saved): void {
+        $repo->expects(self::exactly(2))->method('upsert')->willReturnCallback(static function (SeoSurface $surface) use (&$saved): SeoSurface {
             $saved[] = $surface;
+
+            return $surface;
         });
         $manager = new SeoSurfaceManager($repo);
 
@@ -141,7 +145,7 @@ final class SeoSurfaceManagerTest extends TestCase
         (new ReflectionClass($stored))->getProperty('id')->setValue($stored, 4);
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturnMap([['page:home', 'en', $stored], ['page:new', 'en', null]]);
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
         $repo->expects(self::once())->method('remove')->with($stored);
         $manager = new SeoSurfaceManager($repo);
 
