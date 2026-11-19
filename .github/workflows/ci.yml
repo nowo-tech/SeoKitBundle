@@ -249,7 +249,7 @@ jobs:
           php-version: '8.4'
           tools: composer:v2
 
-      - name: Install dependencies (from the lock: only nowo-tech/transaction-* move below)
+      - name: Install dependencies from the lock (only nowo-tech/transaction-* move below)
         run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Downgrade nowo-tech/transaction-* to the lowest allowed versions
