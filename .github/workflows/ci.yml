@@ -211,7 +211,7 @@ jobs:
         if: ${{ matrix.dbal != '' }}
         run: |
           composer require --no-interaction --no-progress --with-all-dependencies "doctrine/dbal:${{ matrix.dbal }}"
-          composer show doctrine/dbal doctrine/doctrine-bundle
+          composer show doctrine/dbal | head -4
 
       - name: Two-connection race tests
         timeout-minutes: 10
