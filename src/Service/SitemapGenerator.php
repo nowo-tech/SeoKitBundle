@@ -6,7 +6,7 @@ namespace Nowo\SeoKitBundle\Service;
 
 use Nowo\SeoKitBundle\Enum\SitemapChangeFreq;
 use Nowo\SeoKitBundle\Model\SitemapContext;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\Request;
 
 use function is_array;
@@ -34,9 +34,9 @@ final readonly class SitemapGenerator
     public function __construct(
         private array $config,
         private SeoPathBuilderInterface $paths,
-        #[TaggedIterator('nowo_seo_kit.sitemap_url_provider')]
+        #[AutowireIterator('nowo_seo_kit.sitemap_url_provider')]
         private iterable $urlProviders = [],
-        #[TaggedIterator('nowo_seo_kit.indexability_provider')]
+        #[AutowireIterator('nowo_seo_kit.indexability_provider')]
         private iterable $indexabilityProviders = [],
     ) {
     }

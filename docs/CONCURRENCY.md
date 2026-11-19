@@ -72,8 +72,9 @@ A unique-key violation is never answered with a `CONFLICT_*` code:
 - the expected "only one" races (the surface key and locale, the settings row) are caught where they happen and give
   the domain result described in [Write paths](#write-paths);
 - one settings translation per locale (two admins adding the same missing translation at once) answers **409** with
-  the domain code `SEO_KIT_DUPLICATE_KEY` in `X-Error-Code` (and in the JSON `code` of the API), no `X-Conflict-Code`
-  and no `Retry-After`: reload the page and apply the change again;
+  the domain code `SEO_KIT_DUPLICATE_KEY` in `X-Error-Code`, no `X-Conflict-Code` and no `Retry-After`: reload the
+  page and apply the change again. Only the settings page maps it; a unique violation on any other route of the
+  bundle is a real error;
 - a lost connection or any other storage error is not mapped: it is a real error (500).
 
 ## Host options
@@ -129,5 +130,9 @@ nowo_seo_kit:
   winner's row and the failure is thrown. DBAL 4 always nests with savepoints.
 - **doctrine/dbal 3**: the private manager has no rollback detection (see `doctrine.private_entity_manager` in
   [CONFIGURATION.md](CONFIGURATION.md#doctrine)); reload before repeating a save that a host rollback undid.
+- **doctrine/dbal 3 with `commit_tracking: bundle`**: the commit-tracking middleware wraps the connection of the
+  SeoKit entities, which is usually the host's own connection; on DBAL 3 a wrapped driver connection's `commit()`
+  returns `null` instead of `true`. A host that reads that return value sets `commit_tracking: off` or enables
+  transaction-doctrine's `commit_detection` (then the bundle adds no middleware).
 - **`commit_tracking: off`** without transaction-doctrine's `commit_detection`: a conflict after an earlier commit of
   the same request answers `CONFLICT_001`; a retry then repeats only idempotent work (the seed is a get-or-create).

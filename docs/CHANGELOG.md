@@ -61,10 +61,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Requires `nowo-tech/transaction-doctrine` ^1.6, `nowo-tech/transaction-contract` ^1.0 and `doctrine/dbal` ^3.8.2 || ^4.0 (the conflict codes and the commit ledger).
-- A settings save refused by the one-translation-per-locale key (two admins adding the same missing translation at once) answers 409 with the domain code `SEO_KIT_DUPLICATE_KEY` in `X-Error-Code`, never a `CONFLICT_*` code.
+- A settings save refused by the one-translation-per-locale key (two admins adding the same missing translation at once) answers 409 with the domain code `SEO_KIT_DUPLICATE_KEY` in `X-Error-Code`, never a `CONFLICT_*` code. Unique violations on the bundle's other routes are not mapped.
 
 ### Fixed
 
+- `#[TaggedIterator]` (removed in Symfony 8) replaced by `#[AutowireIterator]` on `SitemapGenerator`, `RobotsTxtGenerator`, `SeoAuditor` and `SeoMetadataResolver`; `services.yaml` keeps its explicit `!tagged_iterator` arguments.
 - Two concurrent first saves of the same surface override (admin, JSON API, `SeoSurfaceStoreInterface::save()`, `SeoSurfaceManagerInterface::saveOrClear()`) no longer fail the second one with a 500 on the unique key: its overrides are written to the row the first one inserted.
 
 ### Demo

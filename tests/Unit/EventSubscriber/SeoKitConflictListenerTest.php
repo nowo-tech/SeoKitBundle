@@ -35,8 +35,9 @@ use function json_decode;
  */
 final class SeoKitConflictListenerTest extends TestCase
 {
-    private const API   = 'Nowo\\SeoKitBundle\\Controller\\Api\\SeoSurfaceApiController::post';
-    private const ADMIN = 'Nowo\\SeoKitBundle\\Controller\\Admin\\SeoSurfaceController::edit';
+    private const API      = 'Nowo\\SeoKitBundle\\Controller\\Api\\SeoSurfaceApiController::post';
+    private const ADMIN    = 'Nowo\\SeoKitBundle\\Controller\\Admin\\SeoSurfaceController::edit';
+    private const SETTINGS = 'Nowo\\SeoKitBundle\\Controller\\Admin\\SeoSiteSettingsController::edit';
 
     public function testApiLockConflictWithNothingCommittedAnswers409Conflict001WithRetryAfter(): void
     {
@@ -122,29 +123,15 @@ final class SeoKitConflictListenerTest extends TestCase
         self::assertSame(ConflictCode::COMMITTED, $event->getResponse()?->headers->get(ConflictResponsePolicy::CODE_HEADER));
     }
 
-    public function testApiUniqueViolationAnswersTheDomainCodeNotAConflictCode(): void
+    public function testSettingsUniqueViolationAnswersADomain409WithoutAConflictCode(): void
     {
-        $event = $this->exception(self::API, new RuntimeException('save', 0, $this->uniqueViolation()));
-
-        (new SeoKitConflictListener())->onException($event);
-
-        $response = $event->getResponse();
-        self::assertInstanceOf(JsonResponse::class, $response);
-        self::assertSame(409, $response->getStatusCode());
-        self::assertSame(SeoKitConflictListener::DUPLICATE_KEY, $response->headers->get(SeoKitConflictListener::ERROR_CODE_HEADER));
-        self::assertFalse($response->headers->has(ConflictResponsePolicy::CODE_HEADER));
-        self::assertFalse($response->headers->has('Retry-After'));
-        self::assertSame(['ok' => false, 'errors' => [SeoKitConflictListener::DUPLICATE_KEY_MESSAGE], 'code' => SeoKitConflictListener::DUPLICATE_KEY], json_decode((string) $response->getContent(), true));
-    }
-
-    public function testAdminUniqueViolationAnswersADomain409(): void
-    {
-        $event = $this->exception(self::ADMIN, $this->uniqueViolation());
+        $event = $this->exception(self::SETTINGS, new RuntimeException('save', 0, $this->uniqueViolation()));
 
         (new SeoKitConflictListener())->onException($event);
 
         $answer = $event->getThrowable();
         self::assertInstanceOf(ConflictHttpException::class, $answer);
+        self::assertSame(409, $answer->getStatusCode());
         self::assertSame([SeoKitConflictListener::ERROR_CODE_HEADER => SeoKitConflictListener::DUPLICATE_KEY], $answer->getHeaders());
     }
 

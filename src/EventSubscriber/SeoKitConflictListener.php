@@ -16,7 +16,6 @@ use Nowo\TransactionDoctrine\WriteUnit\CommitMark;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -38,10 +37,10 @@ use function str_starts_with;
  *     `commit_detection`; else the bundle's own mark on the {@see CommitLedger} fed by the commit-tracking middleware of
  *     the bundle's connection, {@see CommitTrackingPass}), a committed `ConcurrencyConflict`, or a lost savepoint with no
  *     deadlock behind it. Example: the settings page seeds the settings row (commit) and then its save deadlocks.
- * - A unique key refusing a write of the bundle that is not an expected "only one" race (the surface (key, locale) and
- *   the settings row are caught where they happen; what is left is one settings translation per locale, two admins
- *   adding the same missing translation at once): 409 with the domain code {@see self::DUPLICATE_KEY} in `X-Error-Code`,
- *   never a `CONFLICT_*` code (it is not a lock conflict).
+ * - A unique key refusing a save of the settings page (one settings translation per locale: two admins adding the same
+ *   missing translation at once; the surface (key, locale) and the settings row are caught where they happen): 409
+ *   with the domain code {@see self::DUPLICATE_KEY} in `X-Error-Code`, never a `CONFLICT_*` code (it is not a lock
+ *   conflict). A unique violation of any other route is not mapped (audit UJ-SK-3).
  * - A lost connection, or any other storage error, is not mapped: a real error.
  *
  * The JSON surface API answers in its own shape (`ok`, `errors`, plus `code`); the admin and public pages are rendered
@@ -83,6 +82,9 @@ final readonly class SeoKitConflictListener
 
     /** Controller namespace of the JSON surface API. */
     private const API_PREFIX = self::CONTROLLER_PREFIX . 'Api\\';
+
+    /** The site settings controller: the only route whose unique violations are mapped (SEO_KIT_DUPLICATE_KEY). */
+    private const SETTINGS_CONTROLLER = self::CONTROLLER_PREFIX . 'Admin\\SeoSiteSettingsController::';
 
     private ConflictResponsePolicy $policy;
 
@@ -139,17 +141,9 @@ final readonly class SeoKitConflictListener
             return;
         }
 
-        if (!$this->isUniqueViolation($failure)) {
-            return;
-        }
-
-        if ($api) {
-            $event->setResponse(new JsonResponse(
-                ['ok' => false, 'errors' => [self::DUPLICATE_KEY_MESSAGE], 'code' => self::DUPLICATE_KEY],
-                Response::HTTP_CONFLICT,
-                [self::ERROR_CODE_HEADER => self::DUPLICATE_KEY],
-            ));
-
+        // Only the settings page: one translation per locale is the one unique key no write path catches. Any other
+        // unique violation of a bundle route is a real error (audit UJ-SK-3).
+        if (!str_starts_with($controller, self::SETTINGS_CONTROLLER) || !$this->isUniqueViolation($failure)) {
             return;
         }
 

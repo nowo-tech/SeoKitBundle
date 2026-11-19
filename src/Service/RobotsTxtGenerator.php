@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nowo\SeoKitBundle\Service;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\Request;
 
 use function is_array;
@@ -31,9 +31,9 @@ final readonly class RobotsTxtGenerator
     public function __construct(
         private array $config,
         private SeoPathBuilderInterface $paths,
-        #[TaggedIterator('nowo_seo_kit.indexability_provider')]
+        #[AutowireIterator('nowo_seo_kit.indexability_provider')]
         private iterable $indexabilityProviders = [],
-        #[TaggedIterator('nowo_seo_kit.geo_robots_groups_provider')]
+        #[AutowireIterator('nowo_seo_kit.geo_robots_groups_provider')]
         private iterable $geoRobotsGroupsProviders = [],
         private ?LoggerInterface $logger = null,
     ) {
