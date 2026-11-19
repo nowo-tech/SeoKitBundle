@@ -119,6 +119,7 @@ The screenshot at the top is the demo SEO Admin. Refresh it with `make -C demo/s
 - [Demo with FrankenPHP](docs/DEMO-FRANKENPHP.md) (includes worker mode)
 - [FrankenPHP worker audit](docs/FRANKENPHP-WORKER-AUDIT.md) (kernel not reset between requests)
 - [Server cookbook (Nginx, php-fpm, FrankenPHP)](docs/SERVERS.md)
+- [Concurrency (REQ-RUNTIME-003)](docs/CONCURRENCY.md)
 - [GitHub Actions CI requirements](docs/GITHUB_CI.md)
 
 ## Tests and coverage

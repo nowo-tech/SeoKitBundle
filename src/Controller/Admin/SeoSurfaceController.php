@@ -98,8 +98,9 @@ final class SeoSurfaceController extends AbstractController
                     $this->notifier->surfaceChanged($surfaceKey, $locale, $id, true);
                 }
             } else {
-                $this->surfaces->save($surface);
-                $this->notifier->surfaceChanged($surfaceKey, $locale, $surface->getId(), false);
+                // 1.25: a new row inserted by a concurrent request first is updated instead (upsert()).
+                $stored = $this->surfaces->upsert($surface);
+                $this->notifier->surfaceChanged($surfaceKey, $locale, $stored->getId(), false);
             }
 
             $this->addFlash('success', 'nowo_seo_kit.flash.surface_saved');

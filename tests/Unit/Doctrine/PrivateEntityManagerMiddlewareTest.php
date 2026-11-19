@@ -6,6 +6,7 @@ namespace Nowo\SeoKitBundle\Tests\Unit\Doctrine;
 
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\Connection as DriverConnection;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\PrivateEntityManagerPass;
 use Nowo\SeoKitBundle\Doctrine\PrivateEntityManagerConnection;
 use Nowo\SeoKitBundle\Doctrine\PrivateEntityManagerMiddleware;
 use Nowo\SeoKitBundle\Doctrine\SeoKitEntityManager;
@@ -17,6 +18,13 @@ use function dirname;
 
 final class PrivateEntityManagerMiddlewareTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        if (!PrivateEntityManagerPass::supportsRollbackMiddleware()) {
+            self::markTestSkipped('The rollback middleware is written against the doctrine/dbal 4 driver API (not registered with DBAL 3).');
+        }
+    }
+
     public function testRollbacksAndFailedCommitsMarkThePrivateManagerStale(): void
     {
         $private = $this->privateManager();

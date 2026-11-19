@@ -8,6 +8,7 @@ use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Enum\SitemapChangeFreq;
 use Nowo\SeoKitBundle\Enum\TwitterCard;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
+use Nowo\TransactionDoctrine\Symfony\Conflict\ConflictResponsePolicy;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -82,6 +83,7 @@ final class Configuration implements ConfigurationInterface
         $this->addBrandNode($root);
         $this->addPersistenceNode($root);
         $this->addDoctrineNode($root);
+        $this->addConflictResponseNode($root);
         $this->addWebUiNode($root);
         $this->addSecurityNode($root);
         $this->addLegacyAdminNode($root);
@@ -169,6 +171,39 @@ final class Configuration implements ConfigurationInterface
                         ->ifTrue(static fn (mixed $v): bool => !is_string($v) || ($v !== '' && preg_match(TablePrefixListener::PREFIX_PATTERN, $v) !== 1))
                         ->thenInvalid('nowo_seo_kit.doctrine.table_prefix must be empty or start with a lowercase letter and contain only lowercase letters, digits and underscores; got %s.')
                     ->end()
+                ->end()
+            ->end()
+            ->end()
+        ->end();
+    }
+
+    /**
+     * 1.25 (REQ-RUNTIME-003 rule 6): answer of a lock conflict on the bundle's routes.
+     */
+    private function addConflictResponseNode(ArrayNodeDefinition $root): void
+    {
+        $root->children()
+            ->arrayNode('conflict_response')
+            ->info('Since 1.25 (REQ-RUNTIME-003): answer of a lock conflict (deadlock, lock wait timeout, serialization failure) on the bundle\'s routes (persistence.enabled). Unset: nowo-tech/transaction-doctrine\'s conflict_response when that bundle is registered, else 409 with Retry-After 1.')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->integerNode('status')
+                    ->info('409 (default, CONFLICT_001 / CONFLICT_002 in X-Conflict-Code) or 503. Null: follow transaction-doctrine, else 409.')
+                    ->defaultNull()
+                    ->validate()
+                        ->ifTrue(static fn (mixed $value): bool => $value !== null && !in_array($value, ConflictResponsePolicy::STATUSES, true))
+                        ->thenInvalid('nowo_seo_kit.conflict_response.status must be 409 or 503, got %s.')
+                    ->end()
+                ->end()
+                ->integerNode('retry_after')
+                    ->info('Retry-After seconds of a CONFLICT_001 answer. Null: follow transaction-doctrine, else 1.')
+                    ->defaultNull()
+                    ->min(0)
+                ->end()
+                ->enumNode('commit_tracking')
+                    ->values(['bundle', 'off'])
+                    ->defaultValue('bundle')
+                    ->info('Commits counted for CONFLICT_002 when nowo-tech/transaction-doctrine\'s commit_detection is off: bundle (default, the connection of the manager that holds the SeoKit entities only; the host\'s other connections are never wrapped) or off (no middleware; only the failure itself and transaction-doctrine\'s request mark decide). With commit_detection on, transaction-doctrine\'s ledger is reused and the bundle adds no middleware.')
                 ->end()
             ->end()
             ->end()

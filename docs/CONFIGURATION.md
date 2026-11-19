@@ -18,6 +18,7 @@ Configuration root: `nowo_seo_kit` (alias `nowo_seo_kit`).
 - [brand](#brand)
 - [persistence](#persistence)
 - [doctrine](#doctrine)
+- [conflict_response](#conflict_response)
 - [web_ui](#web_ui)
   - [Host layout and CSS stack](#host-layout-and-css-stack)
 - [security](#security)
@@ -258,6 +259,17 @@ nowo_seo_kit:
 
 Changing either option renames the tables: run the rename statements from [UPGRADING](UPGRADING.md#to-1220) (or
 generate a migration and turn the drop/create into renames) before deploying.
+
+## conflict_response
+
+Since 1.25 (REQ-RUNTIME-003 rule 6). Answer of a lock conflict (deadlock, lock wait timeout, serialization failure) on
+the bundle's routes, with persistence enabled. See [CONCURRENCY.md](CONCURRENCY.md).
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `status` | `null` | `409` (`CONFLICT_001` / `CONFLICT_002` in `X-Conflict-Code`) or `503`. `null` follows nowo-tech/transaction-doctrine's `conflict_response` when its bundle is registered, else 409. |
+| `retry_after` | `null` | `Retry-After` seconds of a `CONFLICT_001` answer (`CONFLICT_002` never has one). `null` follows transaction-doctrine, else 1. |
+| `commit_tracking` | `bundle` | `bundle`: transaction-doctrine's commit-tracking middleware on the connection of the manager that holds the SeoKit entities only (the host's other connections are never wrapped), or transaction-doctrine's own ledger when its `commit_detection` is on; it tells `CONFLICT_002` (part of the request committed) from `CONFLICT_001`. `off`: no middleware. |
 
 Typed JSON-LD helpers live under `Nowo\SeoKitBundle\Model\StructuredData\` (see [USAGE.md](USAGE.md) / factory `SiteStructuredDataFactory`).
 

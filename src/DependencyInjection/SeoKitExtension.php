@@ -12,6 +12,7 @@ use Nowo\SeoKitBundle\Command\SeoAuditCommand;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSiteSettingsController;
 use Nowo\SeoKitBundle\Controller\Admin\SeoSurfaceController;
 use Nowo\SeoKitBundle\Controller\Api\SeoSurfaceApiController;
+use Nowo\SeoKitBundle\DependencyInjection\Compiler\CommitTrackingPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\EntityManagerOptionPass;
 use Nowo\SeoKitBundle\DependencyInjection\Compiler\PrivateEntityManagerPass;
 use Nowo\SeoKitBundle\Doctrine\PrivateEntityManagerMiddleware;
@@ -21,6 +22,7 @@ use Nowo\SeoKitBundle\Doctrine\TablePrefixListener;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettings;
 use Nowo\SeoKitBundle\Entity\SeoSiteSettingsTranslation;
 use Nowo\SeoKitBundle\Entity\SeoSurface;
+use Nowo\SeoKitBundle\EventSubscriber\SeoKitConflictListener;
 use Nowo\SeoKitBundle\EventSubscriber\SeoRuntimeClearSubscriber;
 use Nowo\SeoKitBundle\Form\SeoSiteSettingsType;
 use Nowo\SeoKitBundle\Form\SeoSurfaceLocaleFilterType;
@@ -57,6 +59,9 @@ use Nowo\SeoKitBundle\Service\SitemapEntryProviderInterface;
 use Nowo\SeoKitBundle\Service\SitemapUrlProviderInterface;
 use Nowo\SeoKitBundle\Ui\SeoKitAreaNav;
 use Nowo\SeoKitBundle\Ui\SeoKitPages;
+use Nowo\TransactionDoctrine\Symfony\Conflict\ConflictResponsePolicy;
+use Nowo\TransactionDoctrine\WriteUnit\CommitLedger;
+use Nowo\TransactionDoctrine\WriteUnit\Dbal\CommitTrackingMiddleware;
 use Nowo\UiKitBundle\Navigation\AreaNavProviderInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
@@ -68,6 +73,7 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 use function array_key_exists;
 use function array_keys;
@@ -181,6 +187,8 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             $container->setAlias(SeoSurfaceManagerInterface::class, SeoSurfaceManager::class);
             // Since 1.24.0: entity-free twin of SeoSurfaceManagerInterface (REQ-ARCH-001 rules 1 and 3).
             $container->setAlias(SeoSurfaceStoreInterface::class, SeoSurfaceManager::class);
+            // Since 1.25 (REQ-RUNTIME-003 rule 6): 409 + CONFLICT_001 / CONFLICT_002 on the bundle's routes.
+            $this->registerConflictAnswer($container, $config['conflict_response']);
         }
 
         if (($config['persistence']['register_audit_command'] ?? true) === true) {
@@ -390,6 +398,43 @@ final class SeoKitExtension extends Extension implements PrependExtensionInterfa
             SeoSiteSettingsTranslation::class,
             SeoSurface::class,
         ]);
+    }
+
+    /**
+     * 1.25 (REQ-RUNTIME-003 rule 6): 409 (or 503) + CONFLICT_001 / CONFLICT_002 instead of a 500 for lock conflicts on
+     * the bundle's routes ({@see SeoKitConflictListener}). Unset options follow transaction-doctrine's policy service
+     * when its bundle is registered.
+     *
+     * Commit tracking (`conflict_response.commit_tracking`): `bundle` (default) registers transaction-doctrine's
+     * commit-tracking middleware with a bundle-owned ledger; {@see CommitTrackingPass} scopes it to the connection of the
+     * SeoKit entities, or drops it and reuses transaction-doctrine's own ledger when that bundle's `commit_detection` is
+     * on. `off` registers neither.
+     *
+     * @param array{status: int|null, retry_after: int|null, commit_tracking: string} $conflictResponse
+     */
+    private function registerConflictAnswer(ContainerBuilder $container, array $conflictResponse): void
+    {
+        $tracking = $conflictResponse['commit_tracking'] !== 'off';
+        if ($tracking) {
+            $container->setDefinition(CommitTrackingPass::LEDGER, new Definition(CommitLedger::class));
+            $container->setDefinition(CommitTrackingPass::MIDDLEWARE, (new Definition(CommitTrackingMiddleware::class, [new Reference(CommitTrackingPass::LEDGER)]))
+                ->addTag('doctrine.middleware'));
+        }
+
+        $policy = $conflictResponse['status'] === null && $conflictResponse['retry_after'] === null
+            ? new Reference(ConflictResponsePolicy::class, ContainerInterface::NULL_ON_INVALID_REFERENCE)
+            : new Definition(ConflictResponsePolicy::class, [
+                $conflictResponse['status'] ?? ConflictResponsePolicy::STATUS_CONFLICT,
+                $conflictResponse['retry_after'] ?? ConflictResponsePolicy::DEFAULT_RETRY_AFTER,
+            ]);
+
+        $container->setDefinition(SeoKitConflictListener::class, (new Definition(SeoKitConflictListener::class, [
+            $policy,
+            $tracking ? new Reference(CommitTrackingPass::LEDGER) : null,
+            new Reference('request_stack', ContainerInterface::NULL_ON_INVALID_REFERENCE),
+        ]))
+            ->addTag('kernel.event_listener', ['event' => KernelEvents::REQUEST, 'method' => 'onRequest', 'priority' => SeoKitConflictListener::REQUEST_PRIORITY])
+            ->addTag('kernel.event_listener', ['event' => KernelEvents::EXCEPTION, 'method' => 'onException', 'priority' => SeoKitConflictListener::PRIORITY]));
     }
 
     /**

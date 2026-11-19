@@ -164,7 +164,7 @@ final class SeoAdminControllersTest extends TestCase
 
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
-        $repo->expects(self::once())->method('save')->with(self::callback(static fn (SeoSurface $saved): bool => $saved->getSurfaceKey() === 'page:home' && $saved->getLocale() === 'en' && $saved->getMetaTitle() === 'Home'));
+        $repo->expects(self::once())->method('upsert')->with(self::callback(static fn (SeoSurface $saved): bool => $saved->getSurfaceKey() === 'page:home' && $saved->getLocale() === 'en' && $saved->getMetaTitle() === 'Home'))->willReturnArgument(0);
 
         $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), null, ['en'], 'en');
         $controller->setContainer($this->container());
@@ -193,7 +193,7 @@ final class SeoAdminControllersTest extends TestCase
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
         // Opening the form must not create (persist + flush) an empty override row.
         $repo->expects(self::never())->method('getOrCreate');
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
         $repo->expects(self::never())->method('remove');
 
         $controller = new SeoSurfaceController($repo, new SeoAuditor(new SeoAuditRules()), $this->checker(), new SeoKitPages(), null, ['es', 'en'], 'en');
@@ -210,7 +210,7 @@ final class SeoAdminControllersTest extends TestCase
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->expects(self::never())->method('findOneByKeyAndLocale');
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
 
         $controller = new SeoSurfaceApiController($repo, $this->checker());
         $controller->setContainer($this->container());
@@ -232,7 +232,7 @@ final class SeoAdminControllersTest extends TestCase
     public function testApiRejectsNonObjectJson(): void
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
 
         $controller = $this->apiController($repo);
 
@@ -244,7 +244,7 @@ final class SeoAdminControllersTest extends TestCase
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
-        $repo->expects(self::once())->method('save');
+        $repo->expects(self::once())->method('upsert')->willReturnArgument(0);
 
         $controller = $this->apiController($repo, formCsrf: true);
 
@@ -257,7 +257,7 @@ final class SeoAdminControllersTest extends TestCase
     public function testApiRefusesMissingOrInvalidCsrfHeader(): void
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
 
         $controller = $this->apiController($repo);
         $body       = json_encode(['meta_title' => 'Home'], JSON_THROW_ON_ERROR);
@@ -272,7 +272,7 @@ final class SeoAdminControllersTest extends TestCase
     public function testApiCsrfFailsClosedWithoutTokenManager(): void
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
-        $repo->expects(self::never())->method('save');
+        $repo->expects(self::never())->method('upsert');
 
         $controller = new SeoSurfaceApiController($repo, $this->checker());
         $controller->setContainer($this->container());
@@ -286,7 +286,7 @@ final class SeoAdminControllersTest extends TestCase
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
-        $repo->expects(self::once())->method('save');
+        $repo->expects(self::once())->method('upsert')->willReturnArgument(0);
 
         $controller = new SeoSurfaceApiController($repo, $this->checker(), null, false);
         $controller->setContainer($this->container());
@@ -300,7 +300,7 @@ final class SeoAdminControllersTest extends TestCase
     {
         $repo = $this->createMock(SeoSurfaceRepository::class);
         $repo->method('findOneByKeyAndLocale')->willReturn(null);
-        $repo->expects(self::once())->method('save')->with(self::isInstanceOf(SeoSurface::class));
+        $repo->expects(self::once())->method('upsert')->with(self::isInstanceOf(SeoSurface::class))->willReturnArgument(0);
 
         $controller = $this->apiController($repo);
 

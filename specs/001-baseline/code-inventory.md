@@ -116,6 +116,8 @@ Every production artifact under `src/` is listed below.
 | `Service/Audit/SeoAuditRow.php` | Audit row DTO | FR-SEO-001 |
 | `Service/Audit/SeoAuditSubjectProviderInterface.php` | Audit subjects SPI | FR-SEO-001 |
 | `Twig/SeoKitExtension.php` | Twig helpers | FR-SEO-006 |
+| `DependencyInjection/Compiler/CommitTrackingPass.php` | Commit tracking on the SeoKit connection only, or transaction-doctrine's ledger (1.25) | FR-SEO-018 |
+| `EventSubscriber/SeoKitConflictListener.php` | 409 + CONFLICT_001 / CONFLICT_002 on the bundle's routes (1.25) | FR-SEO-018 |
 
 ## Symfony config (`src/Resources/config/`)
 
@@ -150,10 +152,10 @@ Every production artifact under `src/` is listed below.
 
 | Category | Files | Mapped |
 | --- | ---: | ---: |
-| PHP classes | 106 | 106 |
+| PHP classes | 108 | 108 |
 | Symfony config | 3 | 3 |
 | Twig views | 4 | 4 |
 | Translations | 7 | 7 |
-| **Total production sources** | **120** | **120** |
+| **Total production sources** | **122** | **122** |
 
 Audit command (production count): `git ls-files src | wc -l` → **100** (2026-10-30).

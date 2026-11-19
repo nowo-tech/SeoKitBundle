@@ -95,6 +95,13 @@
 
 ## Unreleased
 
+- **New requirements:** `nowo-tech/transaction-doctrine` ^1.6, `nowo-tech/transaction-contract` ^1.0 and `doctrine/dbal` ^3.8.2 || ^4.0. Hosts without Doctrine get doctrine/dbal installed but never connected (nothing is registered without `persistence.enabled`).
+- **Lock conflicts answer 409 instead of 500** on the bundle's routes (admin pages, JSON surface API, robots/sitemap when they seed the settings row), with `X-Conflict-Code: CONFLICT_001` + `Retry-After`, or `CONFLICT_002` without `Retry-After` when part of the request was committed. A client that expects 503 sets `nowo_seo_kit.conflict_response.status: 503` (or transaction-doctrine's `conflict_response.status`, which the bundle follows when its own is unset). JSON API answers keep `ok` and `errors` and add `code`.
+- **Commit tracking:** by default the bundle registers transaction-doctrine's commit-tracking middleware on the connection of the SeoKit entities only (`conflict_response.commit_tracking: bundle`). With NowoTransactionDoctrineBundle's `commit_detection: true` its ledger is reused instead. `commit_tracking: off` registers no middleware.
+- **Surface save race:** a new surface whose key and locale another request inserted first is now written to that row (last writer wins) instead of throwing a `UniqueConstraintViolationException`. `SeoSurfaceRepository::upsert()` returns the stored row; the entity passed to `save()` / `saveOrClear()` is then not the stored one. A subclass of `SeoSurfaceRepository` that overrides `save()` should override `upsert()` instead (the bundle's controllers and `SeoSurfaceManager` now call `upsert()`).
+- **Duplicate translation:** a settings save refused by the one-translation-per-locale key answers 409 with `X-Error-Code: SEO_KIT_DUPLICATE_KEY` (no `CONFLICT_*` code) instead of a 500.
+- The bundle never wraps the host's entity manager in a runner (it writes through its own private manager or `doctrine.entity_manager`), so transaction-doctrine's `DoctrineTransactionRunner::forHostEntityManager()` LogicException on unflushed host edits does not apply to SeoKit writes.
+
 ## To 1.24.3
 
 From **1.24.2**:
