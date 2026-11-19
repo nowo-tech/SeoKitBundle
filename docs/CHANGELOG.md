@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
+- [[1.25.0] - 2026-11-19](#1250---2026-11-19)
 - [[1.24.3] - 2026-11-16](#1243---2026-11-16)
 - [[1.24.2] - 2026-11-12](#1242---2026-11-12)
 - [[1.24.1] - 2026-11-12](#1241---2026-11-12)
@@ -50,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [[1.0.0] - 2026-07-16](#100---2026-07-16)
 
 ## [Unreleased]
+
+## [1.25.0] - 2026-11-19
 
 ### Added
 
@@ -902,7 +905,7 @@ Locale tabs for the per-locale wording on /settings/seo (FormKit 2.13 fields mod
 - PHPUnit unit tests with high line coverage
 - GitHub Actions CI, Flex recipe, and documentation pack
 
-[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.24.3...HEAD
+[Unreleased]: https://github.com/nowo-tech/SeoKitBundle/compare/v1.25.0...HEAD
 [1.10.1]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.1
 [1.10.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.10.0
 [1.9.0]: https://github.com/nowo-tech/SeoKitBundle/releases/tag/v1.9.0

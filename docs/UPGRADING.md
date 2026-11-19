@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.25.0](#to-1250)
 - [To 1.24.3](#to-1243)
 - [To 1.24.2](#to-1242)
 - [To 1.24.1](#to-1241)
@@ -94,6 +95,14 @@
   - [Breaking changes](#breaking-changes-12)
 
 ## Unreleased
+
+## To 1.25.0
+
+From **1.24.3**:
+
+```bash
+composer update nowo-tech/seo-kit-bundle
+```
 
 - **New requirements:** `nowo-tech/transaction-doctrine` ^1.6, `nowo-tech/transaction-contract` ^1.0 and `doctrine/dbal` ^3.8.2 || ^4.0. Hosts without Doctrine get doctrine/dbal installed but never connected (nothing is registered without `persistence.enabled`).
 - **Lock conflicts answer 409 instead of 500** on the bundle's routes (admin pages, JSON surface API, robots/sitemap when they seed the settings row), with `X-Conflict-Code: CONFLICT_001` + `Retry-After`, or `CONFLICT_002` without `Retry-After` when part of the request was committed. A client that expects 503 sets `nowo_seo_kit.conflict_response.status: 503` (or transaction-doctrine's `conflict_response.status`, which the bundle follows when its own is unset). JSON API answers keep `ok` and `errors` and add `code`.
