@@ -211,7 +211,12 @@ jobs:
 
       - name: Use DBAL 3
         if: ${{ matrix.dbal != '' }}
-        run: composer require --no-interaction --no-progress --with-all-dependencies "doctrine/dbal:${{ matrix.dbal }}"
+        # doctrine/doctrine-bundle 3 requires doctrine/dbal 4: DBAL 3 hosts run DoctrineBundle 2.
+        run: |
+          composer require --dev --no-update --no-interaction "doctrine/doctrine-bundle:^2.13"
+          composer require --no-update --no-interaction "doctrine/dbal:${{ matrix.dbal }}"
+          composer update --no-interaction --no-progress --with-all-dependencies doctrine/dbal doctrine/doctrine-bundle
+          composer show doctrine/dbal doctrine/doctrine-bundle
 
       - name: Two-connection race tests
         timeout-minutes: 10
@@ -244,10 +249,8 @@ jobs:
           php-version: '8.4'
           tools: composer:v2
 
-      - name: Install dependencies
-        run: |
-          composer config platform.php 8.4.1
-          composer update --prefer-dist --no-progress --no-interaction
+      - name: Install dependencies (from the lock: only nowo-tech/transaction-* move below)
+        run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Downgrade nowo-tech/transaction-* to the lowest allowed versions
         run: |
