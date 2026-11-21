@@ -1,21 +1,12 @@
-{#- Admin shell of the demo CRUD: the demo's UiKit base, a page header with the page title and the admin sub-menu. -#}
+{#- Admin shell of the demo CRUD: the demo shell with a page header (title, intro, toolbar). The admin sub-menu is the
+    "SEO admin" group of the shell aside (base.html.twig). Pages fill the blocks admin_intro and admin_toolbar. -#}
 {% extends 'base.html.twig' %}
 
 {% block title %}SEO Admin{% endblock %}
 
+{% block admin_intro %}Demo CRUD · config + SEO URL definitions{% endblock %}
+{% block admin_toolbar %}{% endblock %}
+
 {% block nowo_ui_page_header %}
-    {{ include(nowo_ui_partial('page_header'), {title: block('title'), intro: 'Demo CRUD · config + SEO URL definitions'}) }}
-    <nav class="nowo-ui-menu" aria-label="SEO admin">
-        {% set _route = app.request.attributes.get('_route') %}
-        {% for item in [
-            {route: 'admin_seo_dashboard', label: 'Dashboard'},
-            {route: 'admin_seo_pages', label: 'Pages'},
-            {route: 'admin_seo_slug_routes', label: 'Slug routes'},
-            {route: 'admin_seo_slugs', label: 'Slugs / URLs'},
-            {route: 'admin_seo_settings_preview', label: 'Site settings'},
-        ] %}
-            <a class="nowo-ui-link" href="{{ path(item.route) }}"{% if _route == item.route %} aria-current="page"{% endif %}>{{ item.label }}</a>
-        {% endfor %}
-        <a class="nowo-ui-link" href="{{ path('app_home') }}">← Demo</a>
-    </nav>
+    {{ include(nowo_ui_partial('page_header'), {title: block('title'), intro: block('admin_intro'), toolbar: block('admin_toolbar')}) }}
 {% endblock %}

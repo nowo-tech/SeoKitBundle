@@ -1,45 +1,24 @@
 {% extends 'admin/seo/layout.html.twig' %}
 
 {% block title %}SEO Admin · {{ is_new ? 'New page' : 'Edit page' }}{% endblock %}
+{% block admin_intro %}{% if is_new %}Create a <code>pages.&lt;route&gt;</code> entry.{% else %}Editing <code>pages.{{ route }}</code>.{% endif %}{% endblock %}
 
 {% block body %}
-    <p class="nowo-ui-muted">{% if is_new %}Create a <code>pages.&lt;route&gt;</code> entry.{% else %}Editing <code>pages.{{ route }}</code>.{% endif %}</p>
-
     {% if page_urls is not empty %}
-        <fieldset>
-            <legend>Resolved SEO URLs</legend>
-            <ul class="nowo-ui-list">
-                {% for locale, url in page_urls %}
-                    <li><code>{{ locale }}</code>: {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}</li>
-                {% endfor %}
-            </ul>
-        </fieldset>
+        {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Resolved SEO URLs', kind: 'list', page_urls: page_urls} %}
+            {% block section_body %}{{ include('admin/seo/_urls.html.twig', {urls: page_urls}) }}{% endblock %}
+        {% endembed %}
     {% endif %}
 
-    {{ form_start(form) }}
-        {% for child in form %}
-            {% if not child.rendered %}
-                {% if child.vars.name == 'locales' %}
-                    {% for locale_form in child %}
-                        <fieldset>
-                            <legend>{{ locale_form.vars.label }}</legend>
-                            {% for field in locale_form %}
-                                {% if not field.rendered %}
-                                    {{ form_row(field) }}
-                                {% endif %}
-                            {% endfor %}
-                        </fieldset>
-                    {% endfor %}
-                    {% do child.setRendered %}
-                {% else %}
-                    {{ form_row(child) }}
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-
-        <div class="nowo-ui-form__actions">
-            <button class="nowo-ui-btn nowo-ui-btn--primary" type="submit">Save</button>
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Definition', kind: 'form', form: form} %}
+        {% block section_body %}
+            {{ form_start(form, {attr: {id: 'seo-form'}}) }}
+                {{ include('admin/seo/_form_fields.html.twig', {form: form}) }}
+            {{ form_end(form) }}
+        {% endblock %}
+        {% block section_footer %}
             <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_pages') }}">Cancel</a>
-        </div>
-    {{ form_end(form) }}
+            <button class="nowo-ui-btn nowo-ui-btn--primary" type="submit" form="seo-form">Save</button>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

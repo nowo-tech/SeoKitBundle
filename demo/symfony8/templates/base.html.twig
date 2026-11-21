@@ -1,57 +1,40 @@
-{#- REQ-DEMO-014: the demo shell is UiKit's admin layout with UiKit's default theme (nowo-ui.css from the bundle's own
-    asset package, no CSS framework, no CDN, no inline styles). nowo_seo_head() prints the SEO tags; the <title> is the
-    layout's own (templates.head_includes_title: false), fed by the SEO metadata. -#}
-{% extends '@NowoUiKit/layout/admin.html.twig' %}
+{#- REQ-DEMO-014: the demo runs inside UiKit's shared demo platform shell (@NowoUiKit/demo_platform/layout.html.twig):
+    the same top bar, aside, content width, theme and footer as every other nowo-tech bundle demo. This file only
+    declares the demo (nowo_ui_demo_platform). nowo_seo_head() prints the SEO tags; the <title> is the layout's own
+    (templates.head_includes_title: false), fed by the SEO metadata. The language pills use the hreflang alternates
+    of the current page (the localized SEO URLs), not the route with another _locale. -#}
+{% extends '@NowoUiKit/demo_platform/layout.html.twig' %}
+{% set _seo = nowo_seo_metadata() %}
+{% set _locale = app.request.locale|default('en') %}
+{% set _blog_slugs = { en: 'hello-world', es: 'hola-mundo', fr: 'bonjour-le-monde' } %}
+{% set _alternates = [] %}
+{% for alt in _seo.alternates %}
+    {% if alt.hreflang != 'x-default' %}
+        {% set _alternates = _alternates|merge([{code: alt.locale, label: alt.locale|upper, href: alt.url}]) %}
+    {% endif %}
+{% endfor %}
+{% set nowo_ui_demo_platform = {
+    bundle: 'SEO Kit',
+    home_route: 'app_home',
+    home_params: {_locale: _locale},
+    repository: 'https://github.com/nowo-tech/SeoKitBundle',
+    translation_domain: false,
+    locales: _alternates,
+    footer_links: [{label: 'Sitemap', href: '/sitemap.xml'}, {label: 'Robots', href: '/robots.txt'}],
+    nav: [
+        {label: 'Home', route: 'app_home', params: {_locale: _locale}, section: 'Demo'},
+        {label: 'About', route: 'app_about', params: {_locale: _locale}, section: 'Demo'},
+        {label: 'Blog sample', route: 'app_blog_show', params: {_locale: _locale, slug: _blog_slugs[_locale]|default('hello-world')}, section: 'Demo'},
+        {label: 'Dashboard', route: 'admin_seo_dashboard', section: 'SEO admin'},
+        {label: 'Pages', route: 'admin_seo_pages', active: ['admin_seo_pages', 'admin_seo_page_*'], section: 'SEO admin'},
+        {label: 'Slug routes', route: 'admin_seo_slug_routes', active: ['admin_seo_slug_routes', 'admin_seo_slug_route_*'], section: 'SEO admin'},
+        {label: 'Slugs / URLs', route: 'admin_seo_slugs', active: ['admin_seo_slugs', 'admin_seo_slug_new', 'admin_seo_slug_edit', 'admin_seo_slug_delete'], section: 'SEO admin'},
+        {label: 'Site settings', route: 'admin_seo_settings_preview', section: 'SEO admin'},
+    ],
+} %}
 
 {% block nowo_ui_document_title %}{% block title %}{{ nowo_seo_metadata().title }}{% endblock %}{% endblock %}
 
 {% block nowo_ui_head %}
     {{ nowo_seo_head() }}
-{% endblock %}
-
-{% block nowo_ui_navigation %}
-    {% set locale = app.request.locale|default('en') %}
-    {% set _route = app.request.attributes.get('_route') %}
-    {% set seo = nowo_seo_metadata() %}
-    {% set blog_slugs = { en: 'hello-world', es: 'hola-mundo', fr: 'bonjour-le-monde' } %}
-    <header class="nowo-ui-header" data-testid="demo-masthead">
-        <a class="nowo-ui-brand" href="{{ path('app_home', {_locale: locale}) }}">SEO Kit Demo</a>
-        <nav class="nowo-ui-menu" aria-label="Main">
-            <a class="nowo-ui-link" href="{{ path('app_home', {_locale: locale}) }}"{% if _route == 'app_home' %} aria-current="page"{% endif %}>Home</a>
-            <a class="nowo-ui-link" href="{{ path('app_about', {_locale: locale}) }}"{% if _route == 'app_about' %} aria-current="page"{% endif %}>About</a>
-            <a class="nowo-ui-link" href="{{ path('app_blog_show', {_locale: locale, slug: blog_slugs[locale]|default('hello-world')}) }}"{% if _route == 'app_blog_show' %} aria-current="page"{% endif %}>Blog sample</a>
-            <a class="nowo-ui-link" href="{{ path('admin_seo_dashboard') }}"{% if _route starts with 'admin_seo_' %} aria-current="page"{% endif %}>SEO Admin</a>
-        </nav>
-        <div class="nowo-ui-header__end">
-            <nav class="nowo-ui-menu" aria-label="Language">
-                {% for alt in seo.alternates %}
-                    {% if alt.hreflang != 'x-default' %}
-                        <a class="nowo-ui-link" href="{{ alt.url }}" hreflang="{{ alt.hreflang }}" lang="{{ alt.locale }}"{% if alt.locale == locale %} aria-current="true"{% endif %}>{{ alt.locale|upper }}</a>
-                    {% endif %}
-                {% endfor %}
-            </nav>
-            {{ include('@NowoUiKitBundle/partials/_theme_toggle.html.twig', { compact: true }, false) }}
-        </div>
-    </header>
-{% endblock %}
-
-{% block nowo_ui_flashes %}
-    {% for type, messages in app.flashes %}
-        {% for message in messages %}
-            <div class="nowo-ui-flash nowo-ui-flash--{{ type }}" role="alert">{{ message }}</div>
-        {% endfor %}
-    {% endfor %}
-{% endblock %}
-
-{% block nowo_ui_content %}
-    {% block body %}{% endblock %}
-    <footer class="nowo-ui-footer">
-        <div class="nowo-ui-footer__inner">
-            <nav class="nowo-ui-footer__nav" aria-label="Footer">
-                <a class="nowo-ui-link" href="/sitemap.xml">Sitemap</a>
-                <a class="nowo-ui-link" href="/robots.txt">Robots</a>
-                <a class="nowo-ui-link" href="{{ path('admin_seo_dashboard') }}">SEO Admin</a>
-            </nav>
-        </div>
-    </footer>
 {% endblock %}

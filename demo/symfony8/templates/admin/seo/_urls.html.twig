@@ -1,0 +1,6 @@
+{#- Resolved SEO URLs per locale. Variable: urls. -#}
+<ul class="nowo-ui-list">
+    {% for locale, url in urls|default({}) %}
+        <li><code>{{ locale }}</code>: {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}</li>
+    {% endfor %}
+</ul>

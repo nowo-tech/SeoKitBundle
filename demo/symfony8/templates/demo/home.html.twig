@@ -5,9 +5,9 @@
 {% endblock %}
 
 {% block body %}
-    <section class="nowo-ui-card">
-        <div class="nowo-ui-card__body">
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Language switch', kind: 'content'} %}
+        {% block section_body %}
             <p>Use the language switch (EN / ES / FR) to change <code>_locale</code> and the localized path for the current page.</p>
-        </div>
-    </section>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

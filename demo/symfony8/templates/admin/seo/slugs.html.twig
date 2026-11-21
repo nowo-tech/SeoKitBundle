@@ -1,61 +1,37 @@
 {% extends 'admin/seo/layout.html.twig' %}
 
 {% block title %}SEO Admin · Slugs / URLs{% endblock %}
+{% block admin_intro %}Per-slug SEO + translated URL slugs (<code>slugs.*</code>).{% endblock %}
+{% block admin_toolbar %}<a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_slug_new') }}">New slug</a>{% endblock %}
 
 {% block body %}
-    <div class="nowo-ui-toolbar">
-        <p class="nowo-ui-muted">Per-slug SEO + translated URL slugs (<code>slugs.*</code>).</p>
-        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_slug_new') }}">New slug</a>
-    </div>
-    <table class="nowo-ui-table">
-        <thead>
-            <tr>
-                <th>Route / slug</th>
-                <th>Meta</th>
-                <th>SEO URLs</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for route, bySlug in slugs %}
-                {% for slug, cfg in bySlug %}
-                    <tr>
-                        <td>
-                            <code>{{ route }}</code><br>
-                            <code>{{ slug }}</code>
-                        </td>
-                        <td>
-                            {{ cfg.title|default('—') }}<br>
-                            <span class="nowo-ui-muted">
-                                sitemap: {{ cfg.in_sitemap|default(true) ? 'yes' : 'no' }}
-                                · noindex: {{ cfg.noindex|default(false) ? 'yes' : 'no' }}
-                            </span>
-                        </td>
-                        <td>
-                            <ul class="nowo-ui-list">
-                                {% for locale, url in slug_urls[route][slug]|default({}) %}
-                                    <li><code>{{ locale }}</code>:
-                                        {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td class="nowo-ui-table__actions">
-                            <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
-                            {{ form_start(delete_forms[route][slug], {attr: {onsubmit: 'return confirm(\'Delete slug ' ~ slug ~ '?\');'}}) }}
-                                {% for child in delete_forms[route][slug] %}
-                                    {% if not child.rendered %}
-                                        {{ form_row(child) }}
-                                    {% endif %}
-                                {% endfor %}
-                                <button class="nowo-ui-btn nowo-ui-btn--danger" type="submit">Delete</button>
-                            {{ form_end(delete_forms[route][slug]) }}
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% else %}
-                <tr><td colspan="4">No slugs configured.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Slugs', kind: 'table', empty: slugs is empty, state_message: 'No slugs configured.', slugs: slugs, slug_urls: slug_urls, delete_forms: delete_forms} %}
+        {% block section_body %}
+            <table class="nowo-ui-data-table">
+                <thead><tr><th scope="col">Route / slug</th><th scope="col">Meta</th><th scope="col">SEO URLs</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    {% set _n = 0 %}
+                    {% for route, bySlug in slugs %}
+                        {% for slug, cfg in bySlug %}
+                            {% set _n = _n + 1 %}
+                            <tr>
+                                <th scope="row"><code>{{ route }}</code><br><code>{{ slug }}</code></th>
+                                <td>
+                                    {{ cfg.title|default('—') }}<br>
+                                    <span class="nowo-ui-muted">sitemap: {{ cfg.in_sitemap|default(true) ? 'yes' : 'no' }} · noindex: {{ cfg.noindex|default(false) ? 'yes' : 'no' }}</span>
+                                </td>
+                                <td class="nowo-ui-cell--wrap">{{ include('admin/seo/_urls.html.twig', {urls: slug_urls[route][slug]|default({})}) }}</td>
+                                <td>
+                                    <div class="nowo-ui-row-actions">
+                                        <a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
+                                        {{ include('admin/seo/_delete.html.twig', {form: delete_forms[route][slug], dialog_id: 'seo-delete-slug-' ~ _n, title: 'Delete slug ' ~ slug ~ '?', message: 'The slug entry is removed from the SEO configuration.'}) }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

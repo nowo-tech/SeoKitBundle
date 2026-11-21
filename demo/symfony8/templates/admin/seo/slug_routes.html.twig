@@ -1,48 +1,37 @@
 {% extends 'admin/seo/layout.html.twig' %}
 
 {% block title %}SEO Admin · Slug routes{% endblock %}
+{% block admin_intro %}Patterns for dynamic routes (<code>slug_routes.*</code>).{% endblock %}
+{% block admin_toolbar %}<a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_slug_route_new') }}">New slug route</a>{% endblock %}
 
 {% block body %}
-    <div class="nowo-ui-toolbar">
-        <p class="nowo-ui-muted">Patterns for dynamic routes (<code>slug_routes.*</code>).</p>
-        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_slug_route_new') }}">New slug route</a>
-    </div>
-    <table class="nowo-ui-table">
-        <thead>
-            <tr>
-                <th>Route</th>
-                <th>Templates / patterns</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for route, cfg in slug_routes %}
-                <tr>
-                    <td><code>{{ route }}</code></td>
-                    <td>
-                        <div><span class="nowo-ui-muted">path</span> <code>{{ cfg.path_pattern|default('—') }}</code></div>
-                        <div><span class="nowo-ui-muted">title</span> <code>{{ cfg.title_template|default('—') }}</code></div>
-                        {% if cfg.locales is defined %}
-                            {% for locale, loc in cfg.locales %}
-                                <div><code>{{ locale }}</code> <code>{{ loc.path_pattern|default('—') }}</code></div>
-                            {% endfor %}
-                        {% endif %}
-                    </td>
-                    <td class="nowo-ui-table__actions">
-                        <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_slug_route_edit', {route: route}) }}">Edit</a>
-                        {{ form_start(delete_forms[route], {attr: {onsubmit: 'return confirm(\'Delete slug route ' ~ route ~ ' and its slugs?\');'}}) }}
-                            {% for child in delete_forms[route] %}
-                                {% if not child.rendered %}
-                                    {{ form_row(child) }}
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Slug routes', kind: 'table', empty: slug_routes is empty, state_message: 'No slug routes configured.', slug_routes: slug_routes, delete_forms: delete_forms} %}
+        {% block section_body %}
+            <table class="nowo-ui-data-table">
+                <thead><tr><th scope="col">Route</th><th scope="col">Templates / patterns</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    {% for route, cfg in slug_routes %}
+                        <tr>
+                            <th scope="row"><code>{{ route }}</code></th>
+                            <td>
+                                <div><span class="nowo-ui-muted">path</span> <code>{{ cfg.path_pattern|default('—') }}</code></div>
+                                <div><span class="nowo-ui-muted">title</span> <code>{{ cfg.title_template|default('—') }}</code></div>
+                                {% if cfg.locales is defined %}
+                                    {% for locale, loc in cfg.locales %}
+                                        <div><code>{{ locale }}</code> <code>{{ loc.path_pattern|default('—') }}</code></div>
+                                    {% endfor %}
                                 {% endif %}
-                            {% endfor %}
-                            <button class="nowo-ui-btn nowo-ui-btn--danger" type="submit">Delete</button>
-                        {{ form_end(delete_forms[route]) }}
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="3">No slug routes configured.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            </td>
+                            <td>
+                                <div class="nowo-ui-row-actions">
+                                    <a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_slug_route_edit', {route: route}) }}">Edit</a>
+                                    {{ include('admin/seo/_delete.html.twig', {form: delete_forms[route], dialog_id: 'seo-delete-route-' ~ loop.index, title: 'Delete slug route ' ~ route ~ '?', message: 'The slug route and its slugs are removed from the SEO configuration.'}) }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

@@ -1,53 +1,30 @@
 {% extends 'admin/seo/layout.html.twig' %}
 
 {% block title %}SEO Admin · Pages{% endblock %}
+{% block admin_intro %}Static route SEO (<code>pages.*</code>) with locale paths for hreflang / sitemap.{% endblock %}
+{% block admin_toolbar %}<a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_page_new') }}">New page</a>{% endblock %}
 
 {% block body %}
-    <div class="nowo-ui-toolbar">
-        <p class="nowo-ui-muted">Static route SEO (<code>pages.*</code>) with locale paths for hreflang / sitemap.</p>
-        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_page_new') }}">New page</a>
-    </div>
-    <table class="nowo-ui-table">
-        <thead>
-            <tr>
-                <th>Route</th>
-                <th>Default path</th>
-                <th>SEO URLs</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for route, page in pages %}
-                <tr>
-                    <td>
-                        <code>{{ route }}</code><br>
-                        <span class="nowo-ui-muted">{{ page.title|default('') }}</span>
-                    </td>
-                    <td><code>{{ page.path|default('—') }}</code></td>
-                    <td>
-                        <ul class="nowo-ui-list">
-                            {% for locale, url in page_urls[route]|default({}) %}
-                                <li><code>{{ locale }}</code>:
-                                    {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </td>
-                    <td class="nowo-ui-table__actions">
-                        <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
-                        {{ form_start(delete_forms[route], {attr: {onsubmit: 'return confirm(\'Delete page ' ~ route ~ '?\');'}}) }}
-                            {% for child in delete_forms[route] %}
-                                {% if not child.rendered %}
-                                    {{ form_row(child) }}
-                                {% endif %}
-                            {% endfor %}
-                            <button class="nowo-ui-btn nowo-ui-btn--danger" type="submit">Delete</button>
-                        {{ form_end(delete_forms[route]) }}
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="4">No pages configured.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Pages', kind: 'table', empty: pages is empty, state_message: 'No pages configured.', pages: pages, page_urls: page_urls, delete_forms: delete_forms} %}
+        {% block section_body %}
+            <table class="nowo-ui-data-table">
+                <thead><tr><th scope="col">Route</th><th scope="col">Default path</th><th scope="col">SEO URLs</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    {% for route, page in pages %}
+                        <tr>
+                            <th scope="row"><code>{{ route }}</code><br><span class="nowo-ui-muted">{{ page.title|default('') }}</span></th>
+                            <td><code>{{ page.path|default('—') }}</code></td>
+                            <td class="nowo-ui-cell--wrap">{{ include('admin/seo/_urls.html.twig', {urls: page_urls[route]|default({})}) }}</td>
+                            <td>
+                                <div class="nowo-ui-row-actions">
+                                    <a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
+                                    {{ include('admin/seo/_delete.html.twig', {form: delete_forms[route], dialog_id: 'seo-delete-page-' ~ loop.index, title: 'Delete page ' ~ route ~ '?', message: 'The page entry is removed from the SEO configuration.'}) }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

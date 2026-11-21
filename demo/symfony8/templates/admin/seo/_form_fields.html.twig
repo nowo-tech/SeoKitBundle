@@ -1,0 +1,20 @@
+{#- All fields of a FormKit form; the per-locale subforms (child "locales") each in a fieldset. -#}
+{% for child in form %}
+    {% if not child.rendered %}
+        {% if child.vars.name == 'locales' %}
+            {% for locale_form in child %}
+                <fieldset>
+                    <legend>{{ locale_form.vars.label }}</legend>
+                    {% for field in locale_form %}
+                        {% if not field.rendered %}
+                            {{ form_row(field) }}
+                        {% endif %}
+                    {% endfor %}
+                </fieldset>
+            {% endfor %}
+            {% do child.setRendered %}
+        {% else %}
+            {{ form_row(child) }}
+        {% endif %}
+    {% endif %}
+{% endfor %}
