@@ -4,4 +4,10 @@
     {{ include(nowo_ui_partial('page_header'), {title: 'About', intro: 'This page uses the #[Seo] attribute for metadata.'}) }}
 {% endblock %}
 
-{% block body %}{% endblock %}
+{% block body %}
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Metadata from #[Seo]', kind: 'content'} %}
+        {% block section_body %}
+            <p>The title, description, canonical URL and hreflang alternates of this page come from the <code>#[Seo]</code> attribute of its controller.</p>
+        {% endblock %}
+    {% endembed %}
+{% endblock %}

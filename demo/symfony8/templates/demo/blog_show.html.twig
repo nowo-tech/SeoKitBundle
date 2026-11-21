@@ -5,10 +5,10 @@
 {% endblock %}
 
 {% block body %}
-    <section class="nowo-ui-card">
-        <div class="nowo-ui-card__body">
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Slug', kind: 'detail', slug: slug} %}
+        {% block section_body %}
             <p>Slug: <code>{{ slug }}</code></p>
             <p>SEO layers: slug_routes + slugs configuration.</p>
-        </div>
-    </section>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

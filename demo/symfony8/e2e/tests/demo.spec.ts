@@ -14,7 +14,7 @@ test.describe('SeoKit demo', () => {
 
   test('language switch follows the localized path and metadata', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'ES' }).click();
+    await page.locator('[data-testid="demo-platform-locales"] a[hreflang="es"]').click();
     await expect(page).toHaveURL(/\/es$/);
     await expect(page).toHaveTitle('Inicio · SEO Kit Demo');
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
@@ -47,12 +47,22 @@ test.describe('SeoKit demo', () => {
 
   test('the demo shell is UiKit and the admin forms are FormKit forms (REQ-DEMO-014/015)', async ({ page }) => {
     await page.goto('/admin/seo/pages/new');
-    await expect(page.getByTestId('demo-masthead')).toBeVisible();
+    await expect(page.getByTestId('demo-platform')).toBeVisible();
     await expect(page.locator('link[href*="bootstrap"]')).toHaveCount(0);
     await expect(page.getByLabel('Route name')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
     const settings = await page.goto('/admin/seo/settings-preview');
     expect(settings?.ok()).toBeTruthy();
-    await expect(page.getByTestId('demo-masthead')).toBeVisible();
+    await expect(page.getByTestId('demo-platform')).toBeVisible();
+  });
+
+  test('a row delete asks first in a UiKit confirm dialog (Cancel has the focus)', async ({ page }) => {
+    await page.goto('/admin/seo/pages');
+    await page.getByRole('button', { name: 'Delete' }).first().click();
+    const dialog = page.locator('dialog[open]');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
   });
 });

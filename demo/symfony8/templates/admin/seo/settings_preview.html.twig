@@ -1,14 +1,15 @@
 {% extends 'admin/seo/layout.html.twig' %}
 
 {% block title %}SEO Admin · Site settings{% endblock %}
+{% block admin_intro %}Preview of the bundle's <code>SeoSiteSettingsType</code> (site name + per-locale titles); nothing is persisted in this demo.{% endblock %}
 
 {% block body %}
-    <p class="nowo-ui-muted">Preview of the bundle's <code>SeoSiteSettingsType</code> (site name + per-locale titles); nothing is persisted in this demo.</p>
-
-    {{ form_start(form) }}
-        {{ form_widget(form) }}
-        <div class="nowo-ui-form__actions">
-            <button class="nowo-ui-btn nowo-ui-btn--primary" type="submit">Save</button>
-        </div>
-    {{ form_end(form) }}
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Site settings', kind: 'form', form: form} %}
+        {% block section_body %}
+            {{ form_start(form, {attr: {id: 'seo-form'}}) }}
+                {{ form_widget(form) }}
+            {{ form_end(form) }}
+        {% endblock %}
+        {% block section_footer %}<button class="nowo-ui-btn nowo-ui-btn--primary" type="submit" form="seo-form">Save</button>{% endblock %}
+    {% endembed %}
 {% endblock %}

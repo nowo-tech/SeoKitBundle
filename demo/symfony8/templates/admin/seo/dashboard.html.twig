@@ -1,114 +1,64 @@
 {% extends 'admin/seo/layout.html.twig' %}
 
 {% block title %}SEO Admin · Dashboard{% endblock %}
+{% block admin_intro %}File: <code>{{ config_file }}</code> · locales: <code>{{ locales|join(', ') }}</code> · default: <code>{{ root.default_locale|default('en') }}</code>{% endblock %}
+{% block admin_toolbar %}<a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_page_new') }}">New page</a>{% endblock %}
 
 {% block body %}
-    <p class="nowo-ui-muted">
-        File: <code>{{ config_file }}</code>
-        · locales: <code>{{ locales|join(', ') }}</code>
-        · default: <code>{{ root.default_locale|default('en') }}</code>
-    </p>
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Pages', kind: 'table', empty: pages is empty, state_message: 'No pages configured.', pages: pages, page_urls: page_urls} %}
+        {% block section_body %}
+            <table class="nowo-ui-data-table">
+                <thead><tr><th scope="col">Route</th><th scope="col">Title</th><th scope="col">SEO URLs</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    {% for route, page in pages %}
+                        <tr>
+                            <th scope="row"><code>{{ route }}</code></th>
+                            <td>{{ page.title|default('—') }}</td>
+                            <td class="nowo-ui-cell--wrap">{{ include('admin/seo/_urls.html.twig', {urls: page_urls[route]|default({})}) }}</td>
+                            <td><a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endblock %}
+    {% endembed %}
 
-    <div class="nowo-ui-toolbar">
-        <h2>Pages</h2>
-        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_page_new') }}">New page</a>
-    </div>
-    <table class="nowo-ui-table">
-        <thead>
-            <tr>
-                <th>Route</th>
-                <th>Title</th>
-                <th>SEO URLs</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for route, page in pages %}
-                <tr>
-                    <td><code>{{ route }}</code></td>
-                    <td>{{ page.title|default('—') }}</td>
-                    <td>
-                        <ul class="nowo-ui-list">
-                            {% for locale, url in page_urls[route]|default({}) %}
-                                <li><code>{{ locale }}</code>:
-                                    {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </td>
-                    <td class="nowo-ui-table__actions">
-                        <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_page_edit', {route: route}) }}">Edit</a>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="4">No pages configured.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Slug routes', kind: 'table', empty: slug_routes is empty, state_message: 'No slug routes configured.', slug_routes: slug_routes} %}
+        {% block section_actions %}<a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_slug_route_new') }}">New slug route</a>{% endblock %}
+        {% block section_body %}
+            <table class="nowo-ui-data-table">
+                <thead><tr><th scope="col">Route</th><th scope="col">Path pattern</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    {% for route, cfg in slug_routes %}
+                        <tr>
+                            <th scope="row"><code>{{ route }}</code></th>
+                            <td><code>{{ cfg.path_pattern|default('—') }}</code></td>
+                            <td><a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_slug_route_edit', {route: route}) }}">Edit</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endblock %}
+    {% endembed %}
 
-    <div class="nowo-ui-toolbar">
-        <h2>Slug routes</h2>
-        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_slug_route_new') }}">New slug route</a>
-    </div>
-    <table class="nowo-ui-table">
-        <thead>
-            <tr>
-                <th>Route</th>
-                <th>Path pattern</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for route, cfg in slug_routes %}
-                <tr>
-                    <td><code>{{ route }}</code></td>
-                    <td><code>{{ cfg.path_pattern|default('—') }}</code></td>
-                    <td class="nowo-ui-table__actions">
-                        <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_slug_route_edit', {route: route}) }}">Edit</a>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="3">No slug routes configured.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div class="nowo-ui-toolbar">
-        <h2>Slugs (URL SEO)</h2>
-        <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('admin_seo_slug_new') }}">New slug</a>
-    </div>
-    <table class="nowo-ui-table">
-        <thead>
-            <tr>
-                <th>Route / slug</th>
-                <th>Title</th>
-                <th>SEO URLs</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for route, bySlug in slugs %}
-                {% for slug, cfg in bySlug %}
-                    <tr>
-                        <td><code>{{ route }}</code><br><code>{{ slug }}</code></td>
-                        <td>{{ cfg.title|default('—') }}</td>
-                        <td>
-                            <ul class="nowo-ui-list">
-                                {% for locale, url in slug_urls[route][slug]|default({}) %}
-                                    <li><code>{{ locale }}</code>:
-                                        {% if url %}<a href="{{ url }}">{{ url }}</a>{% else %}—{% endif %}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td class="nowo-ui-table__actions">
-                            <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% else %}
-                <tr><td colspan="4">No slugs configured.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% embed '@NowoUiKit/demo_platform/_section.html.twig' with {title: 'Slugs (URL SEO)', kind: 'table', empty: slugs is empty, state_message: 'No slugs configured.', slugs: slugs, slug_urls: slug_urls} %}
+        {% block section_actions %}<a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_slug_new') }}">New slug</a>{% endblock %}
+        {% block section_body %}
+            <table class="nowo-ui-data-table">
+                <thead><tr><th scope="col">Route / slug</th><th scope="col">Title</th><th scope="col">SEO URLs</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    {% for route, bySlug in slugs %}
+                        {% for slug, cfg in bySlug %}
+                            <tr>
+                                <th scope="row"><code>{{ route }}</code> <code>{{ slug }}</code></th>
+                                <td>{{ cfg.title|default('—') }}</td>
+                                <td class="nowo-ui-cell--wrap">{{ include('admin/seo/_urls.html.twig', {urls: slug_urls[route][slug]|default({})}) }}</td>
+                                <td><a class="nowo-ui-btn nowo-ui-btn--outline nowo-ui-btn--sm" href="{{ path('admin_seo_slug_edit', {route: route, slug: slug}) }}">Edit</a></td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}
