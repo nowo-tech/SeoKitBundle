@@ -64,7 +64,7 @@ Add to your base layout:
 
 ## Requirements
 
-- PHP >= 8.2, < 8.6
+- PHP >= 8.2, < 8.7
 - Symfony **7.4+** or **8.x**
 - `nowo-tech/form-kit-bundle` ^2.4 (hard dependency)
 

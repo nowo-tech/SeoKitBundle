@@ -12,7 +12,7 @@
 
 ## Requirements
 
-- PHP >= 8.2, < 8.6
+- PHP >= 8.2, < 8.7
 - Symfony **7.4+** or **8.x** (form / validator / translation stack via FormKit)
 - Twig Bundle
 - `nowo-tech/form-kit-bundle` ^2.4 (pulled automatically)
